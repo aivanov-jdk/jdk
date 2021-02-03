@@ -64,9 +64,6 @@ public class BodyInheritedFontSize {
         htmlPane.setEditorKit(kit);
 
         StyleSheet styleSheet = kit.getStyleSheet();
-        if (w3cUnits) {
-            styleSheet.addRule("W3C_LENGTH_UNITS_ENABLE");
-        }
         styleSheet.addRule("body { font-family: sans-serif; font-size: 16pt; }");
 
         Document doc = kit.createDefaultDocument();
