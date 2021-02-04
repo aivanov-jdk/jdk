@@ -120,14 +120,14 @@ public class BodyInheritedFontSize {
 
     private static void checkFontSize(JEditorPane htmlPane,
                                       boolean w3cUnits,
-                                      boolean printElement) {
+                                      boolean debugPrint) {
         final View rootView = htmlPane.getUI().getRootView(htmlPane);
         final View boxView = rootView.getView(0);
         final View bodyView = boxView.getView(1);
 
-        int fontSizeInherited = getViewFontSize(bodyView.getView(0), printElement);
-        int fontSizeExplicit  = getViewFontSize(bodyView.getView(1), printElement);
-        if (printElement) {
+        int fontSizeInherited = getViewFontSize(bodyView.getView(0), debugPrint);
+        int fontSizeExplicit  = getViewFontSize(bodyView.getView(1), debugPrint);
+        if (debugPrint) {
             System.out.println("w3cUnits: " + w3cUnits + "\n"
                     + "Inherited: " + fontSizeInherited + "\n"
                     + "Explicit: " + fontSizeExplicit + "\n");
@@ -140,10 +140,10 @@ public class BodyInheritedFontSize {
         }
     }
 
-    private static int getViewFontSize(View paragraphView, boolean printElement) {
+    private static int getViewFontSize(View paragraphView, boolean debugPrint) {
         View inlineView = paragraphView.getView(0).getView(0);
         int fontSize = StyleConstants.getFontSize(inlineView.getAttributes());
-        if (printElement) {
+        if (debugPrint) {
             ((AbstractElement) inlineView.getElement()).dump(System.out, 1);
         }
         return fontSize;
