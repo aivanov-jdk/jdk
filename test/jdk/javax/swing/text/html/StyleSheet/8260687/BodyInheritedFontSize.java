@@ -47,6 +47,7 @@ public class BodyInheritedFontSize {
             <html>
             <body>
               <p>16pt inherited from body</p>
+              <p style="font-size: 100%">100% paragraph</p>
               <p style="font-size: 16pt">16pt paragraph</p>
             </body>
             </html>
@@ -126,10 +127,12 @@ public class BodyInheritedFontSize {
         final View bodyView = boxView.getView(1);
 
         int fontSizeInherited = getViewFontSize(bodyView.getView(0), debugPrint);
-        int fontSizeExplicit  = getViewFontSize(bodyView.getView(1), debugPrint);
+        int fontSizePercent   = getViewFontSize(bodyView.getView(1), debugPrint);
+        int fontSizeExplicit  = getViewFontSize(bodyView.getView(2), debugPrint);
         if (debugPrint) {
             System.out.println("w3cUnits: " + w3cUnits + "\n"
                     + "Inherited: " + fontSizeInherited + "\n"
+                    + "Percent:   " + fontSizePercent + "\n"
                     + "Explicit: " + fontSizeExplicit + "\n");
         }
         if (fontSizeInherited != fontSizeExplicit) {
@@ -137,6 +140,12 @@ public class BodyInheritedFontSize {
                     + (w3cUnits ? "w3cUnits" : "stdUnits") + ": "
                     + "Inherited: " + fontSizeInherited + " vs. "
                     + "Explicit: " + fontSizeExplicit);
+        }
+        if (fontSizeInherited != fontSizePercent) {
+            throw new RuntimeException("The font size is different with "
+                                               + (w3cUnits ? "w3cUnits" : "stdUnits") + ": "
+                                               + "Inherited: " + fontSizeInherited + " vs. "
+                                               + "Percent: " + fontSizePercent);
         }
     }
 
