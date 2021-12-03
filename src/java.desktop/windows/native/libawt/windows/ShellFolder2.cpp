@@ -1057,12 +1057,10 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
             // Extract the color bitmap
             int nBits = iconSize * iconSize;
 
-            long *colorBits = NULL;
-            long *maskBits = NULL;
             try {
                 entry_point();
 
-                colorBits = (long*)safe_Malloc(MAX_ICON_SIZE * MAX_ICON_SIZE * sizeof(long));
+                long *colorBits = (long*)safe_Malloc(MAX_ICON_SIZE * MAX_ICON_SIZE * sizeof(long));
 
                 GetDIBits(dc, iconInfo.hbmColor, 0, iconSize, colorBits, &bmi, DIB_RGB_COLORS);
                 // XP supports alpha in some icons, and depending on device.
@@ -1078,13 +1076,19 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
                 }
                 if (!hasAlpha) {
                     // Extract the mask bitmap
-                    maskBits = (long*)safe_Malloc(MAX_ICON_SIZE * MAX_ICON_SIZE * sizeof(long));
-                    GetDIBits(dc, iconInfo.hbmMask, 0, iconSize, maskBits, &bmi, DIB_RGB_COLORS);
-                    // Copy the mask alphas into the color bits
-                    for (int i = 0; i < nBits; i++) {
-                        if (maskBits[i] == 0) {
-                            colorBits[i] |= 0xff000000;
+                    try {
+                        entry_point();
+                        long *maskBits = (long*)safe_Malloc(MAX_ICON_SIZE * MAX_ICON_SIZE * sizeof(long));
+                        GetDIBits(dc, iconInfo.hbmMask, 0, iconSize, maskBits, &bmi, DIB_RGB_COLORS);
+                        // Copy the mask alphas into the color bits
+                        for (int i = 0; i < nBits; i++) {
+                            if (maskBits[i] == 0) {
+                                colorBits[i] |= 0xff000000;
+                            }
                         }
+                        free(maskBits);
+                    } catch(std::bad_alloc&) {
+                        handle_bad_alloc();
                     }
                 }
                 // Create java array
@@ -1093,16 +1097,9 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
                     // Copy values to java array
                     env->SetIntArrayRegion(iconBits, 0, nBits, colorBits);
                 }
+                free(colorBits);
             } catch(std::bad_alloc&) {
                 handle_bad_alloc();
-            }
-
-            // Clean up
-            if (colorBits != NULL) {
-                free(colorBits);
-            }
-            if (maskBits != NULL) {
-                free(maskBits);
             }
             // Release DC
             ReleaseDC(NULL, dc);
