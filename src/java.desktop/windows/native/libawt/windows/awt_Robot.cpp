@@ -38,9 +38,9 @@ static void MouseMove(jint x, jint y)
     INPUT mouseInput = {0};
     mouseInput.type = INPUT_MOUSE;
     mouseInput.mi.time = 0;
-    mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE;
-    mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXSCREEN)) + signum(x);
-    mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYSCREEN)) + signum(y);
+    mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK | MOUSEEVENTF_MOVE;
+    mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXVIRTUALSCREEN)) + signum(x);
+    mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYVIRTUALSCREEN)) + signum(y);
     ::SendInput(1, &mouseInput, sizeof(mouseInput));
 }
 
