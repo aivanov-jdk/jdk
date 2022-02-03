@@ -25,14 +25,10 @@
 
 package sun.awt.windows;
 
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.peer.RobotPeer;
 
-import static sun.java2d.SunGraphicsEnvironment.getGCDeviceBounds;
 import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
 
 final class WRobotPeer implements RobotPeer {
@@ -41,20 +37,6 @@ final class WRobotPeer implements RobotPeer {
     @Override
     public void mouseMove(int x, int y) {
         Point point = toDeviceSpaceAbs(x, y);
-
-        GraphicsDevice[] screenDevices = GraphicsEnvironment
-                                         .getLocalGraphicsEnvironment()
-                                         .getScreenDevices();
-        for (GraphicsDevice device : screenDevices) {
-            GraphicsConfiguration config = device.getDefaultConfiguration();
-            Rectangle bounds = getGCDeviceBounds(config);
-            if (bounds.x < 0) {
-                point.x += bounds.width;
-            }
-            if (bounds.y < 0) {
-                point.y += bounds.height;
-            }
-        }
         mouseMoveImpl(point.x, point.y);
     }
     @Override
