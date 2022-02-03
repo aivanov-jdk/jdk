@@ -40,27 +40,21 @@ final class WRobotPeer implements RobotPeer {
     public native void mouseMoveImpl(int x, int y);
     @Override
     public void mouseMove(int x, int y) {
-        System.out.println("WRP(" + x + ", " + y);
         Point point = toDeviceSpaceAbs(x, y);
-        System.out.println("WRP.point " + point.x + ", " + point.y);
 
-
-        final GraphicsDevice[] screenDevices = GraphicsEnvironment
-                                               .getLocalGraphicsEnvironment()
-                                               .getScreenDevices();
+        GraphicsDevice[] screenDevices = GraphicsEnvironment
+                                         .getLocalGraphicsEnvironment()
+                                         .getScreenDevices();
         for (GraphicsDevice device : screenDevices) {
             GraphicsConfiguration config = device.getDefaultConfiguration();
             Rectangle bounds = getGCDeviceBounds(config);
             if (bounds.x < 0) {
                 point.x += bounds.width;
-                System.out.println("Adjusting x for " + bounds);
             }
             if (bounds.y < 0) {
                 point.y += bounds.height;
-                System.out.println("Adjusting y for " + bounds);
             }
         }
-        System.out.println("WRP.point norm " + point.x + ", " + point.y);
         mouseMoveImpl(point.x, point.y);
     }
     @Override
