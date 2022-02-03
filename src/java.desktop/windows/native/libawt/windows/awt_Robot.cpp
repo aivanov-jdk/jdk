@@ -35,6 +35,9 @@ static int signum(int i) {
 
 static void MouseMove(jint x, jint y)
 {
+    x -= ::GetSystemMetrics(SM_XVIRTUALSCREEN);
+    y -= ::GetSystemMetrics(SM_YVIRTUALSCREEN);
+
     INPUT mouseInput = {0};
     mouseInput.type = INPUT_MOUSE;
     mouseInput.mi.time = 0;
