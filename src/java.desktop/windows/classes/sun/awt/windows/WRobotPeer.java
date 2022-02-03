@@ -52,11 +52,11 @@ final class WRobotPeer implements RobotPeer {
             GraphicsConfiguration config = device.getDefaultConfiguration();
             Rectangle bounds = getGCDeviceBounds(config);
             if (bounds.x < 0) {
-                x += bounds.width;
+                point.x += bounds.width;
                 System.out.println("Adjusting x for " + bounds);
             }
             if (bounds.y < 0) {
-                y += bounds.height;
+                point.y += bounds.height;
                 System.out.println("Adjusting y for " + bounds);
             }
         }
