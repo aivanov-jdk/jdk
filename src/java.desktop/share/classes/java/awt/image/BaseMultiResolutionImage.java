@@ -116,14 +116,10 @@ public class BaseMultiResolutionImage extends AbstractMultiResolutionImage {
                                       double destImageHeight) {
 
         checkSize(destImageWidth, destImageHeight);
-        System.out.println("getResolutionVariant(" + destImageWidth
-                           + ", " + destImageHeight);
 
         for (Image rvImage : resolutionVariants) {
             if (destImageWidth <= rvImage.getWidth(null)
                     && destImageHeight <= rvImage.getHeight(null)) {
-                System.out.println("  returning: " + rvImage.getWidth(null)
-                                   + ", " + rvImage.getHeight(null));
                 return rvImage;
             }
         }
