@@ -27,6 +27,7 @@
 #include "java_awt_event_InputEvent.h"
 #include "awt_Component.h"
 #include <winuser.h>
+#include <stdio.h>
 
 static int signum(int i) {
   // special version of signum which returns 1 when value is 0
@@ -45,6 +46,13 @@ static void MouseMove(jint x, jint y)
     mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXVIRTUALSCREEN)) + signum(x);
     mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYVIRTUALSCREEN)) + signum(y);
     ::SendInput(1, &mouseInput, sizeof(mouseInput));
+    printf("MouseMove: mi.dx = %ld, mi.dy = %ld\n",
+           mouseInput.mi.dx, mouseInput.mi.dy);
+
+    POINT cursorPos;
+    ::GetCursorPos(&cursorPos);
+    printf("MouseMove: cp.x = %ld, cp.y = %ld\n",
+           cursorPos.x, cursorPos.y);
 }
 
 static void MousePress(jint buttonMask)
