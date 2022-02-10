@@ -36,11 +36,11 @@ static int signum(int i) {
 
 static void MouseMove(jint x, jint y)
 {
-    printf("MouseMove: x = %d, y = %d\n", x, y);
+    printf("MouseMove: x     = %5d, y     = %5d\n", x, y);
 
     x -= ::GetSystemMetrics(SM_XVIRTUALSCREEN);
     y -= ::GetSystemMetrics(SM_YVIRTUALSCREEN);
-    printf("MouseMove: xx = %d, xy = %d\n", x, y);
+    printf("MouseMove: xx    = %5d, yy    = %5d\n", x, y);
 
     INPUT mouseInput = {0};
     mouseInput.type = INPUT_MOUSE;
@@ -49,12 +49,12 @@ static void MouseMove(jint x, jint y)
     mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXVIRTUALSCREEN)) + signum(x);
     mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYVIRTUALSCREEN)) + signum(y);
     ::SendInput(1, &mouseInput, sizeof(mouseInput));
-    printf("MouseMove: mi.dx = %ld, mi.dy = %ld\n",
+    printf("MouseMove: mi.dx = %5ld, mi.dy = %5ld\n",
            mouseInput.mi.dx, mouseInput.mi.dy);
 
     POINT cursorPos;
     ::GetCursorPos(&cursorPos);
-    printf("MouseMove: cp.x = %ld, cp.y = %ld\n",
+    printf("MouseMove: cp.x  = %5ld, cp.y  = %5ld\n",
            cursorPos.x, cursorPos.y);
     fflush(stdout);
 }
