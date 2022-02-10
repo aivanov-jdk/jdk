@@ -36,8 +36,11 @@ static int signum(int i) {
 
 static void MouseMove(jint x, jint y)
 {
+    printf("MouseMove: x = %d, y = %d\n", x, y);
+
     x -= ::GetSystemMetrics(SM_XVIRTUALSCREEN);
     y -= ::GetSystemMetrics(SM_YVIRTUALSCREEN);
+    printf("MouseMove: xx = %d, xy = %d\n", x, y);
 
     INPUT mouseInput = {0};
     mouseInput.type = INPUT_MOUSE;
@@ -53,6 +56,7 @@ static void MouseMove(jint x, jint y)
     ::GetCursorPos(&cursorPos);
     printf("MouseMove: cp.x = %ld, cp.y = %ld\n",
            cursorPos.x, cursorPos.y);
+    fflush(stdout);
 }
 
 static void MousePress(jint buttonMask)
