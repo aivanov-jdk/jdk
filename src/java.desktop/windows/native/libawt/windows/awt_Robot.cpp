@@ -52,6 +52,12 @@ static void MouseMove(jint x, jint y)
     printf("MouseMove: mi.dx = %5ld, mi.dy = %5ld\n",
            mouseInput.mi.dx, mouseInput.mi.dy);
 
+    printf("MouseMove: xv = %5ld, yv = %5ld, cxv = %5ld, cyv = %5ld\n",
+           ::GetSystemMetrics(SM_XVIRTUALSCREEN),
+           ::GetSystemMetrics(SM_YVIRTUALSCREEN),
+           ::GetSystemMetrics(SM_CXVIRTUALSCREEN),
+           ::GetSystemMetrics(SM_CYVIRTUALSCREEN));
+
     POINT cursorPos;
     ::GetCursorPos(&cursorPos);
     printf("MouseMove: cp.x  = %5ld, cp.y  = %5ld\n",
