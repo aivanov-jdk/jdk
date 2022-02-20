@@ -194,15 +194,15 @@ if (map != null) {
 and dynamic updates will not be available. This is a typical behaviour if
 the JDK does not recognise the desktop environment, or it is one which
 has no such settings. The <b>Headless</b> toolkit is one such example.
-Therefore it is important to test against null before using the map.
+Therefore, it is important to test against null before using the map.
 <br><br>
-<li>If non-null the value will be a <code>Map</code> of
+<li>If non-null, the value will be a <code>Map</code> of
 <code>RenderingHints</code> such that every key is an instance of
 <code>RenderingHints.Key</code> and the value is a legal value for that key.
 <br><br>
 <li>The map may contain the default value for a hint. This is
-needed in the event there is a previously a non-default value for the hint
-set on the <code>Graphics2D</code>. If the map did not contain
+needed in the event there is a non-default value set for the hint
+on the <code>Graphics2D</code> previously. If the map did not contain
 the default value, then <code>addRenderingHints(Map)</code> would leave
 the previous hint which may not correspond to the desktop setting.
 <p>
