@@ -5,7 +5,7 @@
   <title>AWT Desktop Properties</title>
 </head>
 <!--
- Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ here, and their value types.</caption>
 Modern desktops support various forms of text antialiasing (font smoothing).
 <p>
 These are applied by platform-specific heavyweight components.
-However an application may want to render text using the same text
+However, an application may want to render text using the same text
 antialiasing on a drawing surface or lightweight (non-platform) component using
 {@link java.awt.Graphics2D Graphics2D} methods.
 This is particularly important when creating
@@ -231,7 +231,7 @@ the per-device property name.
 <h2>Mouse Functionality</h2>
 <b>Desktop Property: <a id="sun.awt.enableExtraMouseButtons">"sun.awt.enableExtraMouseButtons"</A></b>
 <p>
-This property determines if events from extra mouse buttons (if they are exist and are
+This property determines if events from extra mouse buttons (if they exist and are
 enabled by the underlying operating system) are allowed to be processed and posted into
 {@code EventQueue}.
 <br>
@@ -249,13 +249,13 @@ If the property is set to {@code true} then
 <ul>
 <li> it is still legal to create {@code MouseEvent} objects with
 standard buttons and, if the mouse has more
-then three buttons, it is also legal to use buttons from the range started
+than three buttons, it is also legal to use buttons from the range started
 from 0 up to {@link java.awt.MouseInfo#getNumberOfButtons() getNumberOfButtons()}.
 
 <li> it is legal to use standard button masks when using {@code Robot.mousePress()}
-and {@code Robot.mouseRelease()} methods and, if the mouse has more then three buttons,
+and {@code Robot.mouseRelease()} methods and, if the mouse has more than three buttons,
 it is also legal to use masks for existing extended mouse buttons.
-That way, if there are more then three buttons on the mouse then it is allowed to
+That way, if there are more than three buttons on the mouse then it is allowed to
 use button masks corresponding to the buttons
 in the range from 1 up to {@link java.awt.MouseInfo#getNumberOfButtons() getNumberOfButtons()}
 </ul>
@@ -270,9 +270,9 @@ only: {@code NOBUTTON}, {@code BUTTON1}, {@code BUTTON2} and
 {@code InputEvent.BUTTON3_DOWN_MASK}
 </ul>
 
-This property should be used when there is no need in listening mouse events fired as a result of
+This property should be used when there is no need in listening to mouse events fired as a result of
 activity with extra mouse button.
-By default this property is set to {@code true}.
+By default, this property is set to {@code true}.
 </main>
 </body>
 </html>
