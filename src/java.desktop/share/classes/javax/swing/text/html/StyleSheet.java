@@ -24,17 +24,58 @@
  */
 package javax.swing.text.html;
 
-import sun.swing.SwingUtilities2;
-import java.util.*;
-import java.awt.*;
-import java.io.*;
-import java.net.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.EmptyStackException;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Stack;
+import java.util.StringTokenizer;
+import java.util.Vector;
+
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.UIManager;
-import javax.swing.border.*;
+import javax.swing.border.BevelBorder;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeListener;
-import javax.swing.text.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.View;
+
+import sun.swing.SwingUtilities2;
+
+import static java.awt.RenderingHints.KEY_ANTIALIASING;
+import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
+import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
 
 /**
  * Support for defining the visual characteristics of
@@ -2244,7 +2285,7 @@ public class StyleSheet extends StyleContext {
                 name != HTML.Tag.LI) {
                 return;
             }
-            // deside on what side draw bullets, etc.
+            // decide on what side draw bullets, etc.
             isLeftToRight =
                 host.getComponentOrientation().isLeftToRight();
 
@@ -2294,22 +2335,22 @@ public class StyleSheet extends StyleContext {
             }
             if (childtype == CSS.Value.SQUARE || childtype == CSS.Value.CIRCLE
                 || childtype == CSS.Value.DISC) {
-                drawShape(g, childtype, (int) x, (int) y,
+                drawShape(host, g, childtype, (int) x, (int) y,
                           (int) w, (int) h, align);
             } else if (childtype == CSS.Value.DECIMAL) {
-                drawLetter(g, '1', (int) x, (int) y, (int) w, (int) h, align,
+                drawLetter(host, g, '1', (int) x, (int) y, (int) w, (int) h, align,
                            getRenderIndex(v, item));
             } else if (childtype == CSS.Value.LOWER_ALPHA) {
-                drawLetter(g, 'a', (int) x, (int) y, (int) w, (int) h, align,
+                drawLetter(host, g, 'a', (int) x, (int) y, (int) w, (int) h, align,
                            getRenderIndex(v, item));
             } else if (childtype == CSS.Value.UPPER_ALPHA) {
-                drawLetter(g, 'A', (int) x, (int) y, (int) w, (int) h, align,
+                drawLetter(host, g, 'A', (int) x, (int) y, (int) w, (int) h, align,
                            getRenderIndex(v, item));
             } else if (childtype == CSS.Value.LOWER_ROMAN) {
-                drawLetter(g, 'i', (int) x, (int) y, (int) w, (int) h, align,
+                drawLetter(host, g, 'i', (int) x, (int) y, (int) w, (int) h, align,
                            getRenderIndex(v, item));
             } else if (childtype == CSS.Value.UPPER_ROMAN) {
-                drawLetter(g, 'I', (int) x, (int) y, (int) w, (int) h, align,
+                drawLetter(host, g, 'I', (int) x, (int) y, (int) w, (int) h, align,
                            getRenderIndex(v, item));
             }
         }
@@ -2346,12 +2387,18 @@ public class StyleSheet extends StyleContext {
          * @param ah    height of the container the bullet is placed in
          * @param align preferred alignment factor for the child view
          */
-        void drawShape(Graphics g, CSS.Value type, int ax, int ay, int aw,
+        void drawShape(Container host,
+                       Graphics g, CSS.Value type, int ax, int ay, int aw,
                        int ah, float align) {
             final Object origAA = ((Graphics2D) g).getRenderingHint(
-                                             RenderingHints.KEY_ANTIALIASING);
-            ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                                            RenderingHints.VALUE_ANTIALIAS_ON);
+                                             KEY_ANTIALIASING);
+            final Object aaHint = !(host instanceof JComponent)
+                                    ? null
+                                    : ((JComponent) host).getClientProperty(KEY_TEXT_ANTIALIASING);
+            if (aaHint != RenderingHints.VALUE_TEXT_ANTIALIAS_OFF) {
+                ((Graphics2D) g).setRenderingHint(KEY_ANTIALIASING,
+                                                  VALUE_ANTIALIAS_ON);
+            }
             int size = g.getFont().getSize();
 
             // Position shape to the middle of the html text.
@@ -2366,13 +2413,13 @@ public class StyleSheet extends StyleContext {
             } else {
                 g.fillOval(x, y, size/3, size/3);
             }
-            ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                                              origAA);
+            ((Graphics2D) g).setRenderingHint(KEY_ANTIALIASING, origAA);
         }
 
         /**
          * Draws the letter or number for an ordered list.
          *
+         * @param host  the component for which the paint is performed
          * @param g     the graphics context
          * @param letter type of ordered list to draw
          * @param ax    x coordinate to place the bullet
@@ -2381,7 +2428,8 @@ public class StyleSheet extends StyleContext {
          * @param ah    height of the container the bullet is placed in
          * @param index position of the list item in the list
          */
-        void drawLetter(Graphics g, char letter, int ax, int ay, int aw,
+        void drawLetter(Container host,
+                        Graphics g, char letter, int ax, int ay, int aw,
                         int ah, float align, int index) {
             String str = formatItemNum(index, letter);
             str = isLeftToRight ? str + "." : "." + str;
@@ -2391,7 +2439,9 @@ public class StyleSheet extends StyleContext {
                                         (aw + bulletgap);
             int x = ax + gap;
             int y = Math.max(ay + fm.getAscent(), ay + (int)(ah * align));
-            SwingUtilities2.drawString(null, g, str, x, y);
+            SwingUtilities2.drawString(
+                    host instanceof JComponent ? (JComponent) host : null,
+                    g, str, x, y);
         }
 
         /**
