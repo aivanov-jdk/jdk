@@ -76,6 +76,7 @@ import sun.swing.SwingUtilities2;
 import static java.awt.RenderingHints.KEY_ANTIALIASING;
 import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
 import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF;
 
 /**
  * Support for defining the visual characteristics of
@@ -2390,12 +2391,13 @@ public class StyleSheet extends StyleContext {
         void drawShape(Container host,
                        Graphics g, CSS.Value type, int ax, int ay, int aw,
                        int ah, float align) {
-            final Object origAA = ((Graphics2D) g).getRenderingHint(
-                                             KEY_ANTIALIASING);
             final Object aaHint = !(host instanceof JComponent)
                                     ? null
                                     : ((JComponent) host).getClientProperty(KEY_TEXT_ANTIALIASING);
-            if (aaHint != RenderingHints.VALUE_TEXT_ANTIALIAS_OFF) {
+            final Object origAA = aaHint != VALUE_TEXT_ANTIALIAS_OFF
+                                  ? ((Graphics2D) g).getRenderingHint(KEY_ANTIALIASING)
+                                  : null;
+            if (aaHint != VALUE_TEXT_ANTIALIAS_OFF) {
                 ((Graphics2D) g).setRenderingHint(KEY_ANTIALIASING,
                                                   VALUE_ANTIALIAS_ON);
             }
@@ -2413,7 +2415,9 @@ public class StyleSheet extends StyleContext {
             } else {
                 g.fillOval(x, y, size/3, size/3);
             }
-            ((Graphics2D) g).setRenderingHint(KEY_ANTIALIASING, origAA);
+            if (origAA != null) {
+                ((Graphics2D) g).setRenderingHint(KEY_ANTIALIASING, origAA);
+            }
         }
 
         /**
