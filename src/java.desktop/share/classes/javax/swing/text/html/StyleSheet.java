@@ -2394,10 +2394,10 @@ public class StyleSheet extends StyleContext {
             final Object aaHint = !(host instanceof JComponent)
                                     ? null
                                     : ((JComponent) host).getClientProperty(KEY_TEXT_ANTIALIASING);
-            final Object origAA = aaHint != VALUE_TEXT_ANTIALIAS_OFF
+            final Object origAA = aaHint != null && aaHint != VALUE_TEXT_ANTIALIAS_OFF
                                   ? ((Graphics2D) g).getRenderingHint(KEY_ANTIALIASING)
                                   : null;
-            if (aaHint != VALUE_TEXT_ANTIALIAS_OFF) {
+            if (aaHint != null && aaHint != VALUE_TEXT_ANTIALIAS_OFF) {
                 ((Graphics2D) g).setRenderingHint(KEY_ANTIALIASING,
                                                   VALUE_ANTIALIAS_ON);
             }
