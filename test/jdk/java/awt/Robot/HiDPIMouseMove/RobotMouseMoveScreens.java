@@ -15,12 +15,13 @@ import java.util.Scanner;
  */
 public class RobotMouseMoveScreens {
     private static final long DELAY = 150;
+    private static final int OFFSET = 53;
 
     private static int totalMouseClicks = 0;
 
     private static int mouseClickMatches = 0;
 
-    private static float clickMatchPercentage = 0;
+    private static int npe = 0;
 
     private static int  dNumScreens = 0;
 
@@ -30,9 +31,13 @@ public class RobotMouseMoveScreens {
 
         /* Code below will not be part of the final test, it's being used for data collection  */
 
-        System.out.println("Please enter type of Scaling (Per Monitor or System)");
-        Scanner scanner = new Scanner(System.in);
-        typeOfScaling = scanner.nextLine();
+        if (args.length > 0) {
+            typeOfScaling = args[0];
+        } else {
+            System.out.println("Please enter type of Scaling (Per Monitor or System)");
+            Scanner scanner = new Scanner(System.in);
+            typeOfScaling = scanner.nextLine();
+        }
         /* END */
 
         final GraphicsDevice[] screens = GraphicsEnvironment
@@ -60,10 +65,8 @@ public class RobotMouseMoveScreens {
     private static void moveMouseTo(final Robot robot, final Rectangle bounds)
             throws InterruptedException {
 
-        for (int x= 0; x < (bounds.width - 1);x+=50)
-        {
-            for (int y= 0;y < (bounds.height - 1);y+=50)
-            {
+        for (int x = 0; x < (bounds.width - 1); x += OFFSET) {
+            for (int y = 0; y < (bounds.height - 1); y += OFFSET) {
                 int ptX = x + bounds.x;
                 int ptY = y + bounds.y;
 
@@ -74,11 +77,17 @@ public class RobotMouseMoveScreens {
 
                 Thread.sleep(DELAY);
 
-                final Point mouse = MouseInfo.getPointerInfo().getLocation();
+                try {
+                    final Point mouse = MouseInfo.getPointerInfo().getLocation();
 
-                if(p.x == mouse.x && p.y == mouse.y)
-                {
-                    mouseClickMatches++;
+                    if (p.x == mouse.x && p.y == mouse.y) {
+                        mouseClickMatches++;
+                    }
+                } catch (NullPointerException e) {
+                    if (npe == 0) {
+                        e.printStackTrace();
+                    }
+                    npe++;
                 }
 
             }
@@ -88,10 +97,14 @@ public class RobotMouseMoveScreens {
     private static void printStats()
     {
         /* Code below will not be part of the final test, it's being used for data collection  */
-        clickMatchPercentage = ((mouseClickMatches *100) / totalMouseClicks) ;
+        float clickMatchPercentage = ((mouseClickMatches * 100f) / totalMouseClicks);
         System.out.println("************************************************");
         System.out.println(" Type of Scaling: " + typeOfScaling);
         System.out.println(" Click Match Percentage: " + clickMatchPercentage);
+        System.out.println(" Matched: " + mouseClickMatches);
+        System.out.println(" Total: " + totalMouseClicks);
+        System.out.println(" Mismatch: " + (totalMouseClicks - mouseClickMatches));
+        System.out.println(" NPE: " + npe);
         System.out.println("************************************************");
         /* END */
     }
