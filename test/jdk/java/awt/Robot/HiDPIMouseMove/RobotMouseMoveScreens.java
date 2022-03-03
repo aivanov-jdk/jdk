@@ -8,7 +8,6 @@ import java.awt.Robot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 import java.util.stream.Collectors;
 
 /**
@@ -138,19 +137,12 @@ public class RobotMouseMoveScreens {
         }
     }
 
-    private static String typeOfScaling;
-
     public static void main(String[] args) throws AWTException {
-
-        /* Code below will not be part of the final test, it's being used for data collection  */
-        if (args.length > 0) {
-            typeOfScaling = args[0];
-        } else {
-            System.out.println("Please enter type of Scaling (Per Monitor or System)");
-            Scanner scanner = new Scanner(System.in);
-            typeOfScaling = scanner.nextLine();
+        if (args.length < 1) {
+            System.err.println("The type DPI Awareness is required: Per-Monitor or Unaware");
+            System.exit(1);
         }
-        /* END */
+        final String typeOfScaling = args[0];
 
         final GraphicsDevice[] screens = GraphicsEnvironment
                                                  .getLocalGraphicsEnvironment()
