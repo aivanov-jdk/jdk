@@ -5,7 +5,11 @@ import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 /**
  * Test for
@@ -14,23 +18,129 @@ import java.util.Scanner;
  * mouse moved to the correct position as expected.
  */
 public class RobotMouseMoveScreens {
-    private static final long DELAY = 150;
-    private static final int OFFSET = 53;
+    private static final int DELAY = 150;
 
-    private static int totalMouseClicks = 0;
+    private static final int[] STEPS = {50, 53, 83, 97, 100};
 
-    private static int mouseClickMatches = 0;
+    private static class Stats {
+        /**
+         * The step for mouse move.
+         */
+        private final int step;
 
-    private static int npe = 0;
+        /**
+         * The total number of mouse move.
+         */
+        private int totalMoves = 0;
 
-    private static int  dNumScreens = 0;
+        /**
+         * The number of mouse coordinates that matched accurately.
+         */
+        private int match0 = 0;
 
-    private static String typeOfScaling ;
+        /**
+         * The number of mouse coordinates that matched with 1px tolerance.
+         */
+        private int match1 = 0;
 
-    public static void main(String[] args) throws AWTException, InterruptedException {
+        /**
+         * The number of NPEs.
+         */
+        private int npe = 0;
+
+        /**
+         * The number of mismatch for x coordinate.
+         */
+        private int xMismatch = 0;
+
+        /**
+         * The number of mistmatch for y coordinate.
+         */
+        private int yMismatch = 0;
+
+        private Stats(int step) {
+            this.step = step;
+        }
+
+        private void runTest(final Robot robot,
+                             final GraphicsDevice[] screens) {
+            int screenNo = 0;
+            for (GraphicsDevice screen : screens) {
+                Rectangle bounds = screen.getDefaultConfiguration()
+                                         .getBounds();
+                System.out.println("Screen " + (++screenNo) + ": " + bounds);
+                runTest(robot, bounds);
+            }
+        }
+
+        private void runTest(final Robot robot,
+                             final Rectangle bounds) {
+            final int xMax = bounds.x + bounds.width - 1;
+            final int yMax = bounds.y + bounds.height - 1;
+
+            for (int x = bounds.x; x < xMax; x += step) {
+                for (int y = bounds.y; y < yMax; y += step) {
+                    robot.mouseMove(x, y);
+                    totalMoves++;
+
+                    robot.delay(DELAY);
+
+                    try {
+                        final Point mouse = MouseInfo.getPointerInfo()
+                                                     .getLocation();
+
+                        boolean matched = x == mouse.x && y == mouse.y;
+                        boolean xMismatched = Math.abs(x - mouse.x) == 1;
+                        boolean yMismatched = Math.abs(y - mouse.y) == 1;
+                        if (xMismatched) {
+                            xMismatch++;
+                        }
+                        if (yMismatched) {
+                            yMismatch++;
+                        }
+                        if (matched) {
+                            match0++;
+                        }
+                        if (matched || xMismatched || yMismatched) {
+                            match1++;
+                        }
+                    } catch (NullPointerException e) {
+                        if (npe == 0) {
+                            e.printStackTrace();
+                        }
+                        npe++;
+                    }
+                }
+            }
+        }
+
+        public void print() {
+            float match0Percent = ((match0 * 100f) / totalMoves);
+            float match1Percent = ((match1 * 100f) / totalMoves);
+            System.out.println("************************************************");
+            System.out.println("Percentage: " + match0Percent + "vs " + match1Percent);
+            System.out.println("Total:      " + totalMoves);
+            System.out.println("Matched0:   " + match0);
+            System.out.println("Matched1:   " + match1);
+            System.out.println("xMismatch:  " + xMismatch);
+            System.out.println("yMismatch:  " + yMismatch);
+            System.out.println("NPE:        " + npe);
+        }
+
+        public void printCSV() {
+            int[] data = {step,totalMoves, match0, match1, xMismatch, yMismatch, npe};
+            System.out.println(Arrays.stream(data)
+                                     .mapToObj(Integer::toString)
+                                     .collect(Collectors.joining(","))
+            );
+        }
+    }
+
+    private static String typeOfScaling;
+
+    public static void main(String[] args) throws AWTException {
 
         /* Code below will not be part of the final test, it's being used for data collection  */
-
         if (args.length > 0) {
             typeOfScaling = args[0];
         } else {
@@ -43,69 +153,20 @@ public class RobotMouseMoveScreens {
         final GraphicsDevice[] screens = GraphicsEnvironment
                                                  .getLocalGraphicsEnvironment()
                                                  .getScreenDevices();
-
-
         final Robot robot = new Robot();
-        for (GraphicsDevice screen : screens) {
-            Rectangle bounds = screen.getDefaultConfiguration()
-                                       .getBounds();
-            System.out.println("Screen Number  : " + dNumScreens++);
-            System.out.println(bounds);
-            moveMouseTo(robot, bounds);
-            
+
+        List<Stats> statsList = new ArrayList<>(STEPS.length);
+        for (int step : STEPS) {
+            Stats stats = new Stats(step);
+            stats.runTest(robot, screens);
+            stats.print();
+            statsList.add(stats);
         }
 
-        /* Code below will not be part of the final test, it's being used for data collection  */
-
-        printStats();
-
-        /* END */
-    }
-
-    private static void moveMouseTo(final Robot robot, final Rectangle bounds)
-            throws InterruptedException {
-
-        for (int x = 0; x < (bounds.width - 1); x += OFFSET) {
-            for (int y = 0; y < (bounds.height - 1); y += OFFSET) {
-                int ptX = x + bounds.x;
-                int ptY = y + bounds.y;
-
-                Point p = new Point(ptX, ptY);
-
-                robot.mouseMove(p.x, p.y);
-                totalMouseClicks++;
-
-                Thread.sleep(DELAY);
-
-                try {
-                    final Point mouse = MouseInfo.getPointerInfo().getLocation();
-
-                    if (p.x == mouse.x && p.y == mouse.y) {
-                        mouseClickMatches++;
-                    }
-                } catch (NullPointerException e) {
-                    if (npe == 0) {
-                        e.printStackTrace();
-                    }
-                    npe++;
-                }
-
-            }
-        }
-    }
-
-    private static void printStats()
-    {
-        /* Code below will not be part of the final test, it's being used for data collection  */
-        float clickMatchPercentage = ((mouseClickMatches * 100f) / totalMouseClicks);
+        System.out.println("\n\nFinished: " + typeOfScaling);
         System.out.println("************************************************");
-        System.out.println(" Type of Scaling: " + typeOfScaling);
-        System.out.println(" Click Match Percentage: " + clickMatchPercentage);
-        System.out.println(" Matched: " + mouseClickMatches);
-        System.out.println(" Total: " + totalMouseClicks);
-        System.out.println(" Mismatch: " + (totalMouseClicks - mouseClickMatches));
-        System.out.println(" NPE: " + npe);
         System.out.println("************************************************");
-        /* END */
+
+        statsList.forEach(Stats::printCSV);
     }
 }
