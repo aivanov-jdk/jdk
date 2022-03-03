@@ -64,6 +64,8 @@ public class RobotMouseMoveScreens {
 
         private void runTest(final Robot robot,
                              final GraphicsDevice[] screens) {
+            System.out.println("Step: " + step);
+
             int screenNo = 0;
             for (GraphicsDevice screen : screens) {
                 Rectangle bounds = screen.getDefaultConfiguration()
