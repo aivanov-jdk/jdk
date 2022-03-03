@@ -54,15 +54,15 @@ public class RobotMouseMoveScreens {
         private int xMismatch = 0;
 
         /**
-         * The number of mistmatch for y coordinate.
+         * The number of mismatch for y coordinate.
          */
         private int yMismatch = 0;
 
-        private Stats(int step) {
+        public Stats(int step) {
             this.step = step;
         }
 
-        private void runTest(final Robot robot,
+        public void runTest(final Robot robot,
                              final GraphicsDevice[] screens) {
             System.out.println("Step: " + step);
 
@@ -120,13 +120,13 @@ public class RobotMouseMoveScreens {
             float match0Percent = ((match0 * 100f) / totalMoves);
             float match1Percent = ((match1 * 100f) / totalMoves);
             System.out.println("************************************************");
-            System.out.println("Percentage: " + match0Percent + "vs " + match1Percent);
-            System.out.println("Total:      " + totalMoves);
-            System.out.println("Matched0:   " + match0);
-            System.out.println("Matched1:   " + match1);
-            System.out.println("xMismatch:  " + xMismatch);
-            System.out.println("yMismatch:  " + yMismatch);
-            System.out.println("NPE:        " + npe);
+            System.out.printf("Percentage: %3.2f vs %3.2f", match0Percent, match1Percent);
+            System.out.printf("Total:      %5d\n", totalMoves);
+            System.out.printf("Matched0:   %5d\n", match0);
+            System.out.printf("Matched1:   %5d\n", match1);
+            System.out.printf("xMismatch:  %5d\n", xMismatch);
+            System.out.printf("yMismatch:  %5d\n", yMismatch);
+            System.out.printf("NPE:        %5d\n", npe);
         }
 
         public void printCSV() {
