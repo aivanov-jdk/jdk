@@ -13,7 +13,8 @@ import java.util.stream.Collectors;
 /**
  * Test for
  * <a href="https://bugs.openjdk.java.net/browse/JDK-8249592">JDK-8249592</a>.
- * It moves the mouse to different points on the screen(s) in a sequential manner and reads mouse pointer position back to confirm that
+ * It moves the mouse to different points on the screen(s) in a sequential
+ * manner and reads mouse pointer position back to confirm that
  * mouse moved to the correct position as expected.
  */
 public class RobotMouseMoveScreens {
