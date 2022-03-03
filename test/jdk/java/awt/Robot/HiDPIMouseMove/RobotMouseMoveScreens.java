@@ -119,7 +119,7 @@ public class RobotMouseMoveScreens {
             float match0Percent = ((match0 * 100f) / totalMoves);
             float match1Percent = ((match1 * 100f) / totalMoves);
             System.out.println("************************************************");
-            System.out.printf("Percentage: %3.2f vs %3.2f", match0Percent, match1Percent);
+            System.out.printf("Percentage: %3.2f vs %3.2f\n", match0Percent, match1Percent);
             System.out.printf("Total:      %5d\n", totalMoves);
             System.out.printf("Matched0:   %5d\n", match0);
             System.out.printf("Matched1:   %5d\n", match1);
