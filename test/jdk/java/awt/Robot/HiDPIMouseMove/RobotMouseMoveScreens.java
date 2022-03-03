@@ -106,9 +106,6 @@ public class RobotMouseMoveScreens {
                             match1++;
                         }
                     } catch (NullPointerException e) {
-                        if (npe == 0) {
-                            e.printStackTrace();
-                        }
                         npe++;
                     }
                 }
