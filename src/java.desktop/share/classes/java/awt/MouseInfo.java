@@ -104,6 +104,7 @@ public class MouseInfo {
             }
         }
 
+        System.out.println("getPointerInfo -> null for " + point);
         return retval;
     }
 
