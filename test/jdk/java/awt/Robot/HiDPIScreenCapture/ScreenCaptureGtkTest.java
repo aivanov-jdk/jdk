@@ -68,7 +68,7 @@ public class ScreenCaptureGtkTest {
         // corner of the screen to reduce the chance of being repositioned
         // by the system because that area's occupied by the global
         // menu bar and such.
-        frame.setBounds(83, 97, 400, 300);
+        frame.setBounds(83, 97, 50, 20);
         frame.setUndecorated(true);
 
         Panel panel = new Panel(new BorderLayout());
