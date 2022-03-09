@@ -27,12 +27,20 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.Panel;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.image.BufferedImage;
+import java.awt.image.MultiResolutionImage;
+import java.awt.image.RenderedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
-/**
+import javax.imageio.ImageIO;
+
+/*
  * @test
  * @key headful
  * @bug 8280861
@@ -88,11 +96,26 @@ public class ScreenCaptureGtkTest {
         robot.waitForIdle();
         robot.delay(500);
 
-        final Point screenLocation = frame.getLocationOnScreen();
-        checkPixelColors(robot, screenLocation.x, screenLocation.y);
-
-        robot.delay(100);
-        frame.dispose();
+        try {
+            final Point screenLocation = frame.getLocationOnScreen();
+            checkPixelColors(robot, screenLocation.x, screenLocation.y);
+        } finally {
+            BufferedImage bufImage = robot.createScreenCapture(frame.getBounds());
+            saveImage(bufImage, getImageFileName());
+            if (Integer.parseInt(System.getProperty("sun.java2d.uiScale", "1")) > 1) {
+                MultiResolutionImage mrImage =
+                        robot.createMultiResolutionScreenCapture(frame.getBounds());
+                List<Image> imageList = mrImage.getResolutionVariants();
+                for (Image im : imageList) {
+                    if (im instanceof RenderedImage image) {
+                        saveImage(image,
+                                  getImageFileName(image.getWidth(),
+                                                   image.getHeight()));
+                    }
+                }
+            }
+            frame.dispose();
+        }
     }
 
     static void checkPixelColors(Robot robot, int x, int y) {
@@ -107,5 +130,28 @@ public class ScreenCaptureGtkTest {
                 System.out.println("... OK");
             }
         }
+    }
+
+    private static void saveImage(RenderedImage image, String fileName) {
+        try {
+            ImageIO.write(image, "png", new File(fileName));
+        } catch(IOException e) {
+            System.out.println("failed to save image.");
+            e.printStackTrace();
+        }
+    }
+
+    private static String getImageFileName() {
+        return getBaseFileName() + ".png";
+    }
+
+    private static String getImageFileName(int width, int height) {
+        return getBaseFileName()
+               + "-" + width + "x" + height + ".png";
+    }
+
+    private static String getBaseFileName() {
+        return "image-gtk" + System.getProperty("jdk.gtk.version")
+               + "x" + System.getProperty("sun.java2d.uiScale");
     }
 }
