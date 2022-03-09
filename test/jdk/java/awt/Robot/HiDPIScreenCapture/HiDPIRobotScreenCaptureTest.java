@@ -106,6 +106,7 @@ public class HiDPIRobotScreenCaptureTest {
 
         System.out.println("Creating screen capture of " + rect);
         BufferedImage image = robot.createScreenCapture(rect);
+        robot.delay(2000);
         frame.dispose();
 
         int w = image.getWidth();
@@ -119,6 +120,24 @@ public class HiDPIRobotScreenCaptureTest {
         checkRectColor(image, new Rectangle(w / 2, 0, w / 2, h / 2), COLORS[1]);
         checkRectColor(image, new Rectangle(0, h / 2, w / 2, h / 2), COLORS[2]);
         checkRectColor(image, new Rectangle(w / 2, h / 2, w / 2, h / 2), COLORS[3]);
+        try {
+            ImageIO.write(image, "png",
+                          new File(getImageFileName()));
+        } catch(IOException e) {
+            System.out.println("failed to save image.png.");
+            e.printStackTrace();
+        }
+    }
+
+    private static String getImageFileName() {
+        String scaleX = getScale("sun.java2d.win.uiScaleX");
+        String scaleY = getScale("sun.java2d.win.uiScaleY");
+        return "image" + scaleX + "x" + scaleY + ".png";
+    }
+
+    private static String getScale(String property) {
+        String scale = System.getProperty(property);
+        return scale != null ? scale : System.getProperty("sun.java2d.uiScale");
     }
 
     private static final int OFFSET = 5;
