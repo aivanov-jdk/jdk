@@ -106,7 +106,6 @@ public class HiDPIRobotScreenCaptureTest {
 
         System.out.println("Creating screen capture of " + rect);
         BufferedImage image = robot.createScreenCapture(rect);
-        robot.delay(2000);
         frame.dispose();
 
         int w = image.getWidth();
