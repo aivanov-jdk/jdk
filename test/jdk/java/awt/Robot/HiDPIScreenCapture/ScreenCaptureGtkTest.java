@@ -119,16 +119,19 @@ public class ScreenCaptureGtkTest {
     }
 
     static void checkPixelColors(Robot robot, int x, int y) {
+        boolean result = true;
         for (int i = 0; i < 4; i++) {
             final Color actualColor = robot.getPixelColor(x + i, y);
             System.out.print("Checking color at " + (x + i) + ", " + y + " to be equal to " + COLORS[i]);
             if (!actualColor.equals(COLORS[i])) {
+                result = false;
                 System.out.println("... Mismatch: found " + actualColor + " instead");
-                throw new RuntimeException("Wrong screen pixel color");
-
             } else {
                 System.out.println("... OK");
             }
+        }
+        if (!result) {
+            throw new RuntimeException("Wrong screen pixel color detected");
         }
     }
 
