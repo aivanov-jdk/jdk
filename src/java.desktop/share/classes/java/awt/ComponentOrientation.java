@@ -54,6 +54,23 @@ import java.util.ResourceBundle;
   * <p>
   * There are four different orientations used in modern languages
   * as in the following table.<br>
+  * <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>LT</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th style="transform: rotate(180deg)">Layout</th>
+          <td>
+            A B C<br>
+            D E F<br>
+            G H I
+          </td>
+      </tbody>
+    </table>
   * <pre>
   * LT          RT          TL          TR
   * A B C       C B A       A D G       G D A
