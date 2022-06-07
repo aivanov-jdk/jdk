@@ -47,14 +47,14 @@ import java.net.URL;
  * This means that the implementation sometimes deviates from
  * the SGML specification in favor of HTML.
  * <p>
- * The parser treats \r and \r\n as \n. Newlines after starttags
+ * The parser treats \r and \r\n as \n. Newlines after start tags
  * and before end tags are ignored just as specified in the SGML/HTML
  * specification.
  * <p>
  * The html spec does not specify how spaces are to be coalesced very well.
  * Specifically, the following scenarios are not discussed (note that a
- * space should be used here, but I am using &amp;nbsp to force the space to
- * be displayed):
+ * space should be used here, but I am using {@code &amp;nbsp;} to force the
+ * space to be displayed):
  * <p>
  * '&lt;b&gt;blah&nbsp;&lt;i&gt;&nbsp;&lt;strike&gt;&nbsp;foo' which can be treated as:
  * '&lt;b&gt;blah&nbsp;&lt;i&gt;&lt;strike&gt;foo'
@@ -104,7 +104,7 @@ class Parser implements DTDConstants {
     // State for <html>, <head> and <body>.  Since people like to slap
     // together HTML documents without thinking, occasionally they
     // have multiple instances of these tags.  These booleans track
-    // the first sightings of these tags so they can be safely ignored
+    // the first sightings of these tags, so they can be safely ignored
     // by the parser if repeated.
     private boolean seenHtml = false;
     private boolean seenHead = false;
@@ -519,7 +519,7 @@ class Parser implements DTDConstants {
      * Handle an end tag. The end tag is popped
      * from the tag stack.
      *
-     * @param omitted  {@code true} if the tag is no actually present in the
+     * @param omitted  {@code true} if the tag is not actually present in the
      *                 document, but is supposed by the parser
      */
     protected void endTag(boolean omitted) {
@@ -545,8 +545,8 @@ class Parser implements DTDConstants {
         /* We ignore all elements that are not valid in the context of
            a table except <td>, <th> (these we handle in
            legalElementContext()) and #pcdata.  We also ignore the
-           <font> tag in the context of <ul> and <ol> We additonally
-           ignore the <meta> and the <style> tag if the body tag has
+           <font> tag in the context of <ul> and <ol>. We additionally
+           ignore the <meta> and the <style> tags if the <body> tag has
            been seen. **/
         if ((elemName.equals("html") && seenHtml) ||
             (elemName.equals("head") && seenHead) ||
@@ -687,10 +687,10 @@ class Parser implements DTDConstants {
 
         // They try to find a legal context by checking if the current
         // tag is valid in an enclosing context.  If so
-        // close out the tags by outputing end tags and then
+        // close out the tags by outputting end tags and then
         // insert the current tag.  If the tags that are
         // being closed out do not have an optional end tag
-        // specification in the DTD then an html error is
+        // specification in the DTD then an HTML error is
         // reported.
         //
         if (!insertTag && stack.terminate() && (!strict || stack.elem.omitEnd())) {
@@ -921,7 +921,7 @@ class Parser implements DTDConstants {
 
     /**
      * Parse identifier. Uppercase characters are folded
-     * to lowercase when lower is true. Returns falsed if
+     * to lowercase when lower is true. Returns false if
      * no identifier is found. [55] 346:17
      */
     boolean parseIdentifier(boolean lower) throws IOException {
@@ -1633,7 +1633,7 @@ class Parser implements DTDConstants {
      * Parse an invalid tag.
      */
     void parseInvalidTag() throws IOException {
-        // ignore all data upto the close bracket '>'
+        // ignore all data up to the close bracket '>'
         while (true) {
             skipSpace();
             switch (ch) {
@@ -1829,7 +1829,7 @@ class Parser implements DTDConstants {
 
             // If the end tag is a form, since we did not put it
             // on the tag stack, there is no corresponding start
-            // start tag to find. Hence do not touch the tag stack.
+            // tag to find. Hence do not touch the tag stack.
             //
 
             /*
@@ -1861,7 +1861,7 @@ class Parser implements DTDConstants {
             // find the corresponding start tag
 
             // A commonly occurring error appears to be the insertion
-            // of extra end tags in a table.  The intent here is ignore
+            // of extra end tags in a table.  The intent here is to ignore
             // such extra end tags.
             //
             if (!strict) {
@@ -1909,7 +1909,7 @@ class Parser implements DTDConstants {
 
                 // Since closing out a center tag can have real wierd
                 // effects on the formatting,  make sure that tags
-                // for which omitting an end tag is legimitate
+                // for which omitting an end tag is legitimate
                 // get closed out.
                 //
                 if (elemName.equals("center")) {
@@ -2034,7 +2034,7 @@ class Parser implements DTDConstants {
             }
         } else {
         */
-            // Smlly, if a tag is unknown, we will apply
+            // Similarly, if a tag is unknown, we will apply
             // no legalTagContext logic to it.
             //
             if (!unknown) {
@@ -2097,7 +2097,7 @@ class Parser implements DTDConstants {
             }
 
             if (!insideComment && i == 1 && charsToAdd[0] == START_COMMENT.charAt(0)) {
-                // it isn't end script tag, but may be it's start comment tag?
+                // it isn't end script tag, but maybe it's start comment tag?
                 while (i < START_COMMENT.length()
                         && START_COMMENT.charAt(i) == ch) {
                     charsToAdd[i] = (char) ch;
@@ -2408,7 +2408,7 @@ class Parser implements DTDConstants {
      * method of BufferedReader for each byte.  Measurements done 5/30/97
      * show that there's no point in having a bigger buffer:  Increasing
      * the buffer to 8192 had no measurable impact for a program discarding
-     * one character at a time (reading from an http URL to a local machine).
+     * one character at a time (reading from an HTTP URL to a local machine).
      * NOTE: If the current encoding is bogus, and we read too much
      * (past the content-type) we may suffer a MalformedInputException. For
      * this reason the initial size is 1 and when the body is encountered the
