@@ -155,7 +155,7 @@ import sun.awt.AWTAccessor;
  * look and feels may aggressively look up defaults, so that changing a
  * default may not have an effect after installing the look and feel.
  * Other look and feels may lazily access defaults so that a change to
- * the defaults may effect an existing look and feel. Finally, other look
+ * the defaults may affect an existing look and feel. Finally, other look
  * and feels might not configure themselves from the defaults table in
  * any way. None-the-less it is usually the case that a look and feel
  * expects certain defaults, so that in general
@@ -186,7 +186,7 @@ public class UIManager implements Serializable
      * scope instead so that applets (and potentially multiple lightweight
      * applications running in a single VM) have their own state. For example,
      * an applet can alter its look and feel, see <code>setLookAndFeel</code>.
-     * Doing so has no affect on other applets (or the browser).
+     * Doing so has no effect on other applets (or the browser).
      */
     private static class LAFState
     {
@@ -303,7 +303,7 @@ public class UIManager implements Serializable
 
 
     /**
-     * Provides a little information about an installed
+     * Provides information about an installed
      * <code>LookAndFeel</code> for the sake of configuring a menu or
      * for initial application set up.
      *
@@ -642,8 +642,8 @@ public class UIManager implements Serializable
     /**
      * Returns the name of the <code>LookAndFeel</code> class that implements
      * the native system look and feel if there is one, otherwise
-     * the name of the default cross platform <code>LookAndFeel</code>
-     * class. This value can be overriden by setting the
+     * the name of the default cross-platform <code>LookAndFeel</code>
+     * class. This value can be overridden by setting the
      * <code>swing.systemlaf</code> system property.
      *
      * @return the <code>String</code> of the <code>LookAndFeel</code>
@@ -686,8 +686,8 @@ public class UIManager implements Serializable
 
     /**
      * Returns the name of the <code>LookAndFeel</code> class that implements
-     * the default cross platform look and feel -- the Java
-     * Look and Feel (JLF).  This value can be overriden by setting the
+     * the default cross-platform look and feel &mdash; the Java
+     * Look and Feel (JLF).  This value can be overridden by setting the
      * <code>swing.crossplatformlaf</code> system property.
      *
      * @return  a string with the JLF implementation-class
@@ -1335,7 +1335,7 @@ public class UIManager implements Serializable
 
 
     /**
-     * If a <code>swing.properties</code> file exist and it has a
+     * If a <code>swing.properties</code> file exists and it has a
      * <code>swing.installedlafs</code> property
      * then initialize the <code>installedLAFs</code> field.
      *
@@ -1381,9 +1381,9 @@ public class UIManager implements Serializable
 
     /**
      * If the user has specified a default look and feel, use that.
-     * Otherwise use the look and feel that's native to this platform.
+     * Otherwise, use the look and feel that's native to this platform.
      * If this code is called after the application has explicitly
-     * set it's look and feel, do nothing.
+     * set its look and feel, do nothing.
      *
      * @see #maybeInitialize
      */
