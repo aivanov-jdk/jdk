@@ -549,7 +549,7 @@ public class UIManager implements Serializable
 
     /**
      * Sets the current look and feel to {@code newLookAndFeel}.
-     * If the current look and feel is {@code non-null} {@code
+     * If the current look and feel is {@code non-null}, {@code
      * uninitialize} is invoked on it. If {@code newLookAndFeel} is
      * {@code non-null}, {@code initialize} is invoked on it followed
      * by {@code getDefaults}. The defaults returned from {@code
