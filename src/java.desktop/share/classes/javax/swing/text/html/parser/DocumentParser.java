@@ -60,11 +60,11 @@ import java.net.*;
  * are implied, the AttributeSet argument will have a value of
  * <code>Boolean.TRUE</code> for the key
  * <code>HTMLEditorKit.ParserCallback.IMPLIED</code>.
- * <p>HTML.Attributes defines a type safe enumeration of html attributes.
+ * <p>HTML.Attributes defines a type-safe enumeration of html attributes.
  * If an attribute key of a tag is defined in HTML.Attribute, the
  * HTML.Attribute will be used as the key, otherwise a String will be used.
  * For example &lt;p foo=bar class=neat&gt; has two attributes. foo is
- * not defined in HTML.Attribute, where as class is, therefore the
+ * not defined in HTML.Attribute, whereas class is, therefore the
  * AttributeSet will have two values in it, HTML.Attribute.CLASS with
  * a String value of 'neat' and the String key 'foo' with a String value of
  * 'bar'.
@@ -95,7 +95,7 @@ import java.net.*;
  * <p>
  * Once the stream has been parsed, the callback is notified of the most
  * likely end of line string. The end of line string will be one of
- * \n, \r or \r\n, which ever is encountered the most in parsing the
+ * \n, \r or \r\n, whichever is encountered the most in parsing the
  * stream.
  *
  * @author      Sunita Mani

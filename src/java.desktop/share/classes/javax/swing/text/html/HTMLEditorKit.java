@@ -191,7 +191,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  * specifying the display characteristics.  Swing has a theme
  * mechanism for its look-and-feel implementations.  It is desirable
  * for the look-and-feel to feed display characteristics into the
- * HTML views.  An user with poor vision for example would want
+ * HTML views.  A user with poor vision for example would want
  * high contrast and larger than typical fonts.
  * <p>
  * The support for this is provided by the <code>StyleSheet</code>
@@ -201,9 +201,9 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  * <dt>
  * Not lossy
  * <dd>
- * An EditorKit has the ability to be read and save documents.
+ * An EditorKit has the ability to read and save documents.
  * It is generally the most pleasing to users if there is no loss
- * of data between the two operation.  The policy of the HTMLEditorKit
+ * of data between the two operations.  The policy of the HTMLEditorKit
  * will be to store things not recognized or not necessarily visible
  * so they can be subsequently written out.  The model of the HTML document
  * should therefore contain all information discovered while reading the
