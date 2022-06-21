@@ -182,7 +182,7 @@ public class ImageView extends View {
     }
 
     /**
-     * Return a URL for the image source,
+     * Returns the URL for the image source,
      * or null if it could not be determined.
      *
      * @return the URL for the image source, or null if it could not be determined.
@@ -249,7 +249,7 @@ public class ImageView extends View {
      * that is to load the image asynchronously.
      *
      * @param newValue if {@code true} the image will be loaded when first asked for,
-     *                 otherwise it will be asynchronously.
+     *                 otherwise it will be loaded asynchronously.
      */
     public void setLoadsSynchronously(boolean newValue) {
         synchronized(this) {
@@ -272,7 +272,7 @@ public class ImageView extends View {
     }
 
     /**
-     * Convenient method to get the StyleSheet.
+     * Convenience method to get the StyleSheet.
      *
      * @return the StyleSheet
      */
@@ -293,7 +293,7 @@ public class ImageView extends View {
 
     /**
      * For images the tooltip text comes from text specified with the
-     * <code>ALT</code> attribute. This is overriden to return
+     * <code>ALT</code> attribute. This is overridden to return
      * <code>getAltText</code>.
      *
      * @see JTextComponent#getToolTipText
@@ -706,7 +706,7 @@ public class ImageView extends View {
      */
     private void refreshImage() {
         synchronized(this) {
-            // clear out width/height/realoadimage flag and set loading flag
+            // clear out width/height/reload-image flags and set loading flag
             state = (state | LOADING_FLAG | RELOAD_IMAGE_FLAG | WIDTH_FLAG |
                      HEIGHT_FLAG) ^ (WIDTH_FLAG | HEIGHT_FLAG |
                                      RELOAD_IMAGE_FLAG);
@@ -730,8 +730,8 @@ public class ImageView extends View {
     }
 
     /**
-     * Loads the image from the URL <code>getImageURL</code>. This should
-     * only be invoked from <code>refreshImage</code>.
+     * Loads the image from the URL returned by <code>getImageURL</code>.
+     * This should only be invoked from <code>refreshImage</code>.
      */
     private void loadImage() {
         URL src = getImageURL();
@@ -825,7 +825,7 @@ public class ImageView extends View {
 
             boolean createText = false;
             synchronized(this) {
-                // If imageloading failed, other thread may have called
+                // If loading the image failed, other thread may have called
                 // ImageLoader which will null out image, hence we check
                 // for it.
                 if (image != null) {
@@ -892,7 +892,7 @@ public class ImageView extends View {
     }
 
     /**
-     * Invokes <code>preferenceChanged</code> on the event displatching
+     * Invokes <code>preferenceChanged</code> on the event dispatching
      * thread.
      */
     private void safePreferenceChanged() {
@@ -920,7 +920,7 @@ public class ImageView extends View {
         double proportion = 0.0;
         final int specifiedWidth = getIntAttr(HTML.Attribute.WIDTH, -1);
         final int specifiedHeight = getIntAttr(HTML.Attribute.HEIGHT, -1);
-        /**
+        /*
          * If either of the attributes are not specified, then calculate the
          * proportion for the specified dimension wrt actual value, and then
          * apply the same proportion to the unspecified dimension as well,
@@ -1053,7 +1053,7 @@ public class ImageView extends View {
 
     /**
      * ImageLabelView is used if the image can't be loaded, and
-     * the attribute specified an alt attribute. It overriden a handle of
+     * the <code>ALT</code> attribute is specified. It overriden a handle of
      * methods as the text is hardcoded and does not come from the document.
      */
     private static class ImageLabelView extends InlineView {
