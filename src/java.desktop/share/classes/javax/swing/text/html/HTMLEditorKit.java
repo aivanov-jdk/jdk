@@ -1056,7 +1056,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          *
          * @param r a reader
          * @param cb a parser callback
-         * @param ignoreCharSet if {@code true} charset is ignoring
+         * @param ignoreCharSet if {@code true} charset is ignored
          * @throws IOException if an I/O exception occurs
          */
         public abstract void parse(Reader r, ParserCallback cb, boolean ignoreCharSet) throws IOException;
