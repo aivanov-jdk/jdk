@@ -153,13 +153,13 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  *   HTML support by default, there is nothing preventing support of
  *   non-HTML tags that result in alternative element structures.
  *   <li>
- *   The default view of the models are provided as a hierarchy of
+ *   The default views of the model are provided as a hierarchy of
  *   View implementations, so one can easily customize how a particular
  *   element is displayed or add capabilities for new kinds of elements
  *   by providing new View implementations.  The default set of views
- *   are provided by the <code>HTMLFactory</code> class.  This can
+ *   is provided by the <code>HTMLFactory</code> class.  This can
  *   be easily changed by subclassing or replacing the HTMLFactory
- *   and reimplementing the getViewFactory method to return the alternative
+ *   and reimplementing the getViewFactory method to return an alternative
  *   factory.
  *   <li>
  *   The View implementations work primarily off of CSS attributes,
@@ -168,7 +168,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  *   different.  This can be especially useful for printing.  For
  *   most HTML attributes, the HTML attributes are converted to CSS
  *   attributes for display.  This helps make the View implementations
- *   more general purpose
+ *   more general purpose.
  * </ol>
  *
  * <dt>
