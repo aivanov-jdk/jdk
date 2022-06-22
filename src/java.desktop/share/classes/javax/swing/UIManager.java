@@ -157,7 +157,7 @@ import sun.awt.AWTAccessor;
  * Other look and feels may lazily access defaults so that a change to
  * the defaults may affect an existing look and feel. Finally, other look
  * and feels might not configure themselves from the defaults table in
- * any way. None-the-less it is usually the case that a look and feel
+ * any way. Nonetheless, it is usually the case that a look and feel
  * expects certain defaults, so that in general
  * a {@code ComponentUI} provided by one look and feel will not
  * work with another look and feel.
