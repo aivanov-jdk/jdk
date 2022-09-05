@@ -62,6 +62,9 @@ public class DblClickActionEventTest extends Applet {
                     "  action events are shown below these instructions).",
                     "Then, if your system allows the tray icon to get focus (for",
                     "  example, windows 2000 or windows XP), double-click on the",
+                    // Windows+B to move keyboard focus to the notification area
+                    // The Java icon should be the first one, just press Space and Enter,
+                    // action performed should be generated for either key.
                     "  icon with SPACE button and single-click with RETURN button.",
                     "  Both of them must also trigger ACTION_PERFORMED event.",
                     "If you see ACTION_PERFORMED events after each of your actions",

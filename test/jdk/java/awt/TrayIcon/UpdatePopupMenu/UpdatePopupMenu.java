@@ -137,7 +137,7 @@ public class UpdatePopupMenu implements ActionListener {
         GridBagConstraints gbc = new GridBagConstraints();
         String instructions
                 = "INSTRUCTIONS:"
-                + "\n   1. Click on the System Tray Icon"
+                + "\n   1. Right-Click on the System Tray Icon"
                 + "\n   2. Click on any of the displayed Menu items"
                 + "\n   3. Repeat step 1 and count the number of items in the "
                 + "Menu"

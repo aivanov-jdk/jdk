@@ -110,6 +110,7 @@ public class DragEventSource
 
         b1.addActionListener(new ActionHandler());
 
+        // Make the icon stand out instead of black
         icon = new TrayIcon(new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB));
         icon.setImageAutoSize(true);
 

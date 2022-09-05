@@ -61,7 +61,7 @@ public class AddPopupAfterShowTest {
     private static volatile CountDownLatch countDownLatch;
     private static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n" +
             "1) The red circle icon was added to the system tray.\n"+
-            "2) Check that a popup menu is opened when the icon is clicked.\n"+
+            "2) Check that a popup menu is opened when the icon is right-clicked.\n"+
             "3) If true the test is passed, otherwise failed.";
 
     public static void main(String[] args) throws Exception {

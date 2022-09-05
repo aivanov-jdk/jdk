@@ -58,6 +58,7 @@ public class MiddleButtonEventTest {
             "Tests that clicking TrayIcon with middle button generates events.\n"+
             "When the test is started you will see three-color icon in the " +
             "system tray.\n Click on it with the middle mouse button:\n" +
+            // Could be automated? Other tests clicked or at least hovered the icon
             "- MOUSE_PRESSED, MOUSE_RELEASED, MOUSE_CLICKED events should be\n"+
             "  generated for the middle button.\n" +
             "  If so, the test passed, otherwise failed.";
