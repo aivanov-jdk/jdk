@@ -61,7 +61,7 @@ public class PrintGlyphVectorTest extends Component implements Printable {
 
             Retrieve the output and compare the printed and on-screen
             text to confirm that in both cases the text is aligned and
-            the boxes are around the text, not offset from the text.
+            the boxes are around the text, no offset from the text.
             """;
 
     public void drawGVs(Graphics g) {
@@ -164,4 +164,3 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         passFailJFrame.awaitAndCheck();
     }
 }
-

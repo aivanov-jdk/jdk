@@ -105,5 +105,3 @@ public class PrintLatinCJKTest implements Printable {
         passFailJFrame.awaitAndCheck();
     }
 }
-
-
