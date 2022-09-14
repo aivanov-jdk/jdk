@@ -27,7 +27,7 @@
 #include "java_awt_event_InputEvent.h"
 #include "awt_Component.h"
 #include <winuser.h>
-#include <stdio.h>
+#include <stdlib.h>
 
 static int signum(int i) {
   // special version of signum which returns 1 when value is 0
@@ -36,33 +36,55 @@ static int signum(int i) {
 
 static void MouseMove(jint x, jint y)
 {
-    printf("MouseMove: x     = %5d, y     = %5d\n", x, y);
-
-    x -= ::GetSystemMetrics(SM_XVIRTUALSCREEN);
-    y -= ::GetSystemMetrics(SM_YVIRTUALSCREEN);
-    printf("MouseMove: xx    = %5d, yy    = %5d\n", x, y);
-
     INPUT mouseInput = {0};
     mouseInput.type = INPUT_MOUSE;
     mouseInput.mi.time = 0;
-    mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK | MOUSEEVENTF_MOVE;
-    mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXVIRTUALSCREEN)) + signum(x);
-    mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYVIRTUALSCREEN)) + signum(y);
+    static int init = 0 ;
+
+
+     char* pValue;
+     size_t len;
+     errno_t err = _dupenv_s(&pValue, &len, "OLD_CODE");
+
+    if(init == 0 )
+    {
+        if ((pValue) && ((atoi(pValue)) ==1))
+        {
+            printf("Using Current JDK code  \n");
+        }
+        else
+        {
+            printf("Using JDK code that fixes JDK-8249592  \n");
+        }
+
+        init++;
+    }
+
+     if ((pValue) && (*pValue == '1'))
+     {
+        mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE;
+        mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXSCREEN)) + signum(x);
+        mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYSCREEN)) + signum(y);
+    }
+    else
+    {
+
+        x -= ::GetSystemMetrics(SM_XVIRTUALSCREEN);
+        y -= ::GetSystemMetrics(SM_YVIRTUALSCREEN);
+
+        mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_VIRTUALDESK;
+
+        int scW = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
+        int scH = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
+        mouseInput.mi.dx = (x * 65536 + scW - 1) / scW;
+        mouseInput.mi.dy = (y * 65536 + scH - 1) / scH;
+
+
+
+
+    }
     ::SendInput(1, &mouseInput, sizeof(mouseInput));
-    printf("MouseMove: mi.dx = %5ld, mi.dy = %5ld\n",
-           mouseInput.mi.dx, mouseInput.mi.dy);
 
-    printf("MouseMove: xv = %5ld, yv = %5ld, cxv = %5ld, cyv = %5ld\n",
-           ::GetSystemMetrics(SM_XVIRTUALSCREEN),
-           ::GetSystemMetrics(SM_YVIRTUALSCREEN),
-           ::GetSystemMetrics(SM_CXVIRTUALSCREEN),
-           ::GetSystemMetrics(SM_CYVIRTUALSCREEN));
-
-    POINT cursorPos;
-    ::GetCursorPos(&cursorPos);
-    printf("MouseMove: cp.x  = %5ld, cp.y  = %5ld\n",
-           cursorPos.x, cursorPos.y);
-    fflush(stdout);
 }
 
 static void MousePress(jint buttonMask)
