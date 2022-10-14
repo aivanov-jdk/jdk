@@ -429,7 +429,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
 
     private void changeSelection(int clearMin, int clearMax,
                                  int setMin, int setMax, boolean clearFirst) {
-        for(int i = Math.min(setMin, clearMin); i <= Math.max(setMax, clearMax); i++) {
+        for(int i = Math.max(setMax, clearMax); i >= Math.min(setMin, clearMin); i--) {
 
             boolean shouldClear = contains(clearMin, clearMax, i);
             boolean shouldSet = contains(setMin, setMax, i);
@@ -686,18 +686,27 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * the selection model.  This is typically called to sync the selection
      * model width a corresponding change in the data model.  Note
      * that (as always) index0 need not be &lt;= index1.
+     *
+     * @throws IndexOutOfBoundsException if either index is negative
      */
     public void removeIndexInterval(int index0, int index1)
     {
+        if (index0 < 0 || index1 < 0) {
+            throw new IndexOutOfBoundsException("index is negative");
+        }
         int rmMinIndex = Math.min(index0, index1);
         int rmMaxIndex = Math.max(index0, index1);
-        int gapLength = (rmMaxIndex - rmMinIndex) + 1;
+        int gapLength = (rmMaxIndex - rmMinIndex) == Integer.MAX_VALUE
+                        ? Integer.MAX_VALUE
+                        : (rmMaxIndex - rmMinIndex) + 1;
 
         /* Shift the entire bitset to the left to close the index0, index1
          * gap.
          */
-        for(int i = rmMinIndex; i <= maxIndex; i++) {
-            setState(i, value.get(i + gapLength));
+        for(int i = rmMinIndex; i >= 0 && i <= maxIndex; i++) {
+            setState(i, (i <= Integer.MAX_VALUE - gapLength)
+                        && (i + gapLength >= minIndex)
+                        && value.get(i + gapLength));
         }
 
         int leadIndex = this.leadIndex;
