@@ -33,6 +33,8 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.Document;
 import javax.swing.undo.UndoManager;
 
 public class TestUndoInsertArabicText {
@@ -42,10 +44,10 @@ public class TestUndoInsertArabicText {
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        testEnd();
-        Thread.sleep(1000);
-        testMiddle();
-        Thread.sleep(1000);
+//        testEnd();
+//        Thread.sleep(1000);
+//        testMiddle();
+//        Thread.sleep(1000);
         testBeginning();
     }
 
@@ -76,6 +78,8 @@ public class TestUndoInsertArabicText {
         SwingUtilities.invokeAndWait(() -> {
             if (manager.canUndo()) {
                 manager.undo();
+                System.out.println("--- undone ---");
+                ((AbstractDocument) textArea.getDocument()).dump(System.out);
             }
         });
         Thread.sleep(1000);
@@ -115,11 +119,20 @@ public class TestUndoInsertArabicText {
 
             // insert at beginning of existing text and undo
             SwingUtilities.invokeAndWait(() -> {
+                AbstractDocument doc = (AbstractDocument) textArea.getDocument();
+                System.out.println("--- empty ---");
+                doc.dump(System.out);
+
                 textArea.insert("\u0631", textArea.getText().length());
-                textArea.insert("\u0632", textArea.getText().length());
-                textArea.setCaretPosition(0);
-                textArea.insert("\u0633", 0);
+//                textArea.insert("\u0632", textArea.getText().length());
+//                textArea.setCaretPosition(0);
+//                textArea.insert("\u0633", 0);
+                System.out.println("--- one char ---");
+                doc.dump(System.out);
+
                 textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+                System.out.println("--- orientation changed ---");
+                doc.dump(System.out);
             });
             Thread.sleep(1000);
             undoAndCheck();
