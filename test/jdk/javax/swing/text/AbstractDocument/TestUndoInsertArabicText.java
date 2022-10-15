@@ -53,7 +53,7 @@ public class TestUndoInsertArabicText {
 
     private static void createUI() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            textArea = new JTextArea();
+            textArea = new JTextArea(2, 20);
             manager = new UndoManager();
             frame = new JFrame("Undo - Redo Error");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -65,7 +65,8 @@ public class TestUndoInsertArabicText {
             frame.getContentPane().setLayout(new BorderLayout());
             frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
             frame.setLocationRelativeTo(null);
-            frame.setSize(100, 100);
+//            frame.setSize(100, 100);
+            frame.pack();
             frame.setVisible(true);
         });
     }
@@ -97,6 +98,7 @@ public class TestUndoInsertArabicText {
             Thread.sleep(1000);
             // insert at end of existing text and undo
             SwingUtilities.invokeAndWait(() -> {
+                textArea.insert("start ", 0);
                 textArea.insert("\u0631", textArea.getText().length());
                 textArea.insert("\u0632", textArea.getText().length());
                 textArea.insert("\u0633", textArea.getText().length());
@@ -126,23 +128,37 @@ public class TestUndoInsertArabicText {
                 System.out.println("--- empty ---");
                 doc.dump(System.out);
 
-                textArea.insert("\u0631", textArea.getText().length());
+                String start = "start ";
+                textArea.insert(start, 0);
+                String digits = " 123 ";
+                //textArea.insert(digits, start.length());
+//                textArea.insert(" 678 ", doc.getLength());
+
+                String end = " end";
+                textArea.insert(end, doc.getLength());
+
+                textArea.insert("\u0631\u0633", start.length());
+                textArea.insert("\u0632", doc.getLength());
+                textArea.insert("\u0633", doc.getLength());
 //                textArea.insert("\u0632", textArea.getText().length());
 //                textArea.setCaretPosition(0);
 //                textArea.insert("\u0633", 0);
                 System.out.println("--- one char ---");
                 doc.dump(System.out);
-
+            });
+            Thread.sleep(2000);
+            SwingUtilities.invokeAndWait(() -> {
+                AbstractDocument doc = (AbstractDocument) textArea.getDocument();
                 textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
                 System.out.println("--- orientation changed ---");
                 doc.dump(System.out);
-
-                textArea.insert("\u0632", textArea.getText().length());
-                System.out.println("--- two chars ---");
+                System.out.println("--- with digits ---");
+                textArea.insert("123", 6 + 1);
                 doc.dump(System.out);
             });
-            Thread.sleep(1000);
+            Thread.sleep(2000);
             undoAndCheck();
+            Thread.sleep(2000);
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
