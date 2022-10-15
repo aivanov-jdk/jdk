@@ -78,7 +78,10 @@ public class TestUndoInsertArabicText {
         SwingUtilities.invokeAndWait(() -> {
             if (manager.canUndo()) {
                 manager.undo();
-                System.out.println("--- undone ---");
+                System.out.println("--- undone 1 ---");
+                ((AbstractDocument) textArea.getDocument()).dump(System.out);
+                manager.undo();
+                System.out.println("--- undone 2 ---");
                 ((AbstractDocument) textArea.getDocument()).dump(System.out);
             }
         });
@@ -132,6 +135,10 @@ public class TestUndoInsertArabicText {
 
                 textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
                 System.out.println("--- orientation changed ---");
+                doc.dump(System.out);
+
+                textArea.insert("\u0632", textArea.getText().length());
+                System.out.println("--- two chars ---");
                 doc.dump(System.out);
             });
             Thread.sleep(1000);
