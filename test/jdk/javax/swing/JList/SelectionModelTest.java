@@ -37,6 +37,12 @@ public class SelectionModelTest {
                 SelectionModelTest::test18,
                 SelectionModelTest::test19,
                 SelectionModelTest::test20,
+                SelectionModelTest::test21,
+                SelectionModelTest::test22,
+                SelectionModelTest::test23,
+                SelectionModelTest::test24,
+                SelectionModelTest::test25,
+                SelectionModelTest::test26,
         };
         long start = System.currentTimeMillis();
         Collection<Exception> errors =
@@ -442,6 +448,116 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
         assertTrue(IntStream.rangeClosed(Integer.MAX_VALUE - 10, Integer.MAX_VALUE)
                             .allMatch(selectionModel::isSelectedIndex));
+    }
+
+    private static void test21() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        selectionModel.setSelectionInterval(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertIndexes(selectionModel,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE - 1)
+                            .noneMatch(selectionModel::isSelectedIndex));
+        assertTrue(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
+
+        selectionModel.insertIndexInterval(Integer.MAX_VALUE - 1, 1, true);
+        assertIndexes(selectionModel,
+                      -1, -1,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertTrue(selectionModel.isSelectionEmpty());
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
+                            .noneMatch(selectionModel::isSelectedIndex));
+    }
+
+    private static void test22() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        selectionModel.setSelectionInterval(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertIndexes(selectionModel,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE - 1)
+                            .noneMatch(selectionModel::isSelectedIndex));
+        assertTrue(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
+
+        selectionModel.insertIndexInterval(Integer.MAX_VALUE - 1, 1, false);
+        assertIndexes(selectionModel,
+                      -1, -1,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertTrue(selectionModel.isSelectionEmpty());
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
+                            .noneMatch(selectionModel::isSelectedIndex));
+    }
+
+    private static void test23() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        selectionModel.setSelectionInterval(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertIndexes(selectionModel,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE - 1)
+                            .noneMatch(selectionModel::isSelectedIndex));
+        assertTrue(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
+
+        selectionModel.insertIndexInterval(Integer.MAX_VALUE, 1, true);
+        assertIndexes(selectionModel,
+                      -1, -1,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertTrue(selectionModel.isSelectionEmpty());
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
+                            .noneMatch(selectionModel::isSelectedIndex));
+    }
+
+    private static void test24() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        selectionModel.setSelectionInterval(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertIndexes(selectionModel,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE - 1)
+                            .noneMatch(selectionModel::isSelectedIndex));
+        assertTrue(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
+
+        selectionModel.insertIndexInterval(Integer.MAX_VALUE, 1, false);
+        assertIndexes(selectionModel,
+                      -1, -1,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertTrue(selectionModel.isSelectionEmpty());
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
+                            .noneMatch(selectionModel::isSelectedIndex));
+    }
+
+    private static void test25() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        selectionModel.setSelectionInterval(10, 20);
+
+        selectionModel.insertIndexInterval(10, 0, true);
+        assertIndexes(selectionModel,
+                      10, 20,
+                      10, 20);
+        assertFalse(selectionModel.isSelectionEmpty());
+        assertTrue(IntStream.rangeClosed(0, 9)
+                            .noneMatch(selectionModel::isSelectedIndex));
+        assertTrue(IntStream.rangeClosed(10, 20)
+                            .allMatch(selectionModel::isSelectedIndex));
+        assertTrue(IntStream.rangeClosed(21, Integer.MAX_VALUE)
+                            .noneMatch(selectionModel::isSelectedIndex));
+    }
+
+    private static void test26() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        selectionModel.setSelectionInterval(10, 20);
+
+        selectionModel.insertIndexInterval(10, 0, false);
+        assertIndexes(selectionModel,
+                      10, 20,
+                      10, 20);
+        assertFalse(selectionModel.isSelectionEmpty());
+        assertTrue(IntStream.rangeClosed(0, 9)
+                            .noneMatch(selectionModel::isSelectedIndex));
+        assertTrue(IntStream.rangeClosed(10, 20)
+                            .allMatch(selectionModel::isSelectedIndex));
+        assertTrue(IntStream.rangeClosed(21, Integer.MAX_VALUE)
+                            .noneMatch(selectionModel::isSelectedIndex));
     }
 
     private static Exception runTest(Runnable test) {
