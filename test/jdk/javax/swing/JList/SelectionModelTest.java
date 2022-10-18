@@ -1,43 +1,60 @@
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import javax.swing.DefaultListSelectionModel;
 
-public class SelectionModelTest {
+public class SelectionModelTest implements Callable<Exception> {
 
-    private static final DefaultListSelectionModel selectionModel
+    private final DefaultListSelectionModel selectionModel
             = new DefaultListSelectionModel();
 
+    private final Method method;
+
     public static void main(String[] args) {
-        Runnable[] tests = {
-                SelectionModelTest::test01,
-                SelectionModelTest::test02,
-                SelectionModelTest::test03,
-                SelectionModelTest::test04,
-                SelectionModelTest::test05,
-                SelectionModelTest::test06,
-                SelectionModelTest::test07,
-                SelectionModelTest::test08,
-                SelectionModelTest::test09,
-                SelectionModelTest::test10,
-                SelectionModelTest::test11,
-                SelectionModelTest::test12,
-        };
-        for (Runnable test : tests) {
-            try {
-                test.run();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        System.out.println(Runtime.getRuntime().availableProcessors());
+        ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        Collection<Exception> errors =
+                Arrays.stream(SelectionModelTest.class.getDeclaredMethods())
+                      .filter(m -> m.getName().startsWith("test"))
+                      .sorted(Comparator.comparing(Method::getName))
+                      .map(SelectionModelTest::new)
+                      .map(service::submit)
+                      .map(SelectionModelTest::get)
+                      .filter(Objects::nonNull)
+                      .toList();
+        errors.forEach(Exception::printStackTrace);
+        service.shutdown();
+        if (errors.size() > 0) {
+            throw new RuntimeException(errors.size() + " test(s) failed");
         }
     }
 
-    private static void test01() {
-        System.out.println("\n1st");
+    private SelectionModelTest(Method method) {
+        System.out.println(method.getName());
+        this.method = method;
+    }
+
+    private static Exception get(Future<Exception> future) {
+        try {
+            return future.get();
+        } catch (Exception e) {
+            return e;
+        }
+    }
+
+    private void test01() {
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
-        printSelection();
         selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
-        printSelection();
         assertIndexes(selectionModel, 0, 0, 0, -1);
         //assertTrue(selectionModel.isSelectionEmpty());
         assertFalse(selectionModel.isSelectionEmpty());
@@ -46,7 +63,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test02() {
+    private void test02() {
         System.out.println("\n2nd");
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
@@ -60,7 +77,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test03() {
+    private void test03() {
         System.out.println("\n3rd");
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         printSelection();
@@ -75,7 +92,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test04() {
+    private void test04() {
         System.out.println("\n4th");
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1);
         printSelection();
@@ -92,7 +109,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test05() {
+    private void test05() {
         System.out.println("\n5th");
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE);
         printSelection();
@@ -110,7 +127,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test06() {
+    private void test06() {
         System.out.println("\n6th");
         selectionModel.setSelectionInterval(10, 20);
         printSelection();
@@ -132,7 +149,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test07() {
+    private void test07() {
         System.out.println("\n7th");
         selectionModel.setSelectionInterval(0, 0);
         printSelection();
@@ -167,7 +184,7 @@ public class SelectionModelTest {
         assertFalse(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
     }
 
-    private static void test08() {
+    private void test08() {
         System.out.println("\n8th");
         selectionModel.setSelectionInterval(0, 0);
         printSelection();
@@ -184,7 +201,7 @@ public class SelectionModelTest {
         assertFalse(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
     }
 
-    private static void test09() {
+    private void test09() {
         System.out.println("\n9th");
         selectionModel.setSelectionInterval(0, 0);
         printSelection();
@@ -200,7 +217,7 @@ public class SelectionModelTest {
                             .allMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test10() {
+    private void test10() {
         System.out.println("\n10th");
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
         printSelection();
@@ -223,7 +240,7 @@ public class SelectionModelTest {
                             .allMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test11() {
+    private void test11() {
         System.out.println("\n11th");
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
         printSelection();
@@ -237,7 +254,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test12() {
+    private void test12() {
         System.out.println("\n12th");
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
         printSelection();
@@ -252,7 +269,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void printSelection() {
+    private void printSelection() {
         System.out.println(Integer.toHexString(selectionModel.getAnchorSelectionIndex())
                            + ", "
                            + Integer.toHexString(selectionModel.getLeadSelectionIndex())
@@ -299,6 +316,26 @@ public class SelectionModelTest {
             throw new RuntimeException(String.format("Values are different:"
                     + " %1$d (0x%1$08x) vs %2$d (0x%2$08x)", real, expected));
         }
+    }
+
+    private static Exception runTest(Callable<Exception> test) {
+        try {
+            test.call();
+        } catch (Exception e) {
+            return e;
+        }
+        return null;
+    }
+
+    @Override
+    public Exception call() {
+        return runTest(() -> (Exception) method.invoke(this));
+//        try {
+//            method.invoke(this);
+//        } catch (Exception e) {
+//            return e;
+//        }
+//        return null;
     }
 }
 
