@@ -3,32 +3,41 @@ import java.util.stream.IntStream;
 import javax.swing.DefaultListSelectionModel;
 
 public class SelectionModelTest {
-    public static void main(String[] args) {
-        final DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
 
-        //test01(selectionModel); // TODO must be empty
-//        test02(selectionModel);
-//        test03(selectionModel);
-//        test04(selectionModel);
-//        test05(selectionModel);
-/*     Passing tests
-        test06(selectionModel);
-        test07(selectionModel);
-        test08(selectionModel);
-        test09(selectionModel);
-//*/
-        //test10(selectionModel); // TODO bitIndex < 0: -2
-        //test11(selectionModel); // TODO bitIndex < 0: -2
-        test12(selectionModel);
+    private static final DefaultListSelectionModel selectionModel
+            = new DefaultListSelectionModel();
+
+    public static void main(String[] args) {
+        Runnable[] tests = {
+                SelectionModelTest::test01,
+                SelectionModelTest::test02,
+                SelectionModelTest::test03,
+                SelectionModelTest::test04,
+                SelectionModelTest::test05,
+                SelectionModelTest::test06,
+                SelectionModelTest::test07,
+                SelectionModelTest::test08,
+                SelectionModelTest::test09,
+                SelectionModelTest::test10,
+                SelectionModelTest::test11,
+                SelectionModelTest::test12,
+        };
+        for (Runnable test : tests) {
+            try {
+                test.run();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-    private static void test01(DefaultListSelectionModel selectionModel) {
+    private static void test01() {
         System.out.println("\n1st");
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
         selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel, 0, 0, 0, -1);
         //assertTrue(selectionModel.isSelectionEmpty());
         assertFalse(selectionModel.isSelectionEmpty());
@@ -37,13 +46,13 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test02(DefaultListSelectionModel selectionModel) {
+    private static void test02() {
         System.out.println("\n2nd");
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
         selectionModel.removeIndexInterval(1, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel, 0, 0, 0, 0);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(selectionModel.isSelectedIndex(0));
@@ -51,13 +60,13 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test03(DefaultListSelectionModel selectionModel) {
+    private static void test03() {
         System.out.println("\n3rd");
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
         selectionModel.removeIndexInterval(2, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel, 0, 1, 0, 1);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.of(0, 1)
@@ -66,15 +75,15 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test04(DefaultListSelectionModel selectionModel) {
+    private static void test04() {
         System.out.println("\n4th");
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1);
         selectionModel.removeIndexInterval(0, Integer.MAX_VALUE - 1);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       -1, -1,
                       -1, -1);
@@ -83,15 +92,15 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test05(DefaultListSelectionModel selectionModel) {
+    private static void test05() {
         System.out.println("\n5th");
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE);
         selectionModel.removeIndexInterval(0, Integer.MAX_VALUE - 1);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       0, 0,
                       -1, 0);
@@ -101,10 +110,10 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test06(DefaultListSelectionModel selectionModel) {
+    private static void test06() {
         System.out.println("\n6th");
         selectionModel.setSelectionInterval(10, 20);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel, 10, 20, 10, 20);
         assertTrue(IntStream.rangeClosed(0, 9)
                             .noneMatch(selectionModel::isSelectedIndex));
@@ -114,7 +123,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
 
         selectionModel.removeIndexInterval(0, 10);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel, 0, 9, -1, 9);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, 9)
@@ -123,10 +132,10 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test07(DefaultListSelectionModel selectionModel) {
+    private static void test07() {
         System.out.println("\n7th");
         selectionModel.setSelectionInterval(0, 0);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel, 0, 0, 0, 0);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(selectionModel.isSelectedIndex(0));
@@ -134,7 +143,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
 
         selectionModel.addSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       0, Integer.MAX_VALUE,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
@@ -146,7 +155,7 @@ public class SelectionModelTest {
         assertTrue(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
 
         selectionModel.removeIndexInterval(0, 0);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1);
@@ -158,14 +167,14 @@ public class SelectionModelTest {
         assertFalse(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
     }
 
-    private static void test08(DefaultListSelectionModel selectionModel) {
+    private static void test08() {
         System.out.println("\n8th");
         selectionModel.setSelectionInterval(0, 0);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel, 0, 0, 0, 0);
 
         selectionModel.insertIndexInterval(0, Integer.MAX_VALUE - 1, true);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       0, Integer.MAX_VALUE - 1,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 1);
@@ -175,14 +184,14 @@ public class SelectionModelTest {
         assertFalse(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
     }
 
-    private static void test09(DefaultListSelectionModel selectionModel) {
+    private static void test09() {
         System.out.println("\n9th");
         selectionModel.setSelectionInterval(0, 0);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel, 0, 0, 0, 0);
 
         selectionModel.insertIndexInterval(0, Integer.MAX_VALUE, true);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       0, Integer.MAX_VALUE,
                       Integer.MAX_VALUE, Integer.MAX_VALUE);
@@ -191,10 +200,10 @@ public class SelectionModelTest {
                             .allMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test10(DefaultListSelectionModel selectionModel) {
+    private static void test10() {
         System.out.println("\n10th");
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
@@ -204,7 +213,7 @@ public class SelectionModelTest {
                             .allMatch(selectionModel::isSelectedIndex));
 
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE, true);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
                       -3, -2);
@@ -214,13 +223,13 @@ public class SelectionModelTest {
                             .allMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test11(DefaultListSelectionModel selectionModel) {
+    private static void test11() {
         System.out.println("\n11th");
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
 
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, true);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
                       -3, -2);
@@ -228,13 +237,13 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void test12(DefaultListSelectionModel selectionModel) {
+    private static void test12() {
         System.out.println("\n12th");
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
-        printSelection(selectionModel);
+        printSelection();
 
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, 2, true);
-        printSelection(selectionModel);
+        printSelection();
         assertIndexes(selectionModel,
                       -1, -1,
                       Integer.MIN_VALUE, Integer.MIN_VALUE + 1);
@@ -243,14 +252,14 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void printSelection(final DefaultListSelectionModel sel) {
-        System.out.println(Integer.toHexString(sel.getAnchorSelectionIndex())
+    private static void printSelection() {
+        System.out.println(Integer.toHexString(selectionModel.getAnchorSelectionIndex())
                            + ", "
-                           + Integer.toHexString(sel.getLeadSelectionIndex())
+                           + Integer.toHexString(selectionModel.getLeadSelectionIndex())
                            + " - "
-                           + Integer.toHexString(sel.getMinSelectionIndex())
+                           + Integer.toHexString(selectionModel.getMinSelectionIndex())
                            + ", "
-                           + Integer.toHexString(sel.getMaxSelectionIndex()));
+                           + Integer.toHexString(selectionModel.getMaxSelectionIndex()));
 
     }
 
