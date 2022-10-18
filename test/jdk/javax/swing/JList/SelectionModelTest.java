@@ -1,59 +1,57 @@
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Objects;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import javax.swing.DefaultListSelectionModel;
 
-public class SelectionModelTest implements Callable<Exception> {
-
-    private final DefaultListSelectionModel selectionModel
-            = new DefaultListSelectionModel();
-
-    private final Method method;
+public class SelectionModelTest {
 
     public static void main(String[] args) {
-        System.out.println(Runtime.getRuntime().availableProcessors());
-        ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
+        Runnable[] tests = {
+                SelectionModelTest::test01,
+                SelectionModelTest::test02,
+                SelectionModelTest::test03,
+                SelectionModelTest::test04,
+                SelectionModelTest::test05,
+                SelectionModelTest::test06,
+                SelectionModelTest::test07,
+                SelectionModelTest::test08,
+                SelectionModelTest::test09,
+                SelectionModelTest::test10,
+                SelectionModelTest::test11,
+                SelectionModelTest::test12,
+        };
         Collection<Exception> errors =
-                Arrays.stream(SelectionModelTest.class.getDeclaredMethods())
-                      .filter(m -> m.getName().startsWith("test"))
-                      .sorted(Comparator.comparing(Method::getName))
-                      .map(SelectionModelTest::new)
-                      .map(service::submit)
-                      .map(SelectionModelTest::get)
+                Arrays.stream(tests)
+                      .parallel()
+                      .map(SelectionModelTest::runTest)
                       .filter(Objects::nonNull)
                       .toList();
-        errors.forEach(Exception::printStackTrace);
-        service.shutdown();
+        for (Exception error : errors) {
+            error.printStackTrace();
+            System.err.println();
+        }
         if (errors.size() > 0) {
             throw new RuntimeException(errors.size() + " test(s) failed");
         }
     }
 
-    private SelectionModelTest(Method method) {
-        System.out.println(method.getName());
-        this.method = method;
-    }
-
-    private static Exception get(Future<Exception> future) {
+    private static Exception runTest(Runnable test) {
         try {
-            return future.get();
+            test.run();
         } catch (Exception e) {
             return e;
         }
+        return null;
     }
 
-    private void test01() {
+    private static void test01() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
+
         selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, 0, 0, -1);
         //assertTrue(selectionModel.isSelectionEmpty());
@@ -63,13 +61,13 @@ public class SelectionModelTest implements Callable<Exception> {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private void test02() {
-        System.out.println("\n2nd");
+    private static void test02() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
-        printSelection();
+
         selectionModel.removeIndexInterval(1, Integer.MAX_VALUE);
-        printSelection();
         assertIndexes(selectionModel, 0, 0, 0, 0);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(selectionModel.isSelectedIndex(0));
@@ -77,13 +75,13 @@ public class SelectionModelTest implements Callable<Exception> {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private void test03() {
-        System.out.println("\n3rd");
+    private static void test03() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
-        printSelection();
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
+
         selectionModel.removeIndexInterval(2, Integer.MAX_VALUE);
-        printSelection();
         assertIndexes(selectionModel, 0, 1, 0, 1);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.of(0, 1)
@@ -92,15 +90,15 @@ public class SelectionModelTest implements Callable<Exception> {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private void test04() {
-        System.out.println("\n4th");
+    private static void test04() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1);
-        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1);
+
         selectionModel.removeIndexInterval(0, Integer.MAX_VALUE - 1);
-        printSelection();
         assertIndexes(selectionModel,
                       -1, -1,
                       -1, -1);
@@ -109,15 +107,15 @@ public class SelectionModelTest implements Callable<Exception> {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private void test05() {
-        System.out.println("\n5th");
+    private static void test05() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE);
-        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE);
+
         selectionModel.removeIndexInterval(0, Integer.MAX_VALUE - 1);
-        printSelection();
         assertIndexes(selectionModel,
                       0, 0,
                       -1, 0);
@@ -127,10 +125,10 @@ public class SelectionModelTest implements Callable<Exception> {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private void test06() {
-        System.out.println("\n6th");
+    private static void test06() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+
         selectionModel.setSelectionInterval(10, 20);
-        printSelection();
         assertIndexes(selectionModel, 10, 20, 10, 20);
         assertTrue(IntStream.rangeClosed(0, 9)
                             .noneMatch(selectionModel::isSelectedIndex));
@@ -140,7 +138,6 @@ public class SelectionModelTest implements Callable<Exception> {
                             .noneMatch(selectionModel::isSelectedIndex));
 
         selectionModel.removeIndexInterval(0, 10);
-        printSelection();
         assertIndexes(selectionModel, 0, 9, -1, 9);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, 9)
@@ -149,10 +146,10 @@ public class SelectionModelTest implements Callable<Exception> {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private void test07() {
-        System.out.println("\n7th");
+    private static void test07() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+
         selectionModel.setSelectionInterval(0, 0);
-        printSelection();
         assertIndexes(selectionModel, 0, 0, 0, 0);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(selectionModel.isSelectedIndex(0));
@@ -160,7 +157,6 @@ public class SelectionModelTest implements Callable<Exception> {
                             .noneMatch(selectionModel::isSelectedIndex));
 
         selectionModel.addSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
-        printSelection();
         assertIndexes(selectionModel,
                       0, Integer.MAX_VALUE,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
@@ -172,7 +168,6 @@ public class SelectionModelTest implements Callable<Exception> {
         assertTrue(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
 
         selectionModel.removeIndexInterval(0, 0);
-        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1,
                       Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1);
@@ -184,14 +179,13 @@ public class SelectionModelTest implements Callable<Exception> {
         assertFalse(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
     }
 
-    private void test08() {
-        System.out.println("\n8th");
+    private static void test08() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+
         selectionModel.setSelectionInterval(0, 0);
-        printSelection();
         assertIndexes(selectionModel, 0, 0, 0, 0);
 
         selectionModel.insertIndexInterval(0, Integer.MAX_VALUE - 1, true);
-        printSelection();
         assertIndexes(selectionModel,
                       0, Integer.MAX_VALUE - 1,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 1);
@@ -201,14 +195,13 @@ public class SelectionModelTest implements Callable<Exception> {
         assertFalse(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
     }
 
-    private void test09() {
-        System.out.println("\n9th");
+    private static void test09() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+
         selectionModel.setSelectionInterval(0, 0);
-        printSelection();
         assertIndexes(selectionModel, 0, 0, 0, 0);
 
         selectionModel.insertIndexInterval(0, Integer.MAX_VALUE, true);
-        printSelection();
         assertIndexes(selectionModel,
                       0, Integer.MAX_VALUE,
                       Integer.MAX_VALUE, Integer.MAX_VALUE);
@@ -217,10 +210,10 @@ public class SelectionModelTest implements Callable<Exception> {
                             .allMatch(selectionModel::isSelectedIndex));
     }
 
-    private void test10() {
-        System.out.println("\n10th");
+    private static void test10() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
-        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
@@ -230,7 +223,6 @@ public class SelectionModelTest implements Callable<Exception> {
                             .allMatch(selectionModel::isSelectedIndex));
 
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE, true);
-        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
                       -3, -2);
@@ -240,13 +232,11 @@ public class SelectionModelTest implements Callable<Exception> {
                             .allMatch(selectionModel::isSelectedIndex));
     }
 
-    private void test11() {
-        System.out.println("\n11th");
+    private static void test11() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
-        printSelection();
 
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, true);
-        printSelection();
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
                       -3, -2);
@@ -254,30 +244,17 @@ public class SelectionModelTest implements Callable<Exception> {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private void test12() {
-        System.out.println("\n12th");
+    private static void test12() {
+        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
-        printSelection();
 
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, 2, true);
-        printSelection();
         assertIndexes(selectionModel,
                       -1, -1,
                       Integer.MIN_VALUE, Integer.MIN_VALUE + 1);
         assertTrue(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
-    }
-
-    private void printSelection() {
-        System.out.println(Integer.toHexString(selectionModel.getAnchorSelectionIndex())
-                           + ", "
-                           + Integer.toHexString(selectionModel.getLeadSelectionIndex())
-                           + " - "
-                           + Integer.toHexString(selectionModel.getMinSelectionIndex())
-                           + ", "
-                           + Integer.toHexString(selectionModel.getMaxSelectionIndex()));
-
     }
 
     public static void assertIndexes(DefaultListSelectionModel sel,
@@ -316,26 +293,6 @@ public class SelectionModelTest implements Callable<Exception> {
             throw new RuntimeException(String.format("Values are different:"
                     + " %1$d (0x%1$08x) vs %2$d (0x%2$08x)", real, expected));
         }
-    }
-
-    private static Exception runTest(Callable<Exception> test) {
-        try {
-            test.call();
-        } catch (Exception e) {
-            return e;
-        }
-        return null;
-    }
-
-    @Override
-    public Exception call() {
-        return runTest(() -> (Exception) method.invoke(this));
-//        try {
-//            method.invoke(this);
-//        } catch (Exception e) {
-//            return e;
-//        }
-//        return null;
     }
 }
 
