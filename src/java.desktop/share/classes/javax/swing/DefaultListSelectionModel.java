@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,12 @@
 
 package javax.swing;
 
-import java.beans.Transient;
-import java.io.Serializable;
-import java.util.BitSet;
 import java.util.EventListener;
+import java.util.BitSet;
+import java.io.Serializable;
+import java.beans.Transient;
 
-import javax.swing.event.EventListenerList;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.event.*;
 
 
 /**
@@ -431,7 +429,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
 
     private void changeSelection(int clearMin, int clearMax,
                                  int setMin, int setMax, boolean clearFirst) {
-        for(int i = Math.max(setMax, clearMax); i >= Math.min(setMin, clearMin); i--) {
+        for(int i = Math.min(setMin, clearMin); i <= Math.max(setMax, clearMax); i++) {
 
             boolean shouldClear = contains(clearMin, clearMax, i);
             boolean shouldSet = contains(setMin, setMax, i);
@@ -450,6 +448,10 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
             }
             if (shouldClear) {
                 clear(i);
+            }
+            // Integer overlfow
+            if (i + 1 < i) {
+                break;
             }
         }
         fireValueChanged();
@@ -656,7 +658,11 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          * insMinIndex).
          */
         for(int i = maxIndex; i >= insMinIndex; i--) {
-            setState(i + length, value.get(i));
+            if ((i + length) >= length) {
+                setState(i + length, value.get(i));
+            } else {
+                setState(i, value.get(i));
+            }
         }
 
         /* Initialize the newly inserted indices.
@@ -696,20 +702,25 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         if (index0 < 0 || index1 < 0) {
             throw new IndexOutOfBoundsException("index is negative");
         }
+
         int rmMinIndex = Math.min(index0, index1);
         int rmMaxIndex = Math.max(index0, index1);
-        int gapLength = (rmMaxIndex - rmMinIndex) == Integer.MAX_VALUE
-                        ? Integer.MAX_VALUE
-                        : (rmMaxIndex - rmMinIndex) + 1;
+        int gapLength =(rmMaxIndex - rmMinIndex) == Integer.MAX_VALUE
+                ? Integer.MAX_VALUE
+                : (rmMaxIndex - rmMinIndex) + 1;
 
         /* Shift the entire bitset to the left to close the index0, index1
          * gap.
          */
-        for(int i = rmMinIndex; i >= 0 && i <= maxIndex; i++) {
-            setState(i, (i <= Integer.MAX_VALUE - gapLength)
-                        && (i + gapLength >= minIndex)
-                        && value.get(i + gapLength));
+        for(int i = rmMinIndex; i <= maxIndex; i++) {
+            if ((i + gapLength) >= gapLength) {
+                setState(i, value.get(i + gapLength));
+            } else {
+                setState(i, value.get(gapLength));
+                break;
+            }
         }
+
 
         int leadIndex = this.leadIndex;
         if (leadIndex == 0 && rmMinIndex == 0) {
