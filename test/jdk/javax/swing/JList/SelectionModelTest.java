@@ -246,10 +246,11 @@ public class SelectionModelTest {
         DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
 
-        selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, true);
+        selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, 2, true);
         assertIndexes(selectionModel,
-                      Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
-                      -3, -2);
+                      -1, -1,
+                      Integer.MIN_VALUE, Integer.MIN_VALUE + 1);
+        assertTrue(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
     }
@@ -258,11 +259,11 @@ public class SelectionModelTest {
         DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
 
-        selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, 2, true);
-        assertIndexes(selectionModel,
-                      -1, -1,
-                      Integer.MIN_VALUE, Integer.MIN_VALUE + 1);
+        selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, true);
         assertTrue(selectionModel.isSelectionEmpty());
+        assertIndexes(selectionModel,
+                      Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
+                      -3, -2);
         assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
     }
