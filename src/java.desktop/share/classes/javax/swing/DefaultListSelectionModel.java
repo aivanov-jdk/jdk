@@ -654,10 +654,8 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          * insMinIndex).
          */
         for(int i = maxIndex; i >= insMinIndex; i--) {
-            if ((i + length) >= length) {
+            if (i <= Integer.MAX_VALUE - length) {
                 setState(i + length, value.get(i));
-            } else {
-                setState(i, value.get(i));
             }
         }
 
