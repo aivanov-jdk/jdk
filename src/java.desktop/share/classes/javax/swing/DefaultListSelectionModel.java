@@ -708,13 +708,10 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         /* Shift the entire bitset to the left to close the index0, index1
          * gap.
          */
-        for(int i = rmMinIndex; i <= maxIndex; i++) {
-            if ((i + gapLength) >= gapLength) {
-                setState(i, value.get(i + gapLength));
-            } else {
-                setState(i, value.get(gapLength));
-                break;
-            }
+        for(int i = rmMinIndex; i >= 0 && i <= maxIndex; i++) {
+            setState(i, (i <= Integer.MAX_VALUE - gapLength)
+                        && (i + gapLength >= minIndex)
+                        && value.get(i + gapLength));
         }
 
 
