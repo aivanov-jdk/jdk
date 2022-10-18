@@ -5,6 +5,14 @@ import java.util.stream.IntStream;
 
 import javax.swing.DefaultListSelectionModel;
 
+/*
+ * @test
+ * @bug 6187113
+ * @summary  Verifies DefaultListSelectionModel.removeIndexInterval and
+  *          DefaultListSelectionModel.insertIndexInterval in the edge
+  *          cases of integer overflow (Integer.MAX_VALUE)
+ * @run main SelectionModelTest
+ */
 public class SelectionModelTest {
 
     public static void main(String[] args) {
@@ -30,12 +38,15 @@ public class SelectionModelTest {
                 SelectionModelTest::test19,
                 SelectionModelTest::test20,
         };
+        long start = System.currentTimeMillis();
         Collection<Exception> errors =
                 Arrays.stream(tests)
                       .parallel()
                       .map(SelectionModelTest::runTest)
                       .filter(Objects::nonNull)
                       .toList();
+        long end = System.currentTimeMillis();
+        System.err.println((end - start) / 1000);
         for (Exception error : errors) {
             error.printStackTrace();
             System.err.println();
