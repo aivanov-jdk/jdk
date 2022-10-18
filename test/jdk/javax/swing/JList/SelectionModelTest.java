@@ -11,7 +11,7 @@ import javax.swing.DefaultListSelectionModel;
  * @summary  Verifies DefaultListSelectionModel.removeIndexInterval and
   *          DefaultListSelectionModel.insertIndexInterval in the edge
   *          cases of integer overflow (Integer.MAX_VALUE)
- * @run main SelectionModelTest
+ * @run main/othervm -Xmx6g SelectionModelTest
  */
 public class SelectionModelTest {
 
