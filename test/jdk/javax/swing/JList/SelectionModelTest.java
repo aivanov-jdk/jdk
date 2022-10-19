@@ -67,6 +67,8 @@ public class SelectionModelTest {
 
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
+                            .allMatch(selectionModel::isSelectedIndex));
 
         selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, -1, -1, 0, Integer.MAX_VALUE);
