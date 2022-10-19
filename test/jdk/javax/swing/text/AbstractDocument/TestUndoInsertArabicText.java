@@ -27,123 +27,249 @@
  *           inserted in RTL
  * @run main TestUndoInsertArabicText
  */
+
 import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
+
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.text.AbstractDocument;
-import javax.swing.text.Document;
 import javax.swing.undo.UndoManager;
 
 public class TestUndoInsertArabicText {
 
     private static JTextArea textArea;
+    private static AbstractDocument doc;
     private static UndoManager manager;
     private static JFrame frame;
 
-    public static void main(String[] args) throws Exception {
-//        testEnd();
-//        Thread.sleep(1000);
-//        testMiddle();
-//        Thread.sleep(1000);
-        testBeginning();
+    public static void main(String[] args) {
+        try {
+            testEnd();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            System.out.println("\n");
+            testMiddle();
+
+            System.out.println("\n");
+            testMiddleRTL();
+
+            System.out.println("\n");
+            testMiddlePara();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            System.out.println("\n");
+            testComplex();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static void createUI() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            textArea = new JTextArea(2, 20);
+            textArea = new JTextArea(2, 10);
+            textArea.setFont(textArea.getFont().deriveFont(50f));
+
             manager = new UndoManager();
+            doc = (AbstractDocument) textArea.getDocument();
+            doc.addUndoableEditListener(manager);
+
             frame = new JFrame("Undo - Redo Error");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-            JScrollPane scrollPane = new JScrollPane(textArea);
-
-            textArea.getDocument().addUndoableEditListener(manager);
-
-            frame.getContentPane().setLayout(new BorderLayout());
-            frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
-            frame.setLocationRelativeTo(null);
-//            frame.setSize(100, 100);
+            frame.getContentPane().add(new JScrollPane(textArea),
+                                       BorderLayout.CENTER);
             frame.pack();
+            frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
     }
 
-    private static void undoAndCheck() throws Exception {
-
-        if (textArea.getText().contains("\u0633")) {
-            System.out.println("\u0633 is present");
-        }
+    private static void dispose() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            if (manager.canUndo()) {
-                manager.undo();
-                System.out.println("--- undone 1 ---");
-                ((AbstractDocument) textArea.getDocument()).dump(System.out);
-                manager.undo();
-                System.out.println("--- undone 2 ---");
-                ((AbstractDocument) textArea.getDocument()).dump(System.out);
+            if (frame != null) {
+                frame.dispose();
             }
         });
-        Thread.sleep(1000);
-        if (textArea.getText().contains("\u0633")) {
-            throw new RuntimeException("Undo-ed arabic character still present");
-        }
     }
 
     private static void testEnd() throws Exception {
         try {
+            System.out.println("testEnd");
             createUI();
             Thread.sleep(1000);
-            // insert at end of existing text and undo
+            // Insert at end of the document and undo
             SwingUtilities.invokeAndWait(() -> {
-                textArea.insert("start ", 0);
+                System.out.println("--- empty ---");
+                doc.dump(System.out);
+
                 textArea.insert("\u0631", textArea.getText().length());
-                textArea.insert("\u0632", textArea.getText().length());
-                textArea.insert("\u0633", textArea.getText().length());
+                System.out.println("--- one char ---");
+                doc.dump(System.out);
+
                 textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+                System.out.println("--- orientation changed ---");
+                doc.dump(System.out);
             });
 
             Thread.sleep(1000);
-            undoAndCheck();
+            undoEnd();
         } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
+            dispose();
         }
-
     }
 
-    private static void testBeginning() throws Exception {
+    private static void undoEnd() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            if (manager.canUndo()) {
+                manager.undo();
+                System.out.println("--- undone ---");
+                doc.dump(System.out);
+                assert "".equals(textArea.getText())
+                       : "After undo the text must be empty";
+            }
+        });
+        Thread.sleep(1000);
+    }
+
+    private static void testMiddle() throws Exception {
         try {
+            System.out.println("Middle");
             createUI();
             Thread.sleep(1000);
 
             // insert at beginning of existing text and undo
             SwingUtilities.invokeAndWait(() -> {
-                AbstractDocument doc = (AbstractDocument) textArea.getDocument();
-                System.out.println("--- empty ---");
+                String start = "start ";
+                textArea.insert(start, 0);
+                textArea.insert("?! end", doc.getLength());
+
+                textArea.insert("\u0631\u0632\u0633", start.length());
+                System.out.println("--- text ---");
                 doc.dump(System.out);
+            });
+            Thread.sleep(2000);
+            SwingUtilities.invokeAndWait(() -> {
+                textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+                System.out.println("--- orientation changed ---");
+                doc.dump(System.out);
+            });
+            Thread.sleep(2000);
+            undoMiddle();
+            Thread.sleep(2000);
+        } finally {
+            dispose();
+        }
+    }
+
+    private static void testMiddleRTL() throws Exception {
+        try {
+            System.out.println("MiddleRTL");
+            createUI();
+            Thread.sleep(1000);
+
+            // insert at beginning of existing text and undo
+            SwingUtilities.invokeAndWait(() -> {
+                textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
 
                 String start = "start ";
                 textArea.insert(start, 0);
-                String digits = " 123 ";
-                //textArea.insert(digits, start.length());
-//                textArea.insert(" 678 ", doc.getLength());
+                textArea.insert("?! end", doc.getLength());
 
-                String end = " end";
+                textArea.insert("\u0631\u0632\u0633", start.length());
+                System.out.println("--- text ---");
+                doc.dump(System.out);
+            });
+            Thread.sleep(2000);
+            undoMiddle();
+            Thread.sleep(2000);
+        } finally {
+            dispose();
+        }
+    }
+
+    private static void undoMiddle() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            if (manager.canUndo()) {
+                manager.undo();
+                System.out.println("--- undone ---");
+                doc.dump(System.out);
+            }
+        });
+    }
+
+    private static void testMiddlePara() throws Exception {
+        try {
+            System.out.println("testMiddlePara");
+            createUI();
+            Thread.sleep(1000);
+
+            // insert at beginning of existing text and undo
+            SwingUtilities.invokeAndWait(() -> {
+                String start = "start ";
+                textArea.insert(start + "\n", 0);
+                textArea.insert("end", doc.getLength());
+
+                textArea.insert("\u0631\u0632\u0633", start.length());
+                System.out.println("--- text ---");
+                doc.dump(System.out);
+            });
+            Thread.sleep(2000);
+            SwingUtilities.invokeAndWait(() -> {
+                textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+                System.out.println("--- orientation changed ---");
+                doc.dump(System.out);
+            });
+            Thread.sleep(2000);
+            undoMiddlePara();
+            Thread.sleep(2000);
+        } finally {
+            dispose();
+        }
+    }
+
+    private static void undoMiddlePara() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            if (manager.canUndo()) {
+                manager.undo();
+                System.out.println("--- undone 1 ---");
+                doc.dump(System.out);
+            }
+        });
+        Thread.sleep(2000);
+        SwingUtilities.invokeAndWait(() -> {
+            if (manager.canUndo()) {
+                manager.undo();
+                System.out.println("--- undone 2 ---");
+                doc.dump(System.out);
+            }
+        });
+    }
+
+    private static void testComplex() throws Exception {
+        try {
+            System.out.println("testComplex");
+            createUI();
+            Thread.sleep(1000);
+
+            // insert at beginning of existing text and undo
+            SwingUtilities.invokeAndWait(() -> {
+                String start = "start ";
+                textArea.insert(start, 0);
+
+                String end = " end ";
                 textArea.insert(end, doc.getLength());
 
-                textArea.insert("\u0631\u0633", start.length());
-                textArea.insert("\u0632", doc.getLength());
-                textArea.insert("\u0633", doc.getLength());
-//                textArea.insert("\u0632", textArea.getText().length());
-//                textArea.setCaretPosition(0);
-//                textArea.insert("\u0633", 0);
-                System.out.println("--- one char ---");
+                textArea.insert("\u0633", start.length());
+                textArea.insert("\u0635", doc.getLength());
+                System.out.println("--- text ---");
                 doc.dump(System.out);
             });
             Thread.sleep(2000);
@@ -153,47 +279,27 @@ public class TestUndoInsertArabicText {
                 System.out.println("--- orientation changed ---");
                 doc.dump(System.out);
                 System.out.println("--- with digits ---");
-                textArea.insert("123", 6 + 1);
+                textArea.insert("1", "start ".length() + 1);
                 doc.dump(System.out);
             });
             Thread.sleep(2000);
-            undoAndCheck();
+            undoComplex();
             Thread.sleep(2000);
         } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
+            dispose();
         }
-
     }
 
-    private static void testMiddle() throws Exception {
-        try {
-            createUI();
-            Thread.sleep(1000);
-
-            // insert at middle of existing text and undo
-            SwingUtilities.invokeAndWait(() -> {
-                textArea.insert("\u0631", textArea.getText().length());
-                textArea.insert("\u0632", textArea.getText().length());
-                textArea.insert("\u0634", textArea.getText().length());
-                textArea.insert("\u0635", textArea.getText().length());
-                textArea.setCaretPosition(2);
-                textArea.insert("\u0633", 2);
-                textArea.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-            });
-            Thread.sleep(1000);
-            undoAndCheck();
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
-        }
-
+    private static void undoComplex() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            if (manager.canUndo()) {
+                manager.undo();
+                System.out.println("--- undone 1 ---");
+                doc.dump(System.out);
+                manager.undo();
+                System.out.println("--- undone 2 ---");
+                doc.dump(System.out);
+            }
+        });
     }
 }
-
