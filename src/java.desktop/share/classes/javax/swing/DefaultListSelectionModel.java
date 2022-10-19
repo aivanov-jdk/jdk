@@ -699,9 +699,18 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
 
         int rmMinIndex = Math.min(index0, index1);
         int rmMaxIndex = Math.max(index0, index1);
-        int gapLength =(rmMaxIndex - rmMinIndex) == Integer.MAX_VALUE
-                ? Integer.MAX_VALUE
-                : (rmMaxIndex - rmMinIndex) + 1;
+
+        if (rmMinIndex == 0 && rmMaxIndex == Integer.MAX_VALUE) {
+            for (int i = Integer.MAX_VALUE; i >= 0; i--) {
+                setState(i, false);
+            }
+            // min and max are updated automatically by the for-loop
+
+            // TODO Update anchor and lead
+            return;
+        }
+
+        int gapLength = (rmMaxIndex - rmMinIndex) + 1;
 
         /* Shift the entire bitset to the left to close the index0, index1
          * gap.

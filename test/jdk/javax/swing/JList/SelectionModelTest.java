@@ -69,7 +69,7 @@ public class SelectionModelTest {
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
 
         selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
-        assertIndexes(selectionModel, -1, -1, 0, -1);
+        assertIndexes(selectionModel, -1, -1, 0, Integer.MAX_VALUE);
         assertTrue(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
