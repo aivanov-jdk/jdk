@@ -356,10 +356,10 @@ public class SelectionModelTest {
         assertTrue(IntStream.rangeClosed(Integer.MAX_VALUE - 10, Integer.MAX_VALUE)
                             .allMatch(selectionModel::isSelectedIndex));
 
-        selectionModel.insertIndexInterval(11, 10, true);
+        selectionModel.insertIndexInterval(11, 11, true);
         assertIndexes(selectionModel,
                       0, 10,
-                      0, 10);
+                      Integer.MIN_VALUE, Integer.MIN_VALUE + 10);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, 10)
                             .allMatch(selectionModel::isSelectedIndex));
@@ -381,10 +381,10 @@ public class SelectionModelTest {
         assertTrue(IntStream.rangeClosed(Integer.MAX_VALUE - 10, Integer.MAX_VALUE)
                             .allMatch(selectionModel::isSelectedIndex));
 
-        selectionModel.insertIndexInterval(11, 10, false);
+        selectionModel.insertIndexInterval(11, 11, false);
         assertIndexes(selectionModel,
                       0, 10,
-                      0, 10);
+                      Integer.MIN_VALUE, Integer.MIN_VALUE + 10);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, 10)
                             .allMatch(selectionModel::isSelectedIndex));
