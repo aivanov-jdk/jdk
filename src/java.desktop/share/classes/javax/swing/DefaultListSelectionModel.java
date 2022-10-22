@@ -651,17 +651,17 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         if (length < 0 || index < 0) {
             return;
         }
-        if (index == Integer.MAX_VALUE) {
-            // Nothing to update
-            return;
-        }
+        //if (index + length < 0) {
+        //    return;
+        //}
         /* The first new index will appear at insMinIndex and the last
          * one will appear at insMaxIndex
          */
         int insMinIndex = (before) ? index : index + 1;
-        int insMaxIndex = (insMinIndex + length >= 0)
-                          ? (insMinIndex + length) - 1
-                          : Integer.MAX_VALUE;
+		if (insMinIndex < 0) {
+			insMinIndex = Integer.MAX_VALUE;
+		}
+        int insMaxIndex = (insMinIndex + length >= 0) ? (insMinIndex + length) - 1 : Integer.MAX_VALUE;
 
         /* Right shift the entire bitset by length, beginning with
          * index-1 if before is true, index+1 if it's false (i.e. with

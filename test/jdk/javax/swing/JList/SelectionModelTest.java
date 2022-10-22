@@ -498,11 +498,10 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
         assertTrue(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
 
-        // Passing MAX_VALUE changes nothing
         selectionModel.insertIndexInterval(Integer.MAX_VALUE, 1, true);
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE, Integer.MAX_VALUE,
-                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+                      Integer.MAX_VALUE + 1, Integer.MAX_VALUE + 1);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE - 1)
                             .noneMatch(selectionModel::isSelectedIndex));
