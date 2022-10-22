@@ -667,14 +667,11 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          * index-1 if before is true, index+1 if it's false (i.e. with
          * insMinIndex).
          */
-        //if (length + maxIndex < 0) {
-        //    maxIndex = Integer.MAX_VALUE - length;
-        //}
-        for(int i = maxIndex; i >= insMinIndex; i--) {
-            //System.out.println("insertIndex " + i + " length " + length);
-			if (i <= Integer.MAX_VALUE - length) {
-                setState(i + length, value.get(i));
-			}
+        int startIndex = maxIndex <= Integer.MAX_VALUE - length
+                         ? maxIndex
+                         : Integer.MAX_VALUE - length;
+        for(int i = startIndex; i >= insMinIndex; i--) {
+            setState(i + length, value.get(i));
         }
 
         /* Initialize the newly inserted indices.
