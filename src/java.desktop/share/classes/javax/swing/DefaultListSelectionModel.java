@@ -675,8 +675,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          */
         boolean setInsertedValues = ((getSelectionMode() == SINGLE_SELECTION) ?
                                         false : value.get(index));
-
-        for(int i = insMinIndex; i >=0 && i <= insMaxIndex; i++) {
+        for(int i = insMaxIndex; i >= insMinIndex; i--) {
             setState(i, setInsertedValues);
         }
 
