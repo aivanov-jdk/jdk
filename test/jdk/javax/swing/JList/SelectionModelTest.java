@@ -268,7 +268,7 @@ public class SelectionModelTest {
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, true);
         assertTrue(selectionModel.isSelectionEmpty());
         assertIndexes(selectionModel,
-                      Integer.MAX_VALUE - 1, Integer.MAX_VALUE,
+                      -1, -1,
                       -3, -2);
         assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
@@ -463,7 +463,7 @@ public class SelectionModelTest {
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 1, 1, true);
         assertIndexes(selectionModel,
                       -1, -1,
-                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+                      Integer.MAX_VALUE + 1, Integer.MAX_VALUE + 1);
         assertTrue(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
@@ -482,7 +482,7 @@ public class SelectionModelTest {
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 1, 1, false);
         assertIndexes(selectionModel,
                       -1, -1,
-                      Integer.MAX_VALUE, Integer.MAX_VALUE);
+                      Integer.MAX_VALUE + 1, Integer.MAX_VALUE + 1);
         assertTrue(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
@@ -498,13 +498,15 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
         assertTrue(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
 
+        // Passing MAX_VALUE changes nothing
         selectionModel.insertIndexInterval(Integer.MAX_VALUE, 1, true);
         assertIndexes(selectionModel,
-                      -1, -1,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE,
                       Integer.MAX_VALUE, Integer.MAX_VALUE);
-        assertTrue(selectionModel.isSelectionEmpty());
-        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
+        assertFalse(selectionModel.isSelectionEmpty());
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE - 1)
                             .noneMatch(selectionModel::isSelectedIndex));
+		assertTrue(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
     }
 
     private static void test24() {
@@ -519,11 +521,12 @@ public class SelectionModelTest {
 
         selectionModel.insertIndexInterval(Integer.MAX_VALUE, 1, false);
         assertIndexes(selectionModel,
-                      -1, -1,
+                      Integer.MAX_VALUE, Integer.MAX_VALUE,
                       Integer.MAX_VALUE, Integer.MAX_VALUE);
-        assertTrue(selectionModel.isSelectionEmpty());
-        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
+        assertFalse(selectionModel.isSelectionEmpty());
+        assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE - 1)
                             .noneMatch(selectionModel::isSelectedIndex));
+		assertTrue(selectionModel.isSelectedIndex(Integer.MAX_VALUE));
     }
 
     private static void test25() {

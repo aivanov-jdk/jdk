@@ -334,7 +334,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
            We only need to check for the case when lowest entry has been cleared,
            and in this case we need to search for the first value set above it.
         */
-        if (r == minIndex) {
+        if (r == minIndex && minIndex < Integer.MAX_VALUE) {
             for(minIndex = minIndex + 1; minIndex <= maxIndex; minIndex++) {
                 if (value.get(minIndex)) {
                     break;
@@ -429,7 +429,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
 
     private void changeSelection(int clearMin, int clearMax,
                                  int setMin, int setMax, boolean clearFirst) {
-        for(int i = Math.min(setMin, clearMin); i <= Math.max(setMax, clearMax) && i >= 0; i++) {
+        for(int i = Math.max(setMax, clearMax); i >= Math.min(setMin, clearMin); i--) {
 
             boolean shouldClear = contains(clearMin, clearMax, i);
             boolean shouldSet = contains(setMin, setMax, i);
@@ -625,6 +625,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
     }
 
     private void setState(int index, boolean state) {
+//        System.out.println("index " + index + " state " + state);
         if (state) {
             set(index);
         }
@@ -643,27 +644,34 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      */
     public void insertIndexInterval(int index, int length, boolean before)
     {
+        if (length < 0 || index < 0) {
+            return;
+        }
+        if (index == Integer.MAX_VALUE || length == 0) {
+            // Nothing to update
+            return;
+        }
         /* The first new index will appear at insMinIndex and the last
          * one will appear at insMaxIndex
          */
         int insMinIndex = (before) ? index : index + 1;
-        int insMaxIndex = (insMinIndex + length) - 1;
+        int insMaxIndex = (insMinIndex + length >= 0)
+                          ? (insMinIndex + length) - 1
+                          : Integer.MAX_VALUE;
 
         /* Right shift the entire bitset by length, beginning with
          * index-1 if before is true, index+1 if it's false (i.e. with
          * insMinIndex).
          */
-        for(int i = maxIndex; i >= insMinIndex; i--) {
-            if (i <= Integer.MAX_VALUE - length) {
-                setState(i + length, value.get(i));
-            }
+        for(int i = Math.min(maxIndex, Integer.MAX_VALUE - length); i >= insMinIndex; i--) {
+            setState(i + length, value.get(i));
         }
 
         /* Initialize the newly inserted indices.
          */
-        boolean setInsertedValues = ((getSelectionMode() == SINGLE_SELECTION) ?
-                                        false : value.get(index));
-        for(int i = insMinIndex; i <= insMaxIndex; i++) {
+        boolean setInsertedValues = (getSelectionMode() != SINGLE_SELECTION
+                                     && value.get(index));
+        for(int i = insMaxIndex; i >= insMinIndex; i--) {
             setState(i, setInsertedValues);
         }
 
@@ -700,13 +708,13 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         int rmMinIndex = Math.min(index0, index1);
         int rmMaxIndex = Math.max(index0, index1);
 
+
         if (rmMinIndex == 0 && rmMaxIndex == Integer.MAX_VALUE) {
             for (int i = Integer.MAX_VALUE; i >= 0; i--) {
                 setState(i, false);
             }
-            // min and max are updated automatically by the for-loop
 
-            // TODO Update anchor and lead
+            // TODO Update anchor and lead - min and max should be updated automatically
             return;
         }
 
@@ -715,10 +723,11 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         /* Shift the entire bitset to the left to close the index0, index1
          * gap.
          */
-        for(int i = rmMinIndex; i >= 0 && i <= maxIndex; i++) {
+        for (int i = rmMinIndex; i >= 0 && i <= maxIndex; i++) {
             setState(i, (i <= Integer.MAX_VALUE - gapLength)
-                        && (i + gapLength >= minIndex)
-                        && value.get(i + gapLength));
+                    && (i + gapLength >= minIndex)
+                    && value.get(i + gapLength));
+
         }
 
 
@@ -745,6 +754,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         }
 
         fireValueChanged();
+
     }
 
 
