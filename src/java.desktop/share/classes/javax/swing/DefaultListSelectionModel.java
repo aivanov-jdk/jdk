@@ -651,7 +651,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         if (length < 0 || index < 0) {
             return;
         }
-        if (index == Integer.MAX_VALUE) {
+        if (index == Integer.MAX_VALUE || length == 0) {
             // Nothing to update
             return;
         }
