@@ -651,25 +651,30 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         if (length < 0 || index < 0) {
             return;
         }
-        if (index + length < 0) {
-            return;
-        }
+        //if (index + length < 0) {
+        //    return;
+        //}
         /* The first new index will appear at insMinIndex and the last
          * one will appear at insMaxIndex
          */
         int insMinIndex = (before) ? index : index + 1;
-        int insMaxIndex = (insMinIndex + length) - 1;
+		if (insMinIndex < 0) {
+			insMinIndex = Integer.MAX_VALUE;
+		}
+        int insMaxIndex = (insMinIndex + length >= 0) ? (insMinIndex + length) - 1 : Integer.MAX_VALUE;
 
         /* Right shift the entire bitset by length, beginning with
          * index-1 if before is true, index+1 if it's false (i.e. with
          * insMinIndex).
          */
-        if (length + maxIndex < 0) {
-            maxIndex = Integer.MAX_VALUE - length;
-        }
+        //if (length + maxIndex < 0) {
+        //    maxIndex = Integer.MAX_VALUE - length;
+        //}
         for(int i = maxIndex; i >= insMinIndex; i--) {
             //System.out.println("insertIndex " + i + " length " + length);
-            setState(i + length, value.get(i));
+			if (i <= Integer.MAX_VALUE - length) {
+                setState(i + length, value.get(i));
+			}
         }
 
         /* Initialize the newly inserted indices.
