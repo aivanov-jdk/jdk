@@ -429,7 +429,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
 
     private void changeSelection(int clearMin, int clearMax,
                                  int setMin, int setMax, boolean clearFirst) {
-        for(int i = Math.max(setMax, clearMax); i >= Math.min(setMin, clearMin); i--) {
+        for(int i = Math.min(setMin, clearMin); i <= Math.max(setMax, clearMax); i++) {
 
             boolean shouldClear = contains(clearMin, clearMax, i);
             boolean shouldSet = contains(setMin, setMax, i);
@@ -448,6 +448,10 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
             }
             if (shouldClear) {
                 clear(i);
+            }
+            // Integer overlfow
+            if (i + 1 < i) {
+                break;
             }
         }
         fireValueChanged();
