@@ -718,7 +718,9 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
                 setState(i, false);
             }
 
-            // TODO Update anchor and lead - min and max should be updated automatically
+            if (this.anchorIndex != -1 || this.leadIndex != -1) {
+                updateLeadAnchorIndices(-1, -1);
+            }
             return;
         }
 

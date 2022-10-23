@@ -64,6 +64,7 @@ public class SelectionModelTest {
 
     private static void test01() {
         DefaultListSelectionModel selectionModel = createModel();
+        assertIndexes(selectionModel, -1, -1, -1, -1);
 
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
@@ -71,7 +72,7 @@ public class SelectionModelTest {
                             .allMatch(selectionModel::isSelectedIndex));
 
         selectionModel.removeIndexInterval(0, Integer.MAX_VALUE);
-        assertIndexes(selectionModel, -1, -1, 0, Integer.MAX_VALUE);
+        assertIndexes(selectionModel, -1, -1, -1, -1);
         assertTrue(selectionModel.isSelectionEmpty());
         assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
