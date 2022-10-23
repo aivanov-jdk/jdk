@@ -63,7 +63,7 @@ public class SelectionModelTest {
     }
 
     private static void test01() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
@@ -78,7 +78,7 @@ public class SelectionModelTest {
     }
 
     private static void test02() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
@@ -92,7 +92,7 @@ public class SelectionModelTest {
     }
 
     private static void test03() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
@@ -107,7 +107,7 @@ public class SelectionModelTest {
     }
 
     private static void test04() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1);
         assertIndexes(selectionModel,
@@ -124,7 +124,7 @@ public class SelectionModelTest {
     }
 
     private static void test05() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE);
         assertIndexes(selectionModel,
@@ -142,7 +142,7 @@ public class SelectionModelTest {
     }
 
     private static void test06() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(10, 20);
         assertIndexes(selectionModel, 10, 20, 10, 20);
@@ -163,7 +163,7 @@ public class SelectionModelTest {
     }
 
     private static void test07() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(0, 0);
         assertIndexes(selectionModel, 0, 0, 0, 0);
@@ -196,7 +196,7 @@ public class SelectionModelTest {
     }
 
     private static void test08() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(0, 0);
         assertIndexes(selectionModel, 0, 0, 0, 0);
@@ -212,7 +212,7 @@ public class SelectionModelTest {
     }
 
     private static void test09() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(0, 0);
         assertIndexes(selectionModel, 0, 0, 0, 0);
@@ -227,7 +227,7 @@ public class SelectionModelTest {
     }
 
     private static void test10() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
         assertIndexes(selectionModel,
@@ -249,7 +249,7 @@ public class SelectionModelTest {
     }
 
     private static void test11() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
 
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, 2, true);
@@ -262,7 +262,7 @@ public class SelectionModelTest {
     }
 
     private static void test12() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
 
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, true);
@@ -275,7 +275,7 @@ public class SelectionModelTest {
     }
 
     private static void test13() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(10, 20);
 
         selectionModel.insertIndexInterval(10, 10, true);
@@ -292,7 +292,7 @@ public class SelectionModelTest {
     }
 
     private static void test14() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(10, 20);
 
         selectionModel.insertIndexInterval(10, 10, false);
@@ -309,7 +309,7 @@ public class SelectionModelTest {
     }
 
     private static void test15() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(10, 20);
 
         selectionModel.insertIndexInterval(9, 10, true);
@@ -326,7 +326,7 @@ public class SelectionModelTest {
     }
 
     private static void test16() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(10, 20);
 
         selectionModel.insertIndexInterval(9, 10, false);
@@ -343,7 +343,7 @@ public class SelectionModelTest {
     }
 
     private static void test17() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(0, 10);
         selectionModel.addSelectionInterval(Integer.MAX_VALUE - 10, Integer.MAX_VALUE);
         assertIndexes(selectionModel,
@@ -368,7 +368,7 @@ public class SelectionModelTest {
     }
 
     private static void test18() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(0, 10);
         selectionModel.addSelectionInterval(Integer.MAX_VALUE - 10, Integer.MAX_VALUE);
         assertIndexes(selectionModel,
@@ -393,7 +393,7 @@ public class SelectionModelTest {
     }
 
     private static void test19() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(0, 10);
         selectionModel.addSelectionInterval(Integer.MAX_VALUE - 20, Integer.MAX_VALUE - 10);
         assertIndexes(selectionModel,
@@ -422,7 +422,7 @@ public class SelectionModelTest {
     }
 
     private static void test20() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(0, 10);
         selectionModel.addSelectionInterval(Integer.MAX_VALUE - 20, Integer.MAX_VALUE - 10);
         assertIndexes(selectionModel,
@@ -451,7 +451,7 @@ public class SelectionModelTest {
     }
 
     private static void test21() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(Integer.MAX_VALUE, Integer.MAX_VALUE);
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE, Integer.MAX_VALUE,
@@ -470,7 +470,7 @@ public class SelectionModelTest {
     }
 
     private static void test22() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(Integer.MAX_VALUE, Integer.MAX_VALUE);
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE, Integer.MAX_VALUE,
@@ -489,7 +489,7 @@ public class SelectionModelTest {
     }
 
     private static void test23() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(Integer.MAX_VALUE, Integer.MAX_VALUE);
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE, Integer.MAX_VALUE,
@@ -510,7 +510,7 @@ public class SelectionModelTest {
     }
 
     private static void test24() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(Integer.MAX_VALUE, Integer.MAX_VALUE);
         assertIndexes(selectionModel,
                       Integer.MAX_VALUE, Integer.MAX_VALUE,
@@ -530,7 +530,7 @@ public class SelectionModelTest {
     }
 
     private static void test25() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(10, 20);
 
         selectionModel.insertIndexInterval(10, 0, true);
@@ -547,7 +547,7 @@ public class SelectionModelTest {
     }
 
     private static void test26() {
-        DefaultListSelectionModel selectionModel = new DefaultListSelectionModel();
+        DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(10, 20);
 
         selectionModel.insertIndexInterval(10, 0, false);
@@ -570,6 +570,13 @@ public class SelectionModelTest {
             return e;
         }
         return null;
+    }
+
+    /**
+     * {@return a selection model to test}. 
+     */
+    private static DefaultListSelectionModel createModel() {
+        return new DefaultListSelectionModel();
     }
 
     public static void assertIndexes(DefaultListSelectionModel sel,
