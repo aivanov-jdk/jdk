@@ -17,9 +17,9 @@ public class SelectionModelTest {
 
     public static void main(String[] args) {
         Runnable[] tests = {
-                SelectionModelTest::testRemove0_MAX,
-                SelectionModelTest::testRemove1_MAX,
-                SelectionModelTest::testRemove2_MAX,
+                SelectionModelTest::test01,
+                SelectionModelTest::test02,
+                SelectionModelTest::test03,
                 SelectionModelTest::test04,
                 SelectionModelTest::test05,
                 SelectionModelTest::test06,
@@ -62,14 +62,12 @@ public class SelectionModelTest {
         }
     }
 
-    private static void testRemove0_MAX() {
+    private static void test01() {
         DefaultListSelectionModel selectionModel = createModel();
         assertIndexes(selectionModel, -1, -1, -1, -1);
 
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
-        assertIndexes(selectionModel,
-                      0, Integer.MAX_VALUE,
-                      0, Integer.MAX_VALUE);
+        assertIndexes(selectionModel, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
         assertTrue(IntStream.rangeClosed(0, Integer.MAX_VALUE)
                             .allMatch(selectionModel::isSelectedIndex));
 
@@ -80,7 +78,7 @@ public class SelectionModelTest {
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void testRemove1_MAX() {
+    private static void test02() {
         DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
@@ -90,11 +88,11 @@ public class SelectionModelTest {
         assertIndexes(selectionModel, 0, 0, 0, 0);
         assertFalse(selectionModel.isSelectionEmpty());
         assertTrue(selectionModel.isSelectedIndex(0));
-        assertTrue(IntStream.rangeClosed(1, Integer.MAX_VALUE)
+        assertTrue(IntStream.of(1, Integer.MAX_VALUE - 1, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
     }
 
-    private static void testRemove2_MAX() {
+    private static void test03() {
         DefaultListSelectionModel selectionModel = createModel();
 
         selectionModel.setSelectionInterval(0, Integer.MAX_VALUE);
@@ -103,7 +101,7 @@ public class SelectionModelTest {
         selectionModel.removeIndexInterval(2, Integer.MAX_VALUE);
         assertIndexes(selectionModel, 0, 1, 0, 1);
         assertFalse(selectionModel.isSelectionEmpty());
-        assertTrue(IntStream.rangeClosed(0, 1)
+        assertTrue(IntStream.of(0, 1)
                             .allMatch(selectionModel::isSelectedIndex));
         assertTrue(IntStream.rangeClosed(2, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
