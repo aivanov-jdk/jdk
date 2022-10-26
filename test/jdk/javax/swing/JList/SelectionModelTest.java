@@ -620,20 +620,14 @@ public class SelectionModelTest {
     private static void test29() {
         DefaultListSelectionModel selectionModel = createModel();
         selectionModel.setSelectionInterval(11, 11);
-        assertIndexes(selectionModel,
-                      11, 11,
-                      11, 11);
 
-        selectionModel.insertIndexInterval(10, -10, false);
-        assertIndexes(selectionModel,
-                      1, 11,
-                      1, 1);
-        assertTrue(IntStream.rangeClosed(0, 0)
-                            .noneMatch(selectionModel::isSelectedIndex));
-        assertTrue(IntStream.rangeClosed(11, 11)
-                            .allMatch(selectionModel::isSelectedIndex));
-        assertTrue(IntStream.rangeClosed(12, Integer.MAX_VALUE)
-                            .noneMatch(selectionModel::isSelectedIndex));
+        try {
+            selectionModel.insertIndexInterval(10, -10, false);
+            throw new RuntimeException("Expected IndexOutOfBoundsException "
+                                       + "because of negative length");
+        } catch (IndexOutOfBoundsException ignored) {
+            // expected
+        }
     }
 
     private static Exception runTest(Runnable test) {
