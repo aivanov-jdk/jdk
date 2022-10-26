@@ -76,7 +76,7 @@ public class SelectionModelTest {
                       .filter(Objects::nonNull)
                       .toList();
         long end = System.currentTimeMillis();
-        System.err.println((end - start) / 1000);
+        System.err.println(((end - start) / 1000) + " sec\n");
         for (Exception error : errors) {
             error.printStackTrace();
             System.err.println();
