@@ -67,6 +67,8 @@ public class SelectionModelTest {
                 SelectionModelTest::test24,
                 SelectionModelTest::test25,
                 SelectionModelTest::test26,
+                SelectionModelTest::test27,
+                SelectionModelTest::test28,
         };
         long start = System.currentTimeMillis();
         Collection<Exception> errors =
@@ -586,6 +588,32 @@ public class SelectionModelTest {
                             .allMatch(selectionModel::isSelectedIndex));
         assertTrue(IntStream.rangeClosed(21, Integer.MAX_VALUE)
                             .noneMatch(selectionModel::isSelectedIndex));
+    }
+
+    private static void test27() {
+        DefaultListSelectionModel selectionModel = createModel();
+        selectionModel.setSelectionInterval(0, 0);
+
+        try {
+            selectionModel.insertIndexInterval(-10, 10, false);
+            throw new RuntimeException("Expected IndexOutOfBoundsException "
+                                       + "because of negative index");
+        } catch (IndexOutOfBoundsException ignored) {
+            // expected
+        }
+    }
+
+    private static void test28() {
+        DefaultListSelectionModel selectionModel = createModel();
+        selectionModel.setSelectionInterval(11, 11);
+
+        try {
+            selectionModel.insertIndexInterval(5, -10, false);
+            throw new RuntimeException("Expected IndexOutOfBoundsException "
+                                       + "because of negative length");
+        } catch (IndexOutOfBoundsException ignored) {
+            // expected
+        }
     }
 
     private static Exception runTest(Runnable test) {
