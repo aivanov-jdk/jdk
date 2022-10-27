@@ -260,18 +260,20 @@ public class BasicGraphicsUtils
 
 
     /**
-     * Draw a string with the graphics {@code g} at location (x,y)
+     * Draws a string with the graphics {@code g} at location (<i>x</i>,&nbsp;<i>y</>)
      * just like {@code g.drawString} would. The first occurrence
      * of {@code underlineChar} in text will be underlined.
-     * The matching algorithm is not case sensitive.
+     * The matching algorithm is case-insensitive.
      *
-     * @param g an instance of {@code Graphics}
-     * @param text a text
-     * @param underlinedChar an underlined char
-     * @param x an X coordinate
-     * @param y an Y coordinate
+     * @param g an instance of {@code Graphics} to draw with
+     * @param text the text to be drawn
+     * @param underlinedChar the underlined char
+     * @param x the x coordinate to draw at
+     * @param y the y coordinate to draw at
      */
-    public static void drawString(Graphics g,String text,int underlinedChar,int x,int y) {
+    public static void drawString(Graphics g, String text,
+                                  int underlinedChar,
+                                  int x, int y) {
         int index=-1;
 
         if (underlinedChar != '\0') {
@@ -294,7 +296,7 @@ public class BasicGraphicsUtils
     }
 
     /**
-     * Draw a string with the graphics <code>g</code> at location
+     * Draws a string with the graphics <code>g</code> at location
      * (<code>x</code>, <code>y</code>)
      * just like <code>g.drawString</code> would.
      * The character at index <code>underlinedIndex</code>
@@ -302,21 +304,21 @@ public class BasicGraphicsUtils
      * bounds of <code>text</code> (including &lt; 0), nothing will be
      * underlined.
      *
-     * @param g Graphics to draw with
-     * @param text String to draw
-     * @param underlinedIndex Index of character in text to underline
-     * @param x x coordinate to draw at
-     * @param y y coordinate to draw at
+     * @param g the graphics to draw with
+     * @param text the string to draw
+     * @param underlinedIndex the index of character in text to underline
+     * @param x the x coordinate to draw at
+     * @param y the y coordinate to draw at
      * @since 1.4
      */
     public static void drawStringUnderlineCharAt(Graphics g, String text,
-                           int underlinedIndex, int x,int y) {
+                           int underlinedIndex, int x, int y) {
         SwingUtilities2.drawStringUnderlineCharAt(null, g, text,
                 underlinedIndex, x, y);
     }
 
     /**
-     * Draws dashed rectangle.
+     * Draws a dashed rectangle.
      *
      * @param g an instance of {@code Graphics}
      * @param x an X coordinate
