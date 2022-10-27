@@ -437,7 +437,7 @@ public class BasicGraphicsUtils
      * @param c the component that will display the string, may be null
      * @param g the graphics context, must not be null
      * @param string the string to display, may be null
-     * @param underlinedIndex index of a char value (Unicode code unit)
+     * @param underlinedIndex the index of a char value (Unicode code unit)
      *        in the string to underline
      * @param x the x coordinate to draw the text at
      * @param y the y coordinate to draw the text at
