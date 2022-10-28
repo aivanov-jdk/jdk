@@ -35,7 +35,7 @@ import javax.swing.DefaultListSelectionModel;
  *           DefaultListSelectionModel.insertIndexInterval in the edge
  *           cases of integer overflow (Integer.MAX_VALUE)
  * @requires (os.maxMemory >= 5G)
- * @run main/othervm -Xmx4g SelectionModelTest
+ * @run main/othervm/timeout=180000 -Xmx4g SelectionModelTest
  */
 public class SelectionModelTest {
 
