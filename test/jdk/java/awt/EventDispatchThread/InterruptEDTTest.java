@@ -51,30 +51,39 @@ public class InterruptEDTTest {
     public static void main(String args[]) throws Exception {
         try {
             robot = new Robot();
-            EventQueue.invokeAndWait(() -> {
-                edt = Thread.currentThread();
-                frame = new Frame("Frame");
-                frame.addMouseListener(new MouseAdapter() {
-                    public void mouseClicked(MouseEvent me) {
-                        System.out.println("Mouse clicked Event: " + me);
-                    }
-                });
-                frame.setBounds(350, 50, 400, 400);
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
+            EventQueue.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    edt = Thread.currentThread();
+                    frame = new Frame("Frame");
+                    frame.addMouseListener(new MouseAdapter() {
+                        public void mouseClicked(MouseEvent me) {
+                            System.out.println("Mouse clicked Event: " + me);
+                        }
+                    });
+                    frame.setBounds(350, 50, 400, 400);
+                    frame.setLocationRelativeTo(null);
+                    frame.setVisible(true);
+                }
             });
             ((sun.awt.SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
-            EventQueue.invokeAndWait(() -> {
-                xLocation = frame.getX();
-                yLocation = frame.getY();
-                width = frame.getWidth();
-                height = frame.getHeight();
+            EventQueue.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    xLocation = frame.getX();
+                    yLocation = frame.getY();
+                    width = frame.getWidth();
+                    height = frame.getHeight();
+                }
             });
             ((sun.awt.SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
-            EventQueue.invokeLater(() -> {
-                robot.mouseMove(xLocation + width / 2, yLocation + height / 2);
-                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            EventQueue.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    robot.mouseMove(xLocation + width / 2, yLocation + height / 2);
+                    robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                    robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                }
             });
         } catch (Exception e) {
             e.printStackTrace();
@@ -88,7 +97,12 @@ public class InterruptEDTTest {
             exx.printStackTrace();
         }
         System.out.println("Test passed.");
-        EventQueue.invokeAndWait(() -> disposeFrame());
+        EventQueue.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                disposeFrame();
+            }
+        });
     }
 
     private static void disposeFrame() {
