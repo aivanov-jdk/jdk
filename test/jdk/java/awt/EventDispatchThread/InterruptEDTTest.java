@@ -48,7 +48,7 @@ public class InterruptEDTTest {
     private static volatile int width;
     private static volatile int height;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
             EventQueue.invokeAndWait(new Runnable() {
