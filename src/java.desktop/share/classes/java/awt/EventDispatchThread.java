@@ -203,6 +203,8 @@ class EventDispatchThread extends Thread {
             eq.dispatchEvent(event);
         }
         catch (InterruptedException interruptedException) {
+            System.err.println("EventDispatchThread.pumpOneEventForFilters");
+            interruptedException.printStackTrace();
             doDispatch = false; // AppContext.dispose() interrupts all
                                 // Threads in the AppContext
         }

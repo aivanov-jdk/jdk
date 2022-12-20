@@ -1491,6 +1491,8 @@ public abstract class SunToolkit extends Toolkit
             // We should wait unconditionally for the first event on EDT
             EventQueue.invokeAndWait(() -> {/*dummy implementation*/});
         } catch (InterruptedException | InvocationTargetException ignored) {
+            System.err.println("SunToolkit.realSync - dummy invokeAndWait");
+            ignored.printStackTrace();
         }
         int bigLoop = 0;
         long end = TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) + timeout;
@@ -1609,6 +1611,8 @@ public abstract class SunToolkit extends Toolkit
                     waitLock.wait(timeout(end));
                 }
             } catch (InterruptedException ie) {
+                System.err.println("SunToolkit.waitForIdle");
+                ie.printStackTrace();
                 return false;
             }
         }
@@ -1616,6 +1620,8 @@ public abstract class SunToolkit extends Toolkit
         try {
             Thread.sleep(MINIMAL_DELAY);
         } catch (InterruptedException ie) {
+            System.err.println("SunToolkit.waitForIdle: Minimal delay");
+            ie.printStackTrace();
             throw new RuntimeException("Interrupted");
         }
 

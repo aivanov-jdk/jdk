@@ -667,8 +667,12 @@ public class Robot {
             try {
                 Thread.sleep(ms);
             } catch (final InterruptedException ignored) {
+                System.err.println("Robot.delay(" + ms + ")");
+                ignored.printStackTrace();
                 thread.interrupt(); // Preserve interrupt status
             }
+        } else {
+            System.err.println("Robot.delay(" + ms + ") - already interrupted");
         }
     }
 
