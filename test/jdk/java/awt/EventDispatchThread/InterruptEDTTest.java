@@ -121,7 +121,7 @@ public class InterruptEDTTest {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             System.err.println("mouseClick 2");
-            System.err.println("isInterrupted 2 - " + currentThread().isInterrupted());
+            System.err.println("isInterrupted 2 - " + edt.isInterrupted());
         } catch (Exception exx) {
             exx.printStackTrace();
         }
