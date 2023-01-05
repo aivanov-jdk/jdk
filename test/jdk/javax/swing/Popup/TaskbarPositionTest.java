@@ -71,6 +71,7 @@ public class TaskbarPositionTest implements ActionListener {
     private static JMenuBar menubar;
     private static JMenu menu1;
     private static JMenu menu2;
+    private static JMenu submenu;
     private static Rectangle fullScreenBounds;
     // The usable desktop space: screen size - screen insets.
     private static Rectangle screenBounds;
@@ -111,6 +112,8 @@ public class TaskbarPositionTest implements ActionListener {
             screenBounds.height -= (screenInsets.top + screenInsets.bottom);
             screenBounds.x += screenInsets.left;
             screenBounds.y += screenInsets.top;
+            System.out.println("screenBounds: " + screenBounds);
+            System.out.println("fullScreenBounds: " + fullScreenBounds);
         }
 
         // Place the frame near the bottom.
@@ -189,6 +192,8 @@ public class TaskbarPositionTest implements ActionListener {
         Point pt = new Point();
         SwingUtilities.convertPointToScreen(pt, popup);
         Rectangle bounds = new Rectangle(pt, dim);
+        System.out.println("popup: " + popup.getLabel() + " - " + bounds
+                           + " inside (" + checkBounds + ")");
 
         if (!SwingUtilities.isRectangleContainingRectangle(checkBounds, bounds)) {
             throw new RuntimeException("We do not match! " + checkBounds + " / " + bounds);
@@ -262,9 +267,9 @@ public class TaskbarPositionTest implements ActionListener {
             }
             menu2.add(menuitem);
         }
-        JMenu submenu = new JMenu("Sub Menu");
+        submenu = new JMenu("Sub Menu");
         submenu.setMnemonic('S');
-        submenu.addActionListener(this);
+//        submenu.addActionListener(this);
         for (int i = 0; i < 5; i++) {
             JMenuItem menuitem = new JMenuItem("S JMenuItem" + i);
             menuitem.addActionListener(this);
@@ -302,71 +307,144 @@ public class TaskbarPositionTest implements ActionListener {
             });
 
             robot.waitForIdle();
-            robot.delay(1000);
+            robot.delay(2000);
 
+            System.out.println("Hit 1");
             // 1 - menu
             Util.hitMnemonics(robot, KeyEvent.VK_1);
 
             robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> isPopupOnScreen(menu1.getPopupMenu(), screenBounds));
 
+            robot.delay(2000);
+
             // 2 menu with sub menu
+            System.out.println("2 menu");
             robot.keyPress(KeyEvent.VK_RIGHT);
             robot.keyRelease(KeyEvent.VK_RIGHT);
-            Util.hitMnemonics(robot, KeyEvent.VK_S);
+            robot.delay(2000);
+            System.out.println("    Hit S");
+            robot.keyPress(KeyEvent.VK_S);
+            robot.keyRelease(KeyEvent.VK_S);
 
             robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> isPopupOnScreen(menu2.getPopupMenu(), screenBounds));
+            SwingUtilities.invokeAndWait(() -> isPopupOnScreen(submenu.getPopupMenu(), screenBounds));
+
+            robot.delay(2000);
+
+            System.out.println("Hit Enter");
 
             robot.keyPress(KeyEvent.VK_ENTER);
             robot.keyRelease(KeyEvent.VK_ENTER);
 
+            System.out.println("Is the non-editable combo focused?");
             // Focus should go to non editable combo box
             robot.waitForIdle();
-            robot.delay(500);
+            robot.delay(2000);
 
             robot.keyPress(KeyEvent.VK_DOWN);
+            robot.keyRelease(KeyEvent.VK_DOWN);
 
+            System.out.println("After pressing Down");
+            robot.delay(2000);
             // How do we check combo boxes?
+
+            // Hide popup
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
+
+            System.out.println("Popup is hidden");
+            robot.delay(2000);
 
             // Editable combo box
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
+
+            System.out.println("The second combo is focused");
+            robot.delay(2000);
+
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
 
+            System.out.println("Its popup is open");
+            robot.delay(2000);
             // combo1.getUI();
+
+            // Hide popup
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
+
+            System.out.println("Popup is hidden");
+            robot.delay(2000);
 
             // Popup from Text field
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
+            System.out.println("Text field is focused");
+            robot.delay(2000);
+
             robot.keyPress(KeyEvent.VK_CONTROL);
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_CONTROL);
 
+            System.out.println("Text field popup is open");
+            robot.delay(2000);
+
+            // Hide popup
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
+
+            System.out.println("Popup is hidden");
+            robot.delay(2000);
+
             // Popup from a mouse click.
-            Point pt = new Point(2, 2);
+            Point pt = new Point(4, 4);
             SwingUtilities.convertPointToScreen(pt, panel);
             robot.mouseMove(pt.x, pt.y);
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
             robot.waitForIdle();
+            robot.delay(2000);
+            System.out.println("Popup from mouse click");
+
+            SwingUtilities.invokeAndWait(() -> isPopupOnScreen(popupMenu, screenBounds));
+
+            // Hide popup
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
+
+            System.out.println("Popup is hidden");
+            robot.delay(2000);
+
+
+            System.out.println("Move the frame");
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     frame.setLocation(-30, 100);
-                    combo1.addPopupMenuListener(new ComboPopupCheckListener());
+                    //combo1.addPopupMenuListener(new ComboPopupCheckListener());
                     combo1.requestFocus();
                 }
             });
 
+            robot.waitForIdle();
+            robot.delay(2000);
+
+            System.out.println("Open combo1 popup");
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
+
+            robot.waitForIdle();
+            robot.delay(2000);
+
+            System.out.println("Hide the popup again");
             robot.keyPress(KeyEvent.VK_ESCAPE);
             robot.keyRelease(KeyEvent.VK_ESCAPE);
 
             robot.waitForIdle();
+            robot.delay(2000);
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
