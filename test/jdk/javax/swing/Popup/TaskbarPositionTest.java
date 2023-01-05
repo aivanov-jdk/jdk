@@ -50,6 +50,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.event.PopupMenuEvent;
 
+// TODO remove the second asterisk so that IDEA doesn't complain about jtreg tags
+// TODO not being valid javadoc tags
 /**
  * @test
  * @bug 4245587 4474813 4425878 4767478 8015599
@@ -75,6 +77,8 @@ public class TaskbarPositionTest implements ActionListener {
     private static Rectangle fullScreenBounds;
     // The usable desktop space: screen size - screen insets.
     private static Rectangle screenBounds;
+
+    // TODO Add final modifier to numData, dayData, mnDayData
     private static String[] numData = {
         "One", "Two", "Three", "Four", "Five", "Six", "Seven"
     };
@@ -112,11 +116,10 @@ public class TaskbarPositionTest implements ActionListener {
             screenBounds.height -= (screenInsets.top + screenInsets.bottom);
             screenBounds.x += screenInsets.left;
             screenBounds.y += screenInsets.top;
-            System.out.println("screenBounds: " + screenBounds);
-            System.out.println("fullScreenBounds: " + fullScreenBounds);
         }
 
         // Place the frame near the bottom.
+        // TODO x parameter should be screenBounds.x
         frame.setLocation(0, screenBounds.y + screenBounds.height - frame.getHeight());
         frame.setVisible(true);
     }
@@ -130,6 +133,7 @@ public class TaskbarPositionTest implements ActionListener {
         }
 
         public void popupMenuWillBecomeInvisible(PopupMenuEvent ev) {
+            // TODO Add generics <?> to avoid the warning
             JComboBox combo = (JComboBox) ev.getSource();
             if (combo != null) {
                 Point cpos = combo.getLocation();
@@ -141,6 +145,7 @@ public class TaskbarPositionTest implements ActionListener {
                     Point p = pm.getLocation();
                     SwingUtilities.convertPointToScreen(p, pm);
                    // if (p.y + 1 < cpos.y) {
+                    // TODO Clarify the condition as we discussed in Slack
                     if((cpos.x < 0 &&  p.y+1 < cpos.y )|| p.x < 0) {
                         System.out.println("p.x "+ p.x+ " cpos.x "+ cpos.x+" p.y " + p.y + " cpos.y " + cpos.y);
                         throw new RuntimeException("ComboBox popup is wrongly aligned");
@@ -149,6 +154,10 @@ public class TaskbarPositionTest implements ActionListener {
             }
         }
     }
+
+    // TODO Resolve the warnings for PopupHandler and PopupListener
+
+    // TODO I suggest adding @Override annotations to the overridden methods
 
     private class PopupHandler extends AbstractAction {
 
@@ -160,6 +169,7 @@ public class TaskbarPositionTest implements ActionListener {
         }
     }
 
+    // TODO Make it private
     class PopupListener extends MouseAdapter {
 
         private JPopupMenu popup;
@@ -192,8 +202,6 @@ public class TaskbarPositionTest implements ActionListener {
         Point pt = new Point();
         SwingUtilities.convertPointToScreen(pt, popup);
         Rectangle bounds = new Rectangle(pt, dim);
-        System.out.println("popup: " + popup.getLabel() + " - " + bounds
-                           + " inside (" + checkBounds + ")");
 
         if (!SwingUtilities.isRectangleContainingRectangle(checkBounds, bounds)) {
             throw new RuntimeException("We do not match! " + checkBounds + " / " + bounds);
@@ -236,21 +244,28 @@ public class TaskbarPositionTest implements ActionListener {
      * @param bFlag set mnemonics on menu items
      */
     private JMenuBar createMenuBar(String str, boolean bFlag) {
+        // TODO str and bFlag have the only value, remove the parameters, use the values directly
         menubar = new JMenuBar();
 
         menu1 = new JMenu(str);
         menu1.setMnemonic(str.charAt(0));
+        // TODO The action listener isn't needed
         menu1.addActionListener(this);
 
         menubar.add(menu1);
         for (int i = 0; i < 8; i++) {
             JMenuItem menuitem = new JMenuItem("1 JMenuItem" + i);
+            // TODO I'm pretty sure the action listener isn't needed
+            // TODO Neither is the mnemonic on each menu item - they're unused
             menuitem.addActionListener(this);
             if (bFlag) {
                 menuitem.setMnemonic('0' + i);
             }
             menu1.add(menuitem);
         }
+
+        // TODO Remove action listeners the 2nd menu and its items
+        // TODO Remove mnemonics from the items in the 2nd menu
 
         // second menu
         menu2 = new JMenu("2 - Second Menu");
@@ -269,10 +284,12 @@ public class TaskbarPositionTest implements ActionListener {
         }
         submenu = new JMenu("Sub Menu");
         submenu.setMnemonic('S');
+        // TODO remove the following line, submenu is expected to be displayed
 //        submenu.addActionListener(this);
         for (int i = 0; i < 5; i++) {
             JMenuItem menuitem = new JMenuItem("S JMenuItem" + i);
             menuitem.addActionListener(this);
+            // TODO Here mnemonics aren't needed either
             if (bFlag) {
                 menuitem.setMnemonic('0' + i);
             }
@@ -307,23 +324,18 @@ public class TaskbarPositionTest implements ActionListener {
             });
 
             robot.waitForIdle();
-            robot.delay(2000);
+            robot.delay(1000);
 
-            System.out.println("Hit 1");
             // 1 - menu
             Util.hitMnemonics(robot, KeyEvent.VK_1);
 
             robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> isPopupOnScreen(menu1.getPopupMenu(), screenBounds));
 
-            robot.delay(2000);
-
             // 2 menu with sub menu
-            System.out.println("2 menu");
             robot.keyPress(KeyEvent.VK_RIGHT);
             robot.keyRelease(KeyEvent.VK_RIGHT);
-            robot.delay(2000);
-            System.out.println("    Hit S");
+            // Open the submenu
             robot.keyPress(KeyEvent.VK_S);
             robot.keyRelease(KeyEvent.VK_S);
 
@@ -331,117 +343,86 @@ public class TaskbarPositionTest implements ActionListener {
             SwingUtilities.invokeAndWait(() -> isPopupOnScreen(menu2.getPopupMenu(), screenBounds));
             SwingUtilities.invokeAndWait(() -> isPopupOnScreen(submenu.getPopupMenu(), screenBounds));
 
-            robot.delay(2000);
-
-            System.out.println("Hit Enter");
-
+            // Hit Enter to perform the action of
+            // a selected menu item in the submenu
+            // which requests focus on combo1, non-editable combo box
             robot.keyPress(KeyEvent.VK_ENTER);
             robot.keyRelease(KeyEvent.VK_ENTER);
 
-            System.out.println("Is the non-editable combo focused?");
-            // Focus should go to non editable combo box
             robot.waitForIdle();
-            robot.delay(2000);
 
+            // Focus should go to combo1
+            // Open combo1 popup
             robot.keyPress(KeyEvent.VK_DOWN);
+            // TODO remove this comment - key release was missing
             robot.keyRelease(KeyEvent.VK_DOWN);
 
-            System.out.println("After pressing Down");
-            robot.delay(2000);
-            // How do we check combo boxes?
+            // TODO Verify combo1.isPopupVisible() returns true
+            hidePopup(robot);
 
-            // Hide popup
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
-
-            System.out.println("Popup is hidden");
-            robot.delay(2000);
-
-            // Editable combo box
+            // Move focus to combo2, editable combo box
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
 
-            System.out.println("The second combo is focused");
-            robot.delay(2000);
+            robot.waitForIdle();
 
+            // Open combo2 popup
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
 
-            System.out.println("Its popup is open");
-            robot.delay(2000);
-            // combo1.getUI();
+            // TODO Verify combo2.isPopupVisible() returns true
+            hidePopup(robot);
 
-            // Hide popup
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
-
-            System.out.println("Popup is hidden");
-            robot.delay(2000);
-
-            // Popup from Text field
+            // Move focus to the text field
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
-            System.out.println("Text field is focused");
-            robot.delay(2000);
 
+            // Open its popup
             robot.keyPress(KeyEvent.VK_CONTROL);
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_CONTROL);
 
-            System.out.println("Text field popup is open");
-            robot.delay(2000);
+            // Ensure popupMenu is shown within screen bounds
+            robot.waitForIdle();
+            SwingUtilities.invokeAndWait(() -> isPopupOnScreen(popupMenu, screenBounds));
 
-            // Hide popup
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
+            hidePopup(robot);
 
-            System.out.println("Popup is hidden");
-            robot.delay(2000);
-
-            // Popup from a mouse click.
+            // Popup from a mouse click
+            // TODO Remove this comment - I had to move to 4, 4 - otherwise it's not shown
             Point pt = new Point(4, 4);
             SwingUtilities.convertPointToScreen(pt, panel);
             robot.mouseMove(pt.x, pt.y);
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
+            // Ensure popupMenu is shown within screen bounds
             robot.waitForIdle();
-            robot.delay(2000);
-            System.out.println("Popup from mouse click");
-
             SwingUtilities.invokeAndWait(() -> isPopupOnScreen(popupMenu, screenBounds));
 
-            // Hide popup
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
+            hidePopup(robot);
 
-            System.out.println("Popup is hidden");
-            robot.delay(2000);
-
-
-            System.out.println("Move the frame");
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     frame.setLocation(-30, 100);
+                    // TODO remove the next line, you've already added it
                     //combo1.addPopupMenuListener(new ComboPopupCheckListener());
                     combo1.requestFocus();
                 }
             });
 
+            // TODO remove this comment: Allow the OS to process the events
             robot.waitForIdle();
-            robot.delay(2000);
 
-            System.out.println("Open combo1 popup");
+            // Open combo1 popup again
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
 
             robot.waitForIdle();
-            robot.delay(2000);
 
-            System.out.println("Hide the popup again");
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
+            // TODO Verify combo1.isPopupVisible() returns true
+            hidePopup(robot);
 
             robot.waitForIdle();
             robot.delay(2000);
@@ -452,5 +433,10 @@ public class TaskbarPositionTest implements ActionListener {
                 }
             });
         }
+    }
+
+    private static void hidePopup(Robot robot) {
+        robot.keyPress(KeyEvent.VK_ESCAPE);
+        robot.keyRelease(KeyEvent.VK_ESCAPE);
     }
 }
