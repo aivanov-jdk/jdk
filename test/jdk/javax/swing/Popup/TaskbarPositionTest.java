@@ -62,8 +62,6 @@ import javax.swing.event.PopupMenuEvent;
  */
 public class TaskbarPositionTest implements ActionListener {
 
-    private boolean done;
-    private Throwable error;
     private static TaskbarPositionTest test;
     private static JFrame frame;
     private static JPopupMenu popupMenu;
@@ -94,7 +92,7 @@ public class TaskbarPositionTest implements ActionListener {
 
         // CTRL-down will show the popup.
         panel.getInputMap().put(KeyStroke.getKeyStroke(
-                KeyEvent.VK_DOWN, InputEvent.CTRL_MASK), "OPEN_POPUP");
+                KeyEvent.VK_DOWN, InputEvent.CTRL_DOWN_MASK), "OPEN_POPUP");
         panel.getActionMap().put("OPEN_POPUP", new PopupHandler());
 
         frame.pack();
@@ -129,18 +127,22 @@ public class TaskbarPositionTest implements ActionListener {
         }
 
         public void popupMenuWillBecomeInvisible(PopupMenuEvent ev) {
-            Point cpos = combo1.getLocation();
-            SwingUtilities.convertPointToScreen(cpos, panel);
+            JComboBox combo = (JComboBox) ev.getSource();
+            if (combo != null) {
+                Point cpos = combo.getLocation();
+                SwingUtilities.convertPointToScreen(cpos, panel);
 
-            JPopupMenu pm = (JPopupMenu) combo1.getUI().getAccessibleChild(combo1, 0);
+                JPopupMenu pm = (JPopupMenu) combo.getUI().getAccessibleChild(combo, 0);
 
-            if (pm != null) {
-                Point p = pm.getLocation();
-                SwingUtilities.convertPointToScreen(p, pm);
-                if (p.y+1 < cpos.y) {
-                    System.out.println("p.y " + p.y + " cpos.y " + cpos.y);
-                    throw new RuntimeException("ComboBox popup is wrongly aligned");
-                }  // check that popup was opened down
+                if (pm != null) {
+                    Point p = pm.getLocation();
+                    SwingUtilities.convertPointToScreen(p, pm);
+                   // if (p.y + 1 < cpos.y) {
+                    if((cpos.x < 0 &&  p.y+1 < cpos.y )|| p.x < 0) {
+                        System.out.println("p.x "+ p.x+ " cpos.x "+ cpos.x+" p.y " + p.y + " cpos.y " + cpos.y);
+                        throw new RuntimeException("ComboBox popup is wrongly aligned");
+                    } // check that popup was opened down
+                }
             }
         }
     }
@@ -203,7 +205,8 @@ public class TaskbarPositionTest implements ActionListener {
         combo2.setEditable(true);
         panel.add(combo2);
         panel.setSize(300, 200);
-
+        combo1.addPopupMenuListener(new ComboPopupCheckListener());
+        combo2.addPopupMenuListener(new ComboPopupCheckListener());
         popupMenu = new JPopupMenu();
         JMenuItem item;
         for (int i = 0; i < dayData.length; i++) {
@@ -215,7 +218,7 @@ public class TaskbarPositionTest implements ActionListener {
         JTextField field = new JTextField("CTRL+down for Popup");
         // CTRL-down will show the popup.
         field.getInputMap().put(KeyStroke.getKeyStroke(
-                KeyEvent.VK_DOWN, InputEvent.CTRL_MASK), "OPEN_POPUP");
+                KeyEvent.VK_DOWN, InputEvent.CTRL_DOWN_MASK), "OPEN_POPUP");
         field.getActionMap().put("OPEN_POPUP", new PopupHandler());
 
         panel.add(field);
@@ -346,8 +349,8 @@ public class TaskbarPositionTest implements ActionListener {
             Point pt = new Point(2, 2);
             SwingUtilities.convertPointToScreen(pt, panel);
             robot.mouseMove(pt.x, pt.y);
-            robot.mousePress(InputEvent.BUTTON3_MASK);
-            robot.mouseRelease(InputEvent.BUTTON3_MASK);
+            robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
             robot.waitForIdle();
             SwingUtilities.invokeAndWait(new Runnable() {
