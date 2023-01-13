@@ -1035,6 +1035,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         if (hIcon != 0L && hIcon != -1L) {
             // Get the bits.  This has the side effect of setting the imageHash value for this object.
             final int[] iconBits = getIconBits(hIcon);
+            System.out.println("        makeIcon : iconBits = " + iconBits);
             if (iconBits != null) {
                 // icons are always square
                 final int iconSize = (int) Math.sqrt(iconBits.length);
@@ -1151,20 +1152,36 @@ final class Win32ShellFolder2 extends ShellFolder {
                 int s = ICON_RESOLUTIONS[i];
                 if (size < MIN_QUALITY_ICON || size > MAX_QUALITY_ICON
                         || (s >= size && s <= size*2)) {
+                    System.out.println("getIcon"
+                                       + " : " + getDisplayName()
+                                       + " " + s + "(" + size + ")"
+                                       + " (" + getAbsolutePath() + ")");
                     long hIcon = extractIcon(getParentIShellFolder(),
                             getRelativePIDL(), s, false);
 
                     // E_PENDING: loading can take time so get the default
                     if (hIcon <= 0) {
+                        System.out.println("!!! hIcon("
+                                           + Long.toHexString(hIcon)
+                                           + ") <= 0 : " + getDisplayName()
+                                           + " " + s + "(" + size + ")"
+                                           + " (" + getAbsolutePath() + ")");
                         hIcon = extractIcon(getParentIShellFolder(),
                                 getRelativePIDL(), s, true);
                         if (hIcon <= 0) {
+                            System.out.println("+++ hIcon <= 0 : " + getDisplayName()
+                                               + " " + s + "(" + size + ")"
+                                               + " (" + getAbsolutePath() + ")");
                             if (isDirectory()) {
+                                System.out.println("    folder");
                                 newIcon = getShell32Icon(FOLDER_ICON_ID, size);
                             } else {
+                                System.out.println("    file");
                                 newIcon = getShell32Icon(FILE_ICON_ID, size);
                             }
                             if (newIcon == null) {
+                                System.out.println("*** def newIcon == null : " + getDisplayName()
+                                                   + " (" + getAbsolutePath() + ")");
                                 return null;
                             }
                             if (!(newIcon instanceof MultiResolutionImage)) {
@@ -1173,14 +1190,35 @@ final class Win32ShellFolder2 extends ShellFolder {
                             return newIcon;
                         }
                     }
+                    System.out.println("    hIcon = 0x" + Long.toHexString(hIcon)
+                                       + " " + s + "(" + size + ")"
+                                       + " : " + getDisplayName()
+                                       + " (" + getAbsolutePath() + ")");
                     newIcon = makeIcon(hIcon);
                     disposeIcon(hIcon);
+
+                    if (newIcon == null) {
+                        System.out.println("!!! newIcon == null !!!"
+                                           + " " + s + "(" + size + ")"
+                                           + " : " + getDisplayName()
+                                           + " (" + getAbsolutePath() + ")");
+                    }
 
                     multiResolutionIcon.put(s, newIcon);
                     if (size < MIN_QUALITY_ICON || size > MAX_QUALITY_ICON) {
                         break;
                     }
                 }
+            }
+            if (multiResolutionIcon.isEmpty()
+                || multiResolutionIcon.containsValue(null)) {
+                System.out.println("multiResolutionIcon is bad - "
+                                   + size
+                                   + " : " + getDisplayName()
+                                   + " (" + getAbsolutePath() + ")");
+                multiResolutionIcon.entrySet()
+                                   .forEach(e -> System.out.println("    " + e.getKey() + " -> " + e.getValue()));
+                System.out.println("---!---");
             }
             return new MultiResolutionIconImage(size, multiResolutionIcon);
         });
