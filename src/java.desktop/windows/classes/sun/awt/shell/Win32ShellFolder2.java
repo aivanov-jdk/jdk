@@ -1132,6 +1132,13 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     /**
+     * From Microsoft's documentation
+     * <a href="https://learn.microsoft.com/en-us/windows/win32/com/com-error-codes-1">COM
+     * Error Codes</a>: the data is not available yet.
+     */
+    private static final int E_PENDING = 0x8000000A;
+
+    /**
      * @return The icon image of specified size used to display this shell folder
      */
     public Image getIcon(int width, int height) {
@@ -1160,7 +1167,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                             getRelativePIDL(), s, false);
 
                     // E_PENDING: loading can take time so get the default
-                    if (hIcon <= 0) {
+                    if (hIcon == E_PENDING) {
                         System.out.println("!!! hIcon("
                                            + Long.toHexString(hIcon)
                                            + ") <= 0 : " + getDisplayName()
@@ -1168,7 +1175,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                                            + " (" + getAbsolutePath() + ")");
                         hIcon = extractIcon(getParentIShellFolder(),
                                 getRelativePIDL(), s, true);
-                        if (hIcon <= 0) {
+                        if (hIcon == 0) {
                             System.out.println("+++ hIcon <= 0 : " + getDisplayName()
                                                + " " + s + "(" + size + ")"
                                                + " (" + getAbsolutePath() + ")");

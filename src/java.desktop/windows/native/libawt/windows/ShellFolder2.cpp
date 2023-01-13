@@ -1002,14 +1002,14 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
                    hres, hIcon, hIconSmall, size, iconSize);
             if (SUCCEEDED(hres)) {
                 printf("    SUCCEEDED\n");
+                if (size < 24) {
+                    fn_DestroyIcon((HICON)hIcon);
+                    hIcon = hIconSmall;
+                } else {
+                    fn_DestroyIcon((HICON)hIconSmall);
+                }
             } else {
                 printf("  ! SUCCEEDED\n");
-            }
-            if (size < 24) {
-                fn_DestroyIcon((HICON)hIcon);
-                hIcon = hIconSmall;
-            } else {
-                fn_DestroyIcon((HICON)hIconSmall);
             }
         } else if (hres == E_PENDING) {
             printf("GetIconLocation(uFlags=%x, flags=%x, index=%d) == E_PENDING) - szBuf=%ls\n",
