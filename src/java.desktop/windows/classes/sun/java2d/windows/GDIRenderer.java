@@ -174,6 +174,13 @@ public class GDIRenderer implements
                          int x, int y, int width, int height)
     {
         try {
+            System.out.println(sg2d.surfaceData + ", " + sg2d.getCompClip() + ", "
+                               + Integer.toHexString(sg2d.eargb) + ", ("
+                               + x + " + " + sg2d.transX + " = "
+                               + (x+sg2d.transX) + "), ("
+                               + y + " + " + sg2d.transY + " = "
+                               + (y+sg2d.transY) + "), "
+                               + width + ", " + height);
             doFillRect((GDIWindowSurfaceData)sg2d.surfaceData,
                        sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
                        x+sg2d.transX, y+sg2d.transY, width, height);
@@ -386,6 +393,10 @@ public class GDIRenderer implements
                         int x, int y, int w, int h)
         {
             GraphicsPrimitive.tracePrimitive("GDIFillRect");
+            System.out.println("GDIFillRect(" + sData + ", " + clip + ", "
+                               + comp + ", " + color + ", "
+                               + x + ", " + y + ", "
+                               + w + ", " + h + ")");
             super.doFillRect(sData, clip, comp, color, x, y, w, h);
         }
         void doFillRoundRect(GDIWindowSurfaceData sData,
