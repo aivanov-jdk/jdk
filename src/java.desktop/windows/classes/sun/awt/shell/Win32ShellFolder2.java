@@ -1402,11 +1402,14 @@ final class Win32ShellFolder2 extends ShellFolder {
         final Map<Integer, Image> resolutionVariants = new HashMap<>();
 
         public MultiResolutionIconImage(int baseSize, Map<Integer, Image> resolutionVariants) {
+            assert !resolutionVariants.containsValue(null)
+                   : "There are null icons in the MRI variants map";
             this.baseSize = baseSize;
             this.resolutionVariants.putAll(resolutionVariants);
         }
 
         public MultiResolutionIconImage(int baseSize, Image image) {
+            assert image != null : "Null icon passed as the base image for MRI";
             this.baseSize = baseSize;
             this.resolutionVariants.put(baseSize, image);
         }
