@@ -986,19 +986,20 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
         INT index;
         UINT flags;
         UINT uFlags = getDefaultIcon ? GIL_DEFAULTICON : GIL_FORSHELL | GIL_ASYNC;
+        memset(szBuf, 0, sizeof(szBuf));
         hres = pIcon->GetIconLocation(uFlags, szBuf, MAX_PATH, &index, &flags);
         if (SUCCEEDED(hres)) {
             printf("GetIconLocation(uFlags=%x, flags=%x, index=%d) SUCCESS - szBuf=%ls\n",
                    uFlags, flags, index, szBuf);
             UINT iconSize;
-            HICON hIconSmall;
+            HICON hIconSmall = NULL;
             if (size < 24) {
                 iconSize = (size << 16) + 32;
             } else {
                 iconSize = (16 << 16) + size;
             }
             hres = pIcon->Extract(szBuf, index, &hIcon, &hIconSmall, iconSize);
-            printf("Extract == hres: %x, hIcon=%p, hIconSmall=%p, size=%d(%x)\n",
+            printf("Extract == hres: %lx, hIcon=%p, hIconSmall=%p, size=%d(%x)\n",
                    hres, hIcon, hIconSmall, size, iconSize);
             if (SUCCEEDED(hres)) {
                 printf("    SUCCEEDED\n");
@@ -1009,15 +1010,16 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
                     fn_DestroyIcon((HICON)hIconSmall);
                 }
             } else {
+                hIcon = NULL;
                 printf("  ! SUCCEEDED\n");
             }
         } else if (hres == E_PENDING) {
-            printf("GetIconLocation(uFlags=%x, flags=%x, index=%d) == E_PENDING) - szBuf=%ls\n",
-                   uFlags, flags, index, szBuf);
+            printf("GetIconLocation(hres: %lx, uFlags=%x, flags=%x, index=%d) == E_PENDING) - szBuf=%ls\n",
+                   hres, uFlags, flags, index, szBuf);
             fflush(stdout);
 
             pIcon->Release();
-            return E_PENDING;
+            return (unsigned) E_PENDING;
         } else {
             printf("GetIconLocation(uFlags=%x) == ERROR)\n", uFlags);
         }

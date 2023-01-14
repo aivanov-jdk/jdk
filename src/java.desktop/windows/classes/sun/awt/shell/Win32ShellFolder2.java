@@ -1035,7 +1035,6 @@ final class Win32ShellFolder2 extends ShellFolder {
         if (hIcon != 0L && hIcon != -1L) {
             // Get the bits.  This has the side effect of setting the imageHash value for this object.
             final int[] iconBits = getIconBits(hIcon);
-            System.out.println("        makeIcon : iconBits = " + iconBits);
             if (iconBits != null) {
                 // icons are always square
                 final int iconSize = (int) Math.sqrt(iconBits.length);
@@ -1043,6 +1042,8 @@ final class Win32ShellFolder2 extends ShellFolder {
                         new BufferedImage(iconSize, iconSize, BufferedImage.TYPE_INT_ARGB);
                 img.setRGB(0, 0, iconSize, iconSize, iconBits, 0, iconSize);
                 return img;
+            } else {
+                System.out.println("makeIcon: iconBits == null");
             }
         }
         return null;
@@ -1136,7 +1137,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * <a href="https://learn.microsoft.com/en-us/windows/win32/com/com-error-codes-1">COM
      * Error Codes</a>: the data is not available yet.
      */
-    private static final int E_PENDING = 0x8000000A;
+    private static final long E_PENDING = 0x8000000AL;
 
     /**
      * @return The icon image of specified size used to display this shell folder
