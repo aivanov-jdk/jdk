@@ -45,7 +45,6 @@
 #include <shellapi.h>
 #include "jlong.h"
 #include "alloc.h"
-#include <stdio.h>
 
 #include "stdhdrs.h"
 
@@ -986,23 +985,17 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
         INT index;
         UINT flags;
         UINT uFlags = getDefaultIcon ? GIL_DEFAULTICON : GIL_FORSHELL | GIL_ASYNC;
-        memset(szBuf, 0, sizeof(szBuf));
         hres = pIcon->GetIconLocation(uFlags, szBuf, MAX_PATH, &index, &flags);
         if (SUCCEEDED(hres)) {
-            printf("GetIconLocation(uFlags=%x, flags=%x, index=%d) SUCCESS - szBuf=%ls\n",
-                   uFlags, flags, index, szBuf);
             UINT iconSize;
-            HICON hIconSmall = NULL;
+            HICON hIconSmall;
             if (size < 24) {
                 iconSize = (size << 16) + 32;
             } else {
                 iconSize = (16 << 16) + size;
             }
             hres = pIcon->Extract(szBuf, index, &hIcon, &hIconSmall, iconSize);
-            printf("Extract == hres: %lx, hIcon=%p, hIconSmall=%p, size=%d(%x)\n",
-                   hres, hIcon, hIconSmall, size, iconSize);
             if (SUCCEEDED(hres)) {
-                printf("    SUCCEEDED\n");
                 if (size < 24) {
                     fn_DestroyIcon((HICON)hIcon);
                     hIcon = hIconSmall;
@@ -1011,21 +1004,13 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
                 }
             } else {
                 hIcon = NULL;
-                printf("  ! SUCCEEDED\n");
             }
         } else if (hres == E_PENDING) {
-            printf("GetIconLocation(hres: %lx, uFlags=%x, flags=%x, index=%d) == E_PENDING) - szBuf=%ls\n",
-                   hres, uFlags, flags, index, szBuf);
-            fflush(stdout);
-
             pIcon->Release();
             return (unsigned) E_PENDING;
-        } else {
-            printf("GetIconLocation(uFlags=%x) == ERROR)\n", uFlags);
         }
         pIcon->Release();
     }
-    fflush(stdout);
     return (jlong)hIcon;
 }
 
@@ -1127,13 +1112,8 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
                 if (!(env->ExceptionCheck())) {
                     // Copy values to java array
                     env->SetIntArrayRegion(iconBits, 0, nBits, colorBits);
-                } else {
-                    printf("native getIconBits - !(env->ExceptionCheck())");
-                    fflush(stdout);
                 }
             } catch(std::bad_alloc&) {
-                printf("native getIconBits - std::bad_alloc");
-                fflush(stdout);
                 handle_bad_alloc();
             }
 
@@ -1148,9 +1128,6 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
             if (maskBits != NULL) {
                 free(maskBits);
             }
-        } else {
-            puts("native getIconBits - dc == NULL");
-            fflush(stdout);
         }
         // Fix 4745575 GDI Resource Leak
         // MSDN
@@ -1159,23 +1136,6 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
         // are no longer necessary.
         ::DeleteObject(iconInfo.hbmColor);
         ::DeleteObject(iconInfo.hbmMask);
-    } else {
-        DWORD dwError = ::GetLastError();
-        LPSTR lpMsgBuf;
-        DWORD dwResult = ::FormatMessageA(
-            FORMAT_MESSAGE_ALLOCATE_BUFFER
-                | FORMAT_MESSAGE_FROM_SYSTEM
-                | FORMAT_MESSAGE_IGNORE_INSERTS,
-            NULL,
-            dwError,
-            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-            (LPSTR) &lpMsgBuf,
-            0, NULL
-        );
-        puts("native getIconBits - fn_GetIconInfo returned false");
-        printf("    Error code: 0x%x - %s\n", dwError, lpMsgBuf);
-        ::LocalFree(lpMsgBuf);
-        fflush(stdout);
     }
     return iconBits;
 }
