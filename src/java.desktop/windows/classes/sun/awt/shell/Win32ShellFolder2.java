@@ -1495,12 +1495,11 @@ final class Win32ShellFolder2 extends ShellFolder {
             this.images = new Image[sizes.length];
             this.startIndex = startIndex;
             this.iconID = iconID;
-            System.out.println("MultiResolutionSystemIconImage: " + lib + ", " + iconID + ", " + baseSize + ", " + startIndex);
             images[startIndex] = baseImage;
             assert images[startIndex] != null : "Base image is null";
         }
 
-        public MultiResolutionSystemIconImage(Lib lib, int[] sizes,
+        protected MultiResolutionSystemIconImage(Lib lib, int[] sizes,
                                               int iconID, int baseSize,
                                               Image baseImage) {
             this(lib, sizes,
