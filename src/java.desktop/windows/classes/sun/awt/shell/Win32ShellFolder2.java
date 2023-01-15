@@ -37,11 +37,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import javax.swing.SwingConstants;
@@ -1009,7 +1011,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static native boolean hiResIconAvailable(long parentIShellFolder, long relativePIDL);
 
     // Returns an icon from the Windows system icon list in the form of an HICON
-    private static native long getSystemIcon(int iconID);
+    private static native long getSystemIcon(int iconID, int size);
     private static native long getIconResource(String libName, int iconID,
                                                int cxDesired, int cyDesired);
 
@@ -1197,13 +1199,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Gets an icon from the Windows system icon list as an {@code Image}
      */
     static Image getSystemIcon(SystemIcon iconType) {
-        long hIcon = getSystemIcon(iconType.getIconID());
-        Image icon = makeIcon(hIcon);
-        if (LARGE_ICON_SIZE != icon.getWidth(null)) {
-            icon = new MultiResolutionIconImage(LARGE_ICON_SIZE, icon);
-        }
-        disposeIcon(hIcon);
-        return icon;
+        return new MultiResolutionSystemIconImage(iconType);
     }
 
     /**
@@ -1397,36 +1393,45 @@ final class Win32ShellFolder2 extends ShellFolder {
         });
     }
 
-    static class MultiResolutionIconImage extends AbstractMultiResolutionImage {
-        final int baseSize;
+    private static abstract sealed class BaseMultiResolutionIconImage
+            extends AbstractMultiResolutionImage
+            permits MultiResolutionIconImage, MultiResolutionSystemIconImage {
+        protected final int baseSize;
+
+        protected BaseMultiResolutionIconImage(int baseSize) {
+            this.baseSize = baseSize;
+        }
+
+        @Override
+        public final int getWidth(ImageObserver observer) {
+            return baseSize;
+        }
+
+        @Override
+        public final int getHeight(ImageObserver observer) {
+            return baseSize;
+        }
+
+        @Override
+        protected final Image getBaseImage() {
+            return getResolutionVariant(baseSize, baseSize);
+        }
+    }
+
+    static final class MultiResolutionIconImage extends BaseMultiResolutionIconImage {
         final Map<Integer, Image> resolutionVariants = new HashMap<>();
 
         public MultiResolutionIconImage(int baseSize, Map<Integer, Image> resolutionVariants) {
+            super(baseSize);
             assert !resolutionVariants.containsValue(null)
                    : "There are null icons in the MRI variants map";
-            this.baseSize = baseSize;
             this.resolutionVariants.putAll(resolutionVariants);
         }
 
         public MultiResolutionIconImage(int baseSize, Image image) {
+            super(baseSize);
             assert image != null : "Null icon passed as the base image for MRI";
-            this.baseSize = baseSize;
             this.resolutionVariants.put(baseSize, image);
-        }
-
-        @Override
-        public int getWidth(ImageObserver observer) {
-            return baseSize;
-        }
-
-        @Override
-        public int getHeight(ImageObserver observer) {
-            return baseSize;
-        }
-
-        @Override
-        protected Image getBaseImage() {
-            return getResolutionVariant(baseSize, baseSize);
         }
 
         @Override
@@ -1463,6 +1468,72 @@ final class Win32ShellFolder2 extends ShellFolder {
         public List<Image> getResolutionVariants() {
             return Collections.unmodifiableList(
                     new ArrayList<Image>(resolutionVariants.values()));
+        }
+    }
+
+    private static final class MultiResolutionSystemIconImage
+            extends BaseMultiResolutionIconImage {
+        private static final int[] sizes = {32, 48, 64, 128};
+        private final Image[] images = new Image[sizes.length];
+        private final SystemIcon iconType;
+        MultiResolutionSystemIconImage(SystemIcon iconType) {
+            super(LARGE_ICON_SIZE);
+            this.iconType = iconType;
+            System.out.println("SystemIconImage: " + iconType + "(" + iconType.iconID + ")");
+            images[0] = getIcon(LARGE_ICON_SIZE);
+        }
+
+        private Image getIcon(int size) {
+            System.out.println("> SystemIconImage.getIcon("
+                               + iconType + "(" + iconType.iconID + "), " + size + ")");
+            long hIcon = getSystemIcon(iconType.getIconID(), size);
+            Image icon = makeIcon(hIcon);
+            disposeIcon(hIcon);
+            System.out.println("< SystemIconImage.getIcon = " + icon);
+            return icon;
+        }
+
+        @Override
+        public Image getResolutionVariant(double destImageWidth,
+                                          double destImageHeight) {
+            int size = (int) destImageWidth;
+            System.out.println("> SystemIconImage.variant(" + size + ")");
+            if (size <= baseSize) {
+                System.out.println("< baseSize -> " + images[0]);
+                return images[0];
+            }
+            int index = -1;
+            if (size >= sizes[sizes.length - 1]) {
+                index = sizes.length - 1;
+            } else {
+                for (int i = 1; i < sizes.length; i++) {
+                    if (size <= sizes[i]) {
+                        index = i;
+                        break;
+                    }
+                }
+            }
+            System.out.println("  requestedSize = " + index);
+            assert index > 0 : "Invalid requestedSize: " + index;
+
+            if (images[index] != null) {
+                System.out.println("< matchFound for " + index
+                                   + " -> " + images[index]);
+                return images[index];
+            } else {
+                System.out.println("  getting new size (i = " + index + ")");
+                Image image = getIcon(sizes[index]);
+                images[index] = image;
+                System.out.println("< new image returned ");
+                return image;
+            }
+        }
+
+        @Override
+        public List<Image> getResolutionVariants() {
+            return Arrays.stream(images)
+                         .filter(Objects::nonNull)
+                         .toList();
         }
     }
 }

@@ -45,6 +45,7 @@
 #include <shellapi.h>
 #include "jlong.h"
 #include "alloc.h"
+#include <stdio.h>
 
 #include "stdhdrs.h"
 
@@ -1182,11 +1183,45 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getStandardView
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2
  * Method:    getSystemIcon
- * Signature: (I)J
+ * Signature: (II)J
  */
 JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getSystemIcon
-    (JNIEnv* env, jclass cls, jint iconID)
+    (JNIEnv* env, jclass cls, jint iconID, jint size)
 {
+    HANDLE hUser = GetModuleHandle(TEXT("user32.dll"));
+    printf("GetModuleHandle returned : 0x%p\n", hUser);
+    fflush(stdout);
+
+    iconID = iconID - 32512 + 100;
+
+    HANDLE hIcon = LoadImage((HINSTANCE)hUser, MAKEINTRESOURCE(iconID),
+                             IMAGE_ICON,
+                             size, size, 0);
+    if (hIcon != NULL) {
+        printf("LoadImage succeeded\n");
+        fflush(stdout);
+        return (jlong)hIcon;
+    }
+
+    DWORD dwError = GetLastError();
+    printf("LoadImage failed: %d(0x%x)\n", dwError, dwError);
+    fflush(stdout);
+
+    hIcon = LoadIcon(NULL, MAKEINTRESOURCE(iconID));
+    // Get the icon info
+    ICONINFOEX iconInfo;
+    memset(&iconInfo, 0, sizeof(iconInfo));
+    iconInfo.cbSize = sizeof(iconInfo);
+    if (GetIconInfoEx((HICON)hIcon, &iconInfo)) {
+        printf("wResID = %d(%x)\nszModName = %ls\nszResName = %ls\n",
+               iconInfo.wResID, iconInfo.wResID,
+               iconInfo.szModName, iconInfo.szResName);
+    } else {
+        dwError = GetLastError();
+        printf("GetIconInfoEx failed: %d(0x%x)\n", dwError, dwError);
+        fflush(stdout);
+    }
+
     return (jlong)LoadIcon(NULL, MAKEINTRESOURCE(iconID));
 }
 
