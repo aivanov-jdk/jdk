@@ -1012,7 +1012,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static native boolean hiResIconAvailable(long parentIShellFolder, long relativePIDL);
 
     // Returns an icon from the Windows system icon list in the form of an HICON
-    private static native long getSystemIcon(int iconID, int size);
+    private static native long getSystemIcon(int iconID);
     private static native long getIconResource(String libName, int iconID,
                                                int cxDesired, int cyDesired);
 
