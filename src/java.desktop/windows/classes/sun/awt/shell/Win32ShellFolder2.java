@@ -1161,14 +1161,13 @@ final class Win32ShellFolder2 extends ShellFolder {
                 int s = ICON_RESOLUTIONS[i];
                 if (size < MIN_QUALITY_ICON || size > MAX_QUALITY_ICON
                         || (s >= size && s <= size*2)) {
-                    long hIcon = 0;
-//                    extractIcon(getParentIShellFolder(),
-//                            getRelativePIDL(), s, false);
+                    long hIcon = extractIcon(getParentIShellFolder(),
+                            getRelativePIDL(), s, false);
 
                     // E_PENDING: loading can take time so get the default
-                    if (hIcon == 0) {
-//                        hIcon = extractIcon(getParentIShellFolder(),
-//                                getRelativePIDL(), s, true);
+                    if (hIcon == E_PENDING) {
+                        hIcon = extractIcon(getParentIShellFolder(),
+                                getRelativePIDL(), s, true);
                         if (hIcon == 0) {
                             if (isDirectory()) {
                                 newIcon = getShell32Icon(FOLDER_ICON_ID, size);
