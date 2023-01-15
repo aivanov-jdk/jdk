@@ -1395,7 +1395,9 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     private static abstract sealed class BaseMultiResolutionIconImage
             extends AbstractMultiResolutionImage
-            permits MultiResolutionIconImage, MultiResolutionSystemIconImage {
+            permits MultiResolutionImageWrapper,
+                    MultiResolutionIconImage,
+                    MultiResolutionSystemIconImage {
         protected final int baseSize;
 
         protected BaseMultiResolutionIconImage(int baseSize) {
@@ -1415,6 +1417,26 @@ final class Win32ShellFolder2 extends ShellFolder {
         @Override
         protected final Image getBaseImage() {
             return getResolutionVariant(baseSize, baseSize);
+        }
+    }
+
+    static final class MultiResolutionImageWrapper extends BaseMultiResolutionIconImage {
+        private final Image image;
+
+        public MultiResolutionImageWrapper(int size, Image image) {
+            super(size);
+            this.image = image;
+        }
+
+        @Override
+        public Image getResolutionVariant(double destImageWidth,
+                                          double destImageHeight) {
+            return image;
+        }
+
+        @Override
+        public List<Image> getResolutionVariants() {
+            return List.of(image);
         }
     }
 

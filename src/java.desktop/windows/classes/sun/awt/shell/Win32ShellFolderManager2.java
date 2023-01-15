@@ -54,7 +54,7 @@ import static sun.awt.shell.Win32ShellFolder2.DESKTOP;
 import static sun.awt.shell.Win32ShellFolder2.DRIVES;
 import static sun.awt.shell.Win32ShellFolder2.Invoker;
 import static sun.awt.shell.Win32ShellFolder2.LARGE_ICON_SIZE;
-import static sun.awt.shell.Win32ShellFolder2.MultiResolutionIconImage;
+import static sun.awt.shell.Win32ShellFolder2.MultiResolutionImageWrapper;
 import static sun.awt.shell.Win32ShellFolder2.NETWORK;
 import static sun.awt.shell.Win32ShellFolder2.PERSONAL;
 import static sun.awt.shell.Win32ShellFolder2.RECENT;
@@ -152,7 +152,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
 
             STANDARD_VIEW_BUTTONS[iconIndex] = (size == SMALL_ICON_SIZE)
                     ? img
-                    : new MultiResolutionIconImage(SMALL_ICON_SIZE, img);
+                    : new MultiResolutionImageWrapper(SMALL_ICON_SIZE, img);
         }
 
         return STANDARD_VIEW_BUTTONS[iconIndex];
