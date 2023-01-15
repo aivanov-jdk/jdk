@@ -1180,17 +1180,6 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getStandardView
     return result;
 }
 
-/*
- * Class:     sun_awt_shell_Win32ShellFolder2
- * Method:    getSystemIcon
- * Signature: (I)J
- */
-JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getSystemIcon
-    (JNIEnv* env, jclass cls, jint iconID)
-{
-    return (jlong)LoadIcon(NULL, MAKEINTRESOURCE(iconID));
-}
-
 
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2

@@ -1011,8 +1011,6 @@ final class Win32ShellFolder2 extends ShellFolder {
     // NOTE: this method uses COM and must be called on the 'COM thread'. See ComInvoker for the details
     private static native boolean hiResIconAvailable(long parentIShellFolder, long relativePIDL);
 
-    // Returns an icon from the Windows system icon list in the form of an HICON
-    private static native long getSystemIcon(int iconID);
     private static native long getIconResource(String libName, int iconID,
                                                int cxDesired, int cyDesired);
 
