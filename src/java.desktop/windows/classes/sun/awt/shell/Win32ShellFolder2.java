@@ -1541,15 +1541,11 @@ final class Win32ShellFolder2 extends ShellFolder {
             }
 
             private Image getIcon(int iconID, int size) {
-                System.out.println("> SystemIconImage.getIcon("
-                                   + libName + ", "
-                                   + iconID + ", " + size + ")");
                 long hIcon = getIconResource(libName,
                                              iconID,
                                              size, size);
                 Image icon = makeIcon(hIcon);
                 disposeIcon(hIcon);
-                System.out.println("< SystemIconImage.getIcon = " + icon);
                 return icon;
             }
         }
@@ -1558,32 +1554,25 @@ final class Win32ShellFolder2 extends ShellFolder {
         public final Image getResolutionVariant(double destImageWidth,
                                           double destImageHeight) {
             final int size = (int) destImageWidth;
-            System.out.println("> SystemIconImage.variant(" + size + " of "
-                               + baseSize + ")");
             if (size <= baseSize) {
-                System.out.println("< baseSize -> " + images[startIndex]);
                 return images[startIndex];
             }
+
             int index = IntStream.range(startIndex + 1, sizes.length)
                                  .filter(i -> size <= sizes[i])
                                  .findFirst()
                                  .orElse(sizes.length - 1);
-            System.out.println("  requested index = " + index);
-
             if (images[index] != null) {
-                System.out.println("< matchFound for " + index
-                                   + " -> " + images[index]);
                 return images[index];
             }
 
-            System.out.println("  getting new size (i = " + index + ")");
             Image image = lib.getIcon(iconID, sizes[index]);
             if (image != null) {
                 images[index] = image;
-                System.out.println("< new image returned ");
                 return image;
             }
-            System.out.println("< fall back first non-null or base");
+
+            // Return the nearest non-null image of smaller size
             return IntStream.rangeClosed(index - 1, startIndex)
                             .mapToObj(i -> images[i])
                             .filter(Objects::nonNull)
