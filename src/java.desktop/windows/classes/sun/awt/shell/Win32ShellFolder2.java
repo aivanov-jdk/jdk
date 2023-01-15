@@ -1486,7 +1486,9 @@ final class Win32ShellFolder2 extends ShellFolder {
         private Image getIcon(int size) {
             System.out.println("> SystemIconImage.getIcon("
                                + iconType + "(" + iconType.iconID + "), " + size + ")");
-            long hIcon = getSystemIcon(iconType.getIconID(), size);
+            long hIcon = getIconResource("user32.dll",
+                                         iconType.getIconID() - SystemIcon.IDI_APPLICATION.iconID + 100,
+                                         size, size);
             Image icon = makeIcon(hIcon);
             disposeIcon(hIcon);
             System.out.println("< SystemIconImage.getIcon = " + icon);
