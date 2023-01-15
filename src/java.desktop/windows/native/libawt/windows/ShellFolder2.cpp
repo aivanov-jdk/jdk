@@ -1241,12 +1241,14 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
     if (pLibName != NULL) {
         env->ReleaseStringUTFChars(libName, pLibName);
     }
+    HANDLE hIcon = NULL;
     if (libHandle != NULL) {
-        return ptr_to_jlong(LoadImage(libHandle, MAKEINTRESOURCE(iconID),
-                                      IMAGE_ICON, cxDesired, cyDesired,
-                                      0));
+        hIcon = LoadImage(libHandle, MAKEINTRESOURCE(iconID),
+                          IMAGE_ICON, cxDesired, cyDesired,
+                          0);
+        FreeLibrary(libHandle);
     }
-    return 0;
+    return ptr_to_jlong(hIcon);
 }
 
 
