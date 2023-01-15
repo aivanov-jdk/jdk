@@ -1552,7 +1552,7 @@ final class Win32ShellFolder2 extends ShellFolder {
 
         @Override
         public final Image getResolutionVariant(double destImageWidth,
-                                          double destImageHeight) {
+                                                double destImageHeight) {
             final int size = (int) destImageWidth;
             if (size <= baseSize) {
                 return images[startIndex];
