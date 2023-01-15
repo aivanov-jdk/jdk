@@ -1567,7 +1567,7 @@ final class Win32ShellFolder2 extends ShellFolder {
 
         private Image getIcon(int size) {
             System.out.println("> Shell32IconImage.getIcon("
-                               + iconID + size + ")");
+                               + iconID + ", " + size + ")");
             long hIcon = getIconResource("shell32.dll",
                                          iconID,
                                          size, size);
@@ -1580,14 +1580,15 @@ final class Win32ShellFolder2 extends ShellFolder {
         @Override
         public Image getResolutionVariant(double destImageWidth,
                                           double destImageHeight) {
-            int size = (int) destImageWidth;
-            System.out.println("> Shell32IconImage.variant(" + size + ")");
+            final int size = (int) destImageWidth;
+            System.out.println("> Shell32IconImage.variant(" + size + " of "
+                               + baseSize + ")");
             if (size <= baseSize) {
                 System.out.println("< baseSize -> " + images[startIndex]);
                 return images[startIndex];
             }
-            int index = IntStream.range(startIndex, sizes.length)
-                                 .filter(i -> baseSize <= sizes[i])
+            int index = IntStream.range(startIndex + 1, sizes.length)
+                                 .filter(i -> size <= sizes[i])
                                  .findFirst()
                                  .orElse(sizes.length - 1);
             System.out.println("  requestedSize = " + index);
@@ -1600,9 +1601,16 @@ final class Win32ShellFolder2 extends ShellFolder {
             } else {
                 System.out.println("  getting new size (i = " + index + ")");
                 Image image = getIcon(sizes[index]);
-                images[index] = image;
-                System.out.println("< new image returned ");
-                return image;
+                if (image != null) {
+                    images[index] = image;
+                    System.out.println("< new image returned ");
+                    return image;
+                }
+                return IntStream.rangeClosed(index - 1, startIndex)
+                                .mapToObj(i -> images[i])
+                                .filter(Objects::nonNull)
+                                .findFirst()
+                                .orElse(images[startIndex]);
             }
         }
 
