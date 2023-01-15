@@ -1195,14 +1195,14 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Gets an icon from the Windows system icon list as an {@code Image}
      */
     static Image getSystemIcon(SystemIcon iconType) {
-        return new MultiResolutionSystemIconImage(iconType);
+        return MultiResolutionSystemIconImage.getIcon(iconType);
     }
 
     /**
      * Gets an icon from the Windows system icon list as an {@code Image}
      */
     static Image getShell32Icon(int iconID, int size) {
-        return new MultiResolutionShell32IconImage(iconID, size);
+        return MultiResolutionSystemIconImage.getIcon(iconID, size);
     }
 
     /**
@@ -1384,8 +1384,7 @@ final class Win32ShellFolder2 extends ShellFolder {
             extends AbstractMultiResolutionImage
             permits MultiResolutionImageWrapper,
                     MultiResolutionIconImage,
-                    MultiResolutionSystemIconImage,
-                    MultiResolutionShell32IconImage {
+                    MultiResolutionSystemIconImage {
         protected final int baseSize;
 
         protected BaseMultiResolutionIconImage(int baseSize) {
@@ -1476,112 +1475,91 @@ final class Win32ShellFolder2 extends ShellFolder {
         }
     }
 
-    private static final class MultiResolutionSystemIconImage
-            extends BaseMultiResolutionIconImage {
-        private static final int[] sizes = {32, 48, 64, 128};
-        private final Image[] images = new Image[sizes.length];
-        private final SystemIcon iconType;
-
-        public MultiResolutionSystemIconImage(SystemIcon iconType) {
-            super(LARGE_ICON_SIZE);
-            this.iconType = iconType;
-            System.out.println("SystemIconImage: " + iconType + "(" + iconType.iconID + ")");
-            images[0] = getIcon(LARGE_ICON_SIZE);
-        }
-
-        private Image getIcon(int size) {
-            System.out.println("> SystemIconImage.getIcon("
-                               + iconType + "(" + iconType.iconID + "), " + size + ")");
-            long hIcon = getIconResource("user32.dll",
-                                         iconType.getIconID() - SystemIcon.IDI_APPLICATION.iconID + 100,
-                                         size, size);
-            Image icon = makeIcon(hIcon);
-            disposeIcon(hIcon);
-            System.out.println("< SystemIconImage.getIcon = " + icon);
-            return icon;
-        }
-
-        @Override
-        public Image getResolutionVariant(double destImageWidth,
-                                          double destImageHeight) {
-            int size = (int) destImageWidth;
-            System.out.println("> SystemIconImage.variant(" + size + ")");
-            if (size <= baseSize) {
-                System.out.println("< baseSize -> " + images[0]);
-                return images[0];
-            }
-            int index = -1;
-            if (size >= sizes[sizes.length - 1]) {
-                index = sizes.length - 1;
-            } else {
-                for (int i = 1; i < sizes.length; i++) {
-                    if (size <= sizes[i]) {
-                        index = i;
-                        break;
-                    }
-                }
-            }
-            System.out.println("  requestedSize = " + index);
-            assert index > 0 : "Invalid requestedSize: " + index;
-
-            if (images[index] != null) {
-                System.out.println("< matchFound for " + index
-                                   + " -> " + images[index]);
-                return images[index];
-            } else {
-                System.out.println("  getting new size (i = " + index + ")");
-                Image image = getIcon(sizes[index]);
-                images[index] = image;
-                System.out.println("< new image returned ");
-                return image;
-            }
-        }
-
-        @Override
-        public List<Image> getResolutionVariants() {
-            return Arrays.stream(images)
-                         .filter(Objects::nonNull)
-                         .toList();
-        }
-    }
-
-    private static final class MultiResolutionShell32IconImage
-            extends BaseMultiResolutionIconImage {
-        private static final int[] sizes = ICON_RESOLUTIONS;
-        private final Image[] images = new Image[sizes.length];
-        private final int iconID;
+    private static abstract sealed class MultiResolutionSystemIconImage
+            extends BaseMultiResolutionIconImage
+            permits MultiResolutionUser32IconImage,
+                    MultiResolutionShell32IconImage {
+        private final int[] sizes;
+        private final Image[] images;
 
         private final int startIndex;
 
-        public MultiResolutionShell32IconImage(int iconID, int baseSize) {
+        private final int iconID;
+
+        private final Lib lib;
+
+        protected MultiResolutionSystemIconImage(Lib lib, int[] sizes,
+                                                 int iconID, int baseSize,
+                                                 int startIndex,
+                                                 Image baseImage) {
             super(baseSize);
-            startIndex = IntStream.range(0, sizes.length)
-                                  .filter(i -> baseSize <= sizes[i])
-                                  .findFirst()
-                                  .orElse(sizes.length - 1);
+            this.lib = lib;
+            this.sizes = sizes;
+            this.images = new Image[sizes.length];
+            this.startIndex = startIndex;
             this.iconID = iconID;
-            System.out.println("Shell32IconImage: " + iconID + ", " + baseSize + ", " + startIndex);
-            images[startIndex] = getIcon(baseSize);
+            System.out.println("MultiResolutionSystemIconImage: " + lib + ", " + iconID + ", " + baseSize + ", " + startIndex);
+            images[startIndex] = baseImage;
             assert images[startIndex] != null : "Base image is null";
         }
 
-        private Image getIcon(int size) {
-            System.out.println("> Shell32IconImage.getIcon("
-                               + iconID + ", " + size + ")");
-            long hIcon = getIconResource("shell32.dll",
-                                         iconID,
-                                         size, size);
-            Image icon = makeIcon(hIcon);
-            disposeIcon(hIcon);
-            System.out.println("< Shell32IconImage.getIcon = " + icon);
-            return icon;
+        public MultiResolutionSystemIconImage(Lib lib, int[] sizes,
+                                              int iconID, int baseSize,
+                                              Image baseImage) {
+            this(lib, sizes,
+                 iconID, baseSize,
+                 IntStream.range(0, sizes.length)
+                          .filter(i -> baseSize <= sizes[i])
+                          .findFirst()
+                          .orElse(sizes.length - 1),
+                 baseImage);
+        }
+
+        public static Image getIcon(int iconID, int size) {
+            Image icon = Lib.SHELL32.getIcon(iconID, size);
+            if (icon != null) {
+                return new MultiResolutionShell32IconImage(iconID, size, icon);
+            }
+            return null;
+        }
+
+        public static Image getIcon(SystemIcon iconType) {
+            final int iconID = MultiResolutionUser32IconImage.getIconID(iconType);
+            Image icon = Lib.USER32.getIcon(iconID, LARGE_ICON_SIZE);
+            if (icon != null) {
+                return new MultiResolutionUser32IconImage(iconID, icon);
+            }
+            return null;
+        }
+
+        public enum Lib {
+            USER32("user32.dll"), SHELL32("shell32.dll");
+
+            public final String libName;
+
+            Lib(String libName) {
+                this.libName = libName;
+            }
+
+            private Image getIcon(int iconID, int size) {
+                System.out.println("> SystemIconImage.getIcon("
+                                   + libName + ", "
+                                   + iconID + ", " + size + ")");
+                long hIcon = getIconResource(libName,
+                                             iconID,
+                                             size, size);
+                Image icon = makeIcon(hIcon);
+                disposeIcon(hIcon);
+                System.out.println("< SystemIconImage.getIcon = " + icon);
+                return icon;
+            }
         }
 
         @Override
-        public Image getResolutionVariant(double destImageWidth,
+        public final Image getResolutionVariant(double destImageWidth,
                                           double destImageHeight) {
             final int size = (int) destImageWidth;
-            System.out.println("> Shell32IconImage.variant(" + size + " of "
+            System.out.println("> SystemIconImage.variant(" + size + " of "
                                + baseSize + ")");
             if (size <= baseSize) {
                 System.out.println("< baseSize -> " + images[startIndex]);
@@ -1591,34 +1569,61 @@ final class Win32ShellFolder2 extends ShellFolder {
                                  .filter(i -> size <= sizes[i])
                                  .findFirst()
                                  .orElse(sizes.length - 1);
-            System.out.println("  requestedSize = " + index);
-            assert index > 0 : "Invalid requestedSize: " + index;
+            System.out.println("  requested index = " + index);
 
             if (images[index] != null) {
                 System.out.println("< matchFound for " + index
                                    + " -> " + images[index]);
                 return images[index];
-            } else {
-                System.out.println("  getting new size (i = " + index + ")");
-                Image image = getIcon(sizes[index]);
-                if (image != null) {
-                    images[index] = image;
-                    System.out.println("< new image returned ");
-                    return image;
-                }
-                return IntStream.rangeClosed(index - 1, startIndex)
-                                .mapToObj(i -> images[i])
-                                .filter(Objects::nonNull)
-                                .findFirst()
-                                .orElse(images[startIndex]);
             }
+
+            System.out.println("  getting new size (i = " + index + ")");
+            Image image = lib.getIcon(iconID, sizes[index]);
+            if (image != null) {
+                images[index] = image;
+                System.out.println("< new image returned ");
+                return image;
+            }
+            System.out.println("< fall back first non-null or base");
+            return IntStream.rangeClosed(index - 1, startIndex)
+                            .mapToObj(i -> images[i])
+                            .filter(Objects::nonNull)
+                            .findFirst()
+                            .orElse(images[startIndex]);
         }
 
         @Override
-        public List<Image> getResolutionVariants() {
+        public final List<Image> getResolutionVariants() {
             return Arrays.stream(images, startIndex, images.length)
                          .filter(Objects::nonNull)
                          .toList();
+        }
+    }
+
+    private static final class MultiResolutionUser32IconImage
+            extends MultiResolutionSystemIconImage {
+        private static final int[] SIZES = {32, 48, 64, 128};
+
+        private MultiResolutionUser32IconImage(int iconID, Image baseImage) {
+            super(Lib.USER32, SIZES,
+                  iconID, LARGE_ICON_SIZE,
+                  0,
+                  baseImage);
+        }
+
+        private static int getIconID(SystemIcon iconType) {
+            return iconType.getIconID() - SystemIcon.IDI_APPLICATION.iconID + 100;
+        }
+    }
+
+    private static final class MultiResolutionShell32IconImage
+            extends MultiResolutionSystemIconImage {
+
+        private MultiResolutionShell32IconImage(int iconID, int baseSize,
+                                               Image baseImage) {
+            super(Lib.SHELL32, ICON_RESOLUTIONS,
+                  iconID, baseSize,
+                  baseImage);
         }
     }
 }
