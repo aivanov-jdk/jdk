@@ -50,8 +50,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.event.PopupMenuEvent;
 
-// TODO remove the second asterisk so that IDEA doesn't complain about jtreg tags
-// TODO not being valid javadoc tags
 /*
  * @test
  * @bug 4245587 4474813 4425878 4767478 8015599
@@ -78,7 +76,6 @@ public class TaskbarPositionTest implements ActionListener {
     // The usable desktop space: screen size - screen insets.
     private static Rectangle screenBounds;
 
-    // TODO Add final modifier to numData, dayData, mnDayData
     private static final String[] numData = {
         "One", "Two", "Three", "Four", "Five", "Six", "Seven"
     };
@@ -119,8 +116,9 @@ public class TaskbarPositionTest implements ActionListener {
         }
 
         // Place the frame near the bottom.
-        // TODO x parameter should be screenBounds.x
-        frame.setLocation(screenBounds.x, screenBounds.y + screenBounds.height - frame.getHeight());
+        frame.setLocation(screenBounds.x,
+                          screenBounds.y + screenBounds.height
+                          - frame.getHeight());
         frame.setVisible(true);
     }
 
@@ -133,18 +131,20 @@ public class TaskbarPositionTest implements ActionListener {
         }
 
         public void popupMenuWillBecomeInvisible(PopupMenuEvent ev) {
-            // TODO Add generics <?> to avoid the warning
-            JComboBox combo = (JComboBox)ev.getSource();
+            JComboBox<?> combo = (JComboBox<?>)ev.getSource();
             if (combo != null) {
+                // TODO Replace with getLocationOnScreen
                 Point cpos = combo.getLocation();
                 SwingUtilities.convertPointToScreen(cpos, panel);
 
                 JPopupMenu pm = (JPopupMenu) combo.getUI().getAccessibleChild(combo, 0);
 
                 if (pm != null) {
+                    // TODO Replace with getLocationOnScreen
                     Point p = pm.getLocation();
                     SwingUtilities.convertPointToScreen(p, pm);
 
+                    // TODO No tabs in Java! Never ever
 				   boolean isPopupOutOfScreen = (p.x < 0 || p.y < 0) ? true : false ;//Popup should be within screen
 				   boolean isComboOutOfScreen = (cpos.x < 0)? true : false;//When Frame moved to -ve postion popup should be moved.
                    if(isPopupOutOfScreen || (isComboOutOfScreen &&  p.y+1 < cpos.y )) {
@@ -157,8 +157,6 @@ public class TaskbarPositionTest implements ActionListener {
     }
 
     // TODO Resolve the warnings for PopupHandler and PopupListener
-
-    // TODO I suggest adding @Override annotations to the overridden methods
 
     private class PopupHandler extends AbstractAction {
 
@@ -179,11 +177,13 @@ public class TaskbarPositionTest implements ActionListener {
             this.popup = popup;
         }
 
-        @Override public void mousePressed(MouseEvent e) {
+        @Override
+        public void mousePressed(MouseEvent e) {
             maybeShowPopup(e);
         }
 
-        @Override public void mouseReleased(MouseEvent e) {
+        @Override
+        public void mouseReleased(MouseEvent e) {
             maybeShowPopup(e);
         }
 
@@ -199,12 +199,14 @@ public class TaskbarPositionTest implements ActionListener {
      * Tests if the popup is on the screen.
      */
     public static void isPopupOnScreen(JPopupMenu popup, Rectangle checkBounds) {
+        // TODO Simplify getting bounds with using popup.getLocationOnScreen()
         Dimension dim = popup.getSize();
         Point pt = new Point();
         SwingUtilities.convertPointToScreen(pt, popup);
         Rectangle bounds = new Rectangle(pt, dim);
 
         if (!SwingUtilities.isRectangleContainingRectangle(checkBounds, bounds)) {
+            // TODO Make the error message clearer
             throw new RuntimeException("We do not match! " + checkBounds + " / " + bounds);
         }
 
@@ -241,13 +243,14 @@ public class TaskbarPositionTest implements ActionListener {
     }
 
     private JMenuBar createMenuBar() {
-        // TODO str and bFlag have the only value, remove the parameters, use the values directly
+        // TODO Convert menubar to local variable
         menubar = new JMenuBar();
 
         menu1 = new JMenu("1 - First Menu");
         menu1.setMnemonic('1');
 
         menubar.add(menu1);
+        // TODO Refactor these loops into a helper method
         for (int i = 0; i < 8; i++) {
             JMenuItem menuitem = new JMenuItem("1 JMenuItem" + i);
             menu1.add(menuitem);
@@ -266,6 +269,8 @@ public class TaskbarPositionTest implements ActionListener {
         for (int i = 0; i < 5; i++) {
             JMenuItem menuitem = new JMenuItem("S JMenuItem" + i);
             submenu.add(menuitem);
+            // TODO Here action listener is required
+            menuitem.addActionListener(this);
         }
         menu2.add(new JSeparator());
         menu2.add(submenu);
@@ -285,6 +290,7 @@ public class TaskbarPositionTest implements ActionListener {
 
         try {
             // Use Robot to automate the test
+            // TODO Combine robot declaration and initialisation
             Robot robot;
             robot = new Robot();
             robot.setAutoDelay(50);
@@ -328,6 +334,9 @@ public class TaskbarPositionTest implements ActionListener {
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
 
+            // TODO No tabs in Java! Never ever
+            // TODO isPopupVisible() must be called on EDT
+            // TODO Ensure the popup is within screenBounds
 			if(!combo1.isPopupVisible())
 			{
 				throw new RuntimeException("ComboBox1 popup not visible");
@@ -367,6 +376,11 @@ public class TaskbarPositionTest implements ActionListener {
             hidePopup(robot);
 
             // Popup from a mouse click
+            // TODO panel should be accessed only on EDT
+            // TODO Use panel.getLocationOnScreen() to initialise the Point
+            //      object. Use point.translate(4, 4) to move it a bit.
+            //      And return back from EDT to main method.
+            //      You may want to use AtomicReference<Point> for this.
             Point pt = new Point(4, 4);
             SwingUtilities.convertPointToScreen(pt, panel);
             robot.mouseMove(pt.x, pt.y);
