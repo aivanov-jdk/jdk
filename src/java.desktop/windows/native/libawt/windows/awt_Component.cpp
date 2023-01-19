@@ -7417,6 +7417,8 @@ void DCList::AddDC(HDC hDC, HWND hWnd)
     DCItem *newItem = new DCItem;
     newItem->hDC = hDC;
     newItem->hWnd = hWnd;
+    J2dTraceLn2(J2D_TRACE_VERBOSE, "  AddDC    (hdc=0x%08x, hwnd=0x%08x",
+                hDC, hWnd);
     AddDCItem(newItem);
 }
 
@@ -7513,6 +7515,8 @@ void DCList::RealizePalettes(int screen)
 }
 
 void MoveDCToPassiveList(HDC hDC, HWND hWnd) {
+    J2dTraceLn2(J2D_TRACE_VERBOSE, "  MoveDC   (hdc=0x%08x, hwnd=0x%08x",
+                hDC, hWnd);
     DCItem *removedDC;
     if ((removedDC = activeDCList.RemoveDC(hDC, hWnd)) != NULL) {
         passiveDCList.AddDCItem(removedDC);
@@ -7524,6 +7528,8 @@ static void ReleaseDCList(DCItem *removedDCs) {
         DCItem *tmpDCList = removedDCs;
         DASSERT(::GetObjectType(tmpDCList->hDC) == OBJ_DC);
         int retValue = ::ReleaseDC(tmpDCList->hWnd, tmpDCList->hDC);
+        J2dTraceLn2(J2D_TRACE_VERBOSE, "  ReleaseDC(hdc=0x%08x, hwnd=0x%08x",
+                    tmpDCList->hDC, tmpDCList->hWnd);
         VERIFY(retValue != 0);
         if (retValue != 0) {
             // Valid ReleaseDC call; need to decrement GDI object counter

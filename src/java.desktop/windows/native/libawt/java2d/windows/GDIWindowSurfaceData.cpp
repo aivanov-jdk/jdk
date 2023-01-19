@@ -114,6 +114,8 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
         // which may've been disposed by this time, and we have
         // no means of checking against it.
         if (oldhDC != NULL) {
+            J2dTraceLn2(J2D_TRACE_VERBOSE, "  toPassive(hdc=0x%08x, hwnd=0x%08x",
+                        info->hDC, info->hWnd);
             MoveDCToPassiveList(oldhDC, info->hWnd);
             info->hDC = NULL;
             info->hWnd = NULL;
@@ -126,10 +128,12 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
             AwtComponent *comp = GDIWindowSurfaceData_GetComp(env, wsdo);
             if (comp == NULL) {
                 // wsdo->invalid is set by GDIWindowSurfaceData_GetComp
+                J2dTraceLn(J2D_TRACE_VERBOSE2, "  comp == NULL");
                 return;
             }
             hDC = comp->GetDCFromComponent();
             if (hDC == NULL) {
+                J2dTraceLn(J2D_TRACE_VERBOSE2, "  hDC == NULL -> wsdo->invalid = JNI_TRUE");
                 wsdo->invalid = JNI_TRUE;
                 return;
             }
@@ -152,11 +156,20 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
                 ::OffsetRect(&info->bounds, wsdo->insets.left, wsdo->insets.top);
                 //Likewise, translate GDI calls from client-relative to window-relative
                 ::OffsetViewportOrgEx(hDC, -wsdo->insets.left, -wsdo->insets.top, NULL);
+                J2dTraceLn5(J2D_TRACE_VERBOSE2, "  wsdo->window=0x%08x, info->bounds=(%d, %d, %d, %d)",
+                            wsdo->window,
+                            info->bounds.left, info->bounds.top,
+                            info->bounds.right, info->bounds.bottom);
+                J2dTraceLn4(J2D_TRACE_VERBOSE2, "                           wsdo->insets=(%d, %d, %d, %d)",
+                            wsdo->insets.left, wsdo->insets.top,
+                            wsdo->insets.right, wsdo->insets.bottom);
             }
 
             // Finally, set these new values in the info for this thread
             info->hDC = hDC;
             info->hWnd = wsdo->window;
+            J2dTraceLn2(J2D_TRACE_VERBOSE, "  hdc=0x%08x, hwnd=0x%08x",
+                        info->hDC, info->hWnd);
         }
 
         // cached brush and pen are not associated with any DC, and can be
