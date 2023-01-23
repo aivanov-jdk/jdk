@@ -1029,13 +1029,13 @@ static HDC GDIWinSD_GetDC(JNIEnv *env, GDIWinSDOps *wsdo,
 
     ThreadGraphicsInfo *info = GetThreadGraphicsInfo(env, wsdo);
     J2dTraceLn4(J2D_TRACE_VERBOSE,
-                    "  > wsdo=0x%p wsdo->window=0x%p info->hDC=0x%p info->hWnd=0x%p",
+                    "  > wsdo=0x%08x wsdo->window=0x%08x info->hDC=0x%08x info->hWnd=0x%08x",
                     wsdo, wsdo->window, info->hDC, info->hWnd);
 
     GDIWinSD_InitDC(env, wsdo, info, type, patrop, clip, comp, color);
 
     J2dTraceLn4(J2D_TRACE_VERBOSE,
-                    "  < wsdo=0x%p wsdo->window=0x%p info->hDC=0x%p info->hWnd=0x%p",
+                    "  < wsdo=0x%08x wsdo->window=0x%08x info->hDC=0x%08x info->hWnd=0x%08x",
                     wsdo, wsdo->window, info->hDC, info->hWnd);
     return env->ExceptionCheck() ? (HDC)NULL : info->hDC;
 }
