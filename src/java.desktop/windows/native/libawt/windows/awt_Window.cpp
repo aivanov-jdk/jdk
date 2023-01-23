@@ -1918,7 +1918,11 @@ MsgRouting AwtWindow::WmSize(UINT type, int w, int h)
 
 MsgRouting AwtWindow::WmPaint(HDC)
 {
+    printf("> AwtWindow::WmPaint\n");
+    fflush(stdout);
     PaintUpdateRgn(&m_insets);
+    printf("< AwtWindow::WmPaint\n");
+    fflush(stdout);
     return mrConsume;
 }
 

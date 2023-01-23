@@ -27,6 +27,7 @@
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsConfig.h"
 #include "awt_Window.h"
+#include <stdio.h>
 
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
  */
@@ -189,7 +190,11 @@ MsgRouting AwtCanvas::WmEraseBkgnd(HDC hDC, BOOL& didErase)
  */
 MsgRouting AwtCanvas::WmPaint(HDC)
 {
+    printf("> AwtCanvas::WmPaint\n");
+    fflush(stdout);
     PaintUpdateRgn(NULL);
+    printf("< AwtCanvas::WmPaint\n");
+    fflush(stdout);
     return mrConsume;
 }
 

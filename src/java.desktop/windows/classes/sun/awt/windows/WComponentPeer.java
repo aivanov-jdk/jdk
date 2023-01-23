@@ -891,6 +891,7 @@ public abstract class WComponentPeer extends WObjectPeer
             PaintEvent event = PaintEventDispatcher.getPaintEventDispatcher().
                 createPaintEvent((Component)target, x, y, w, h);
             if (event != null) {
+                System.out.println("  postPaintIfNecessary -> postEvent: " + event);
                 postEvent(event);
             }
         }
