@@ -49,6 +49,8 @@
 #include "ComCtl32Util.h"
 #include "math.h"
 
+#include "Trace.h"
+
 #include <Region.h>
 
 #include <jawt.h>
@@ -1376,6 +1378,9 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       {
             HDC hDC;
             // First, release the DCs scheduled for deletion
+            J2dTraceLn1(J2D_TRACE_VERBOSE,
+                        "> WM_AWT_GETDC                hWnd=0x%08x",
+                        GetHWnd());
             ReleaseDCList(passiveDCList);
 
             GetDCReturnStruct *returnStruct = new GetDCReturnStruct;
@@ -1397,14 +1402,22 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             }
             returnStruct->hDC = hDC;
             retValue = (LRESULT)returnStruct;
+            J2dTraceLn2(J2D_TRACE_VERBOSE,
+                        "< WM_AWT_GETDC hDC=0x%08x hWnd=0x%08x",
+                        hDC, GetHWnd());
             mr = mrConsume;
             break;
       }
       case WM_AWT_RELEASEDC:
       {
             HDC hDC = (HDC)wParam;
+            J2dTraceLn2(J2D_TRACE_VERBOSE,
+                        "> WM_AWT_RELEASEDC hDC=0x%08x hWnd=0x%08x",
+                        hDC, GetHWnd());
             MoveDCToPassiveList(hDC, GetHWnd());
             ReleaseDCList(passiveDCList);
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                        "< WM_AWT_RELEASEDC");
             mr = mrConsume;
             break;
       }
@@ -1412,8 +1425,13 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       {
             // Called during Component destruction.  Gets current list of
             // DC's associated with Component and releases each DC.
+            J2dTraceLn1(J2D_TRACE_VERBOSE,
+                        "> WM_AWT_RELEASE_ALL_DCS hWnd=0x%08x",
+                        GetHWnd());
             ReleaseDCList(GetHWnd(), activeDCList);
             ReleaseDCList(passiveDCList);
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                        "< WM_AWT_RELEASE_ALL_DCS");
             mr = mrConsume;
             break;
       }
@@ -1434,11 +1452,9 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           CheckFontSmoothingSettings(GetHWnd());
           /* Set draw state */
           SetDrawState(GetDrawState() | JAWT_LOCK_CLIP_CHANGED);
-          printf("> WM_PAINT\n");
-          fflush(stdout);
+          J2dTraceLn1(J2D_TRACE_VERBOSE, "> WM_PAINT (wParam=0x%08x)", wParam);
           mr = WmPaint((HDC)wParam);
-          printf("< WM_PAINT\n");
-          fflush(stdout);
+          J2dTraceLn(J2D_TRACE_VERBOSE, "< WM_PAINT");
           break;
 
       case WM_GETMINMAXINFO:

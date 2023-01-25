@@ -1021,6 +1021,7 @@ static HDC GDIWinSD_GetDC(JNIEnv *env, GDIWinSDOps *wsdo,
     J2dTraceLn(J2D_TRACE_INFO, "GDIWinSD_GetDC");
 
     if (wsdo->invalid == JNI_TRUE) {
+        J2dTraceLn(J2D_TRACE_WARNING, "  wsdo->invalid !");
         if (beingShutdown != JNI_TRUE) {
             SurfaceData_ThrowInvalidPipeException(env, "bounds changed");
         }

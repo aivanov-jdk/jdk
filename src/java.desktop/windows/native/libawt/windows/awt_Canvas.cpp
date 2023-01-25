@@ -27,7 +27,7 @@
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsConfig.h"
 #include "awt_Window.h"
-#include <stdio.h>
+#include <Trace.h>
 
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
  */
@@ -177,7 +177,11 @@ MsgRouting AwtCanvas::WmEraseBkgnd(HDC hDC, BOOL& didErase)
         (m_eraseBackgroundOnResize && AwtWindow::IsResizing()))
     {
        RECT     rc;
+
        ::GetClipBox(hDC, &rc);
+       J2dTraceLn5(J2D_TRACE_VERBOSE,
+                   "Canvas::WmEraseBkgnd hDC=0x%08x rc=(%d, %d, %d, %d)",
+                   hDC, rc.left, rc.top, rc.right, rc.bottom);
        ::FillRect(hDC, &rc, this->GetBackgroundBrush());
     }
 
@@ -190,11 +194,9 @@ MsgRouting AwtCanvas::WmEraseBkgnd(HDC hDC, BOOL& didErase)
  */
 MsgRouting AwtCanvas::WmPaint(HDC)
 {
-    printf("> AwtCanvas::WmPaint\n");
-    fflush(stdout);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "> AwtCanvas::WmPaint");
     PaintUpdateRgn(NULL);
-    printf("< AwtCanvas::WmPaint\n");
-    fflush(stdout);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "< AwtCanvas::WmPaint");
     return mrConsume;
 }
 
