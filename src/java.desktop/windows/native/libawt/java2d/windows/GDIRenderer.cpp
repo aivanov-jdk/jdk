@@ -451,8 +451,8 @@ Java_sun_java2d_windows_GDIRenderer_doFillRect
         return;
     }
     J2dTraceLn4(J2D_TRACE_VERBOSE,
-                    "  wsdo=0x%08x hdc=0x%08x window=0x%08x",
-                    wsdo, hdc, wsdo->window, wsdo->bmdc);
+                    "  wsdo=0x%08x hdc=0x%08x window=0x%08x wnd=0x%08x",
+                    wsdo, hdc, wsdo->window, ::WindowFromDC(hdc));
     ::PatBlt(hdc, x, y, w, h, patrop);
     wsdo->ReleaseDC(env, wsdo, hdc);
 }
