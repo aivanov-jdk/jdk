@@ -1452,9 +1452,11 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           CheckFontSmoothingSettings(GetHWnd());
           /* Set draw state */
           SetDrawState(GetDrawState() | JAWT_LOCK_CLIP_CHANGED);
-          J2dTraceLn1(J2D_TRACE_VERBOSE, "> WM_PAINT (wParam=0x%08x)", wParam);
+          J2dTraceLn2(J2D_TRACE_VERBOSE, "> WM_PAINT hWnd=0x%08x (wParam=0x%08x)",
+                      GetHWnd(), wParam);
           mr = WmPaint((HDC)wParam);
-          J2dTraceLn(J2D_TRACE_VERBOSE, "< WM_PAINT");
+          J2dTraceLn1(J2D_TRACE_VERBOSE, "< WM_PAINT hWnd=0x%08x",
+                      GetHWnd());
           break;
 
       case WM_GETMINMAXINFO:
