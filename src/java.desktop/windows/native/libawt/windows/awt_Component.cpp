@@ -2165,6 +2165,10 @@ MsgRouting AwtComponent::WmCtlColor(HDC hDC, HWND hCtrl,
 
 MsgRouting AwtComponent::WmHScroll(UINT scrollCode, UINT pos,
                                    HWND hScrollbar) {
+   J2dTraceLn4(J2D_TRACE_VERBOSE,
+               "AwtComp::WmHScroll hWnd=0x%08x scrollCode=0x%08x pos=%u hScrollbar=0x%08x",
+               GetHWnd(), scrollCode, pos, hScrollbar);
+
     if (hScrollbar && hScrollbar != GetHWnd()) {
         /* the last test should never happen */
         AwtComponent* sb = GetComponent(hScrollbar);
@@ -2177,6 +2181,10 @@ MsgRouting AwtComponent::WmHScroll(UINT scrollCode, UINT pos,
 
 MsgRouting AwtComponent::WmVScroll(UINT scrollCode, UINT pos, HWND hScrollbar)
 {
+   J2dTraceLn4(J2D_TRACE_VERBOSE,
+               "AwtComp::WmVScroll hWnd=0x%08x scrollCode=0x%08x pos=%u hScrollbar=0x%08x",
+               GetHWnd(), scrollCode, pos, hScrollbar);
+
     if (hScrollbar && hScrollbar != GetHWnd()) {
         /* the last test should never happen */
         AwtComponent* sb = GetComponent(hScrollbar);

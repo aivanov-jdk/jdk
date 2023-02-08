@@ -370,6 +370,9 @@ AwtScrollPane::WmNcHitTest(UINT x, UINT y, LRESULT& retVal)
 
 MsgRouting AwtScrollPane::WmVScroll(UINT scrollCode, UINT pos, HWND hScrollPane)
 {
+    J2dTraceLn4(J2D_TRACE_VERBOSE,
+                "AwtScrollPane::WmVScroll hWnd=0x%08x scrollCode=0x%08x pos=%u hScrollPane=0x%08x",
+                GetHWnd(), scrollCode, pos, hScrollPane);
     // While user scrolls using tracker, SCROLLINFO.nPos is not changed, SCROLLINFO.nTrackPos is changed instead.
     int dragP = scrollCode == SB_THUMBPOSITION || scrollCode == SB_THUMBTRACK;
     int newPos = GetScrollPos(SB_VERT);
@@ -380,13 +383,25 @@ MsgRouting AwtScrollPane::WmVScroll(UINT scrollCode, UINT pos, HWND hScrollPane)
         si.fMask = SIF_TRACKPOS;
         ::GetScrollInfo(GetHWnd(), SB_VERT, &si);
         newPos = si.nTrackPos;
+        J2dTraceLn1(J2D_TRACE_VERBOSE,
+                   "     dragP -> newPos=%d",
+                   newPos);
+    } else {
+        J2dTraceLn1(J2D_TRACE_VERBOSE,
+                   "    !dragP -> newPos=%d",
+                   newPos);
     }
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "    PostScrollEvent(SB_VERT");
     PostScrollEvent(SB_VERT, scrollCode, newPos);
     return mrConsume;
 }
 
 MsgRouting AwtScrollPane::WmHScroll(UINT scrollCode, UINT pos, HWND hScrollPane)
 {
+    J2dTraceLn4(J2D_TRACE_VERBOSE,
+                "AwtScrollPane::WmHScroll hWnd=0x%08x scrollCode=0x%08x pos=%u hScrollPane=0x%08x",
+                GetHWnd(), scrollCode, pos, hScrollPane);
     // While user scrolls using tracker, SCROLLINFO.nPos is not changed, SCROLLINFO.nTrackPos is changed instead.
     int dragP = scrollCode == SB_THUMBPOSITION || scrollCode == SB_THUMBTRACK;
     int newPos = GetScrollPos(SB_HORZ);
@@ -397,7 +412,16 @@ MsgRouting AwtScrollPane::WmHScroll(UINT scrollCode, UINT pos, HWND hScrollPane)
         si.fMask = SIF_TRACKPOS;
         ::GetScrollInfo(GetHWnd(), SB_HORZ, &si);
         newPos = si.nTrackPos;
+        J2dTraceLn1(J2D_TRACE_VERBOSE,
+                   "     dragP -> newPos=%d",
+                   newPos);
+    } else {
+        J2dTraceLn1(J2D_TRACE_VERBOSE,
+                   "    !dragP -> newPos=%d",
+                   newPos);
     }
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "    PostScrollEvent(SB_HORZ...");
     PostScrollEvent(SB_HORZ, scrollCode, newPos);
     return mrConsume;
 }

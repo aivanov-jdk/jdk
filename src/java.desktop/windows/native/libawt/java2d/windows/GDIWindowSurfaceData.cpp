@@ -1050,6 +1050,8 @@ GDIWinSD_InitDC(JNIEnv *env, GDIWinSDOps *wsdo, ThreadGraphicsInfo *info,
 
     // init clip
     if (clip == NULL) {
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "  clip == NULL");
         if (info->type & CLIP) {
             ::SelectClipRgn(info->hDC, (HRGN) NULL);
             info->type ^= CLIP;
@@ -1059,6 +1061,8 @@ GDIWinSD_InitDC(JNIEnv *env, GDIWinSDOps *wsdo, ThreadGraphicsInfo *info,
             info->clip = NULL;
         }
     } else if (!env->IsSameObject(clip, info->clip)) {
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "  !IsSameObject(clip, info->clip))");
         SurfaceDataBounds span;
         RegionData clipInfo;
         if (Region_GetInfo(env, clip, &clipInfo)) {
@@ -1070,7 +1074,11 @@ GDIWinSD_InitDC(JNIEnv *env, GDIWinSDOps *wsdo, ThreadGraphicsInfo *info,
             ::SelectClipRgn(info->hDC, hrgn);
             ::DeleteObject(hrgn);
             info->type |= CLIP;
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  Region_IsEmpty");
         } else if (Region_IsRectangular(&clipInfo)) {
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  Region_IsRectangular");
             if (clipInfo.bounds.x1 <= info->bounds.left &&
                 clipInfo.bounds.y1 <= info->bounds.top &&
                 clipInfo.bounds.x2 >= info->bounds.right &&
@@ -1088,6 +1096,12 @@ GDIWinSD_InitDC(JNIEnv *env, GDIWinSDOps *wsdo, ThreadGraphicsInfo *info,
                                     clipInfo.bounds.y1 - wsdo->insets.top,
                                     clipInfo.bounds.x2 - wsdo->insets.left,
                                     clipInfo.bounds.y2 - wsdo->insets.top);
+                J2dTraceLn4(J2D_TRACE_VERBOSE,
+                           "  CreateRectRgn(%d, %d, %d, %d)",
+                           clipInfo.bounds.x1 - wsdo->insets.left,
+                           clipInfo.bounds.y1 - wsdo->insets.top,
+                           clipInfo.bounds.x2 - wsdo->insets.left,
+                           clipInfo.bounds.y2 - wsdo->insets.top);
                 ::SelectClipRgn(info->hDC, hrgn);
                 ::DeleteObject(hrgn);
                 info->type |= CLIP;
@@ -1120,6 +1134,12 @@ GDIWinSD_InitDC(JNIEnv *env, GDIWinSDOps *wsdo, ThreadGraphicsInfo *info,
                 pRect->top = span.y1 - topInset;
                 pRect->right = span.x2 - leftInset;
                 pRect->bottom = span.y2 - topInset;
+                J2dTraceLn4(J2D_TRACE_VERBOSE,
+                           "  Region_NextIteration(%d, %d, %d, %d)",
+                           pRect->left,
+                           pRect->top,
+                           pRect->right,
+                           pRect->bottom);
                 pRect++;
             }
             Region_EndIteration(env, &clipInfo);

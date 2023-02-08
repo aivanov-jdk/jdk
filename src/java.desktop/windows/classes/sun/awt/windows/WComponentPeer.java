@@ -243,7 +243,9 @@ public abstract class WComponentPeer extends WObjectPeer
         // for coalescing
         SunToolkit.flushPendingEvents();
         // paint the damaged area
+        System.out.println("> paintDamagedAreaImmediately");
         paintArea.paint(target, shouldClearRectBeforePaint());
+        System.out.println("< paintDamagedAreaImmediately");
     }
 
     synchronized native void updateWindow();

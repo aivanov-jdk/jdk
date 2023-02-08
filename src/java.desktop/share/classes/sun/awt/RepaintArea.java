@@ -232,12 +232,16 @@ public class RepaintArea {
                             updateComponent(comp, g);
                         } else {
                             if (shouldClearRectBeforePaint) {
+                                System.out.println("> > RepaintArea.clearRect(" + ra.paintRects[i] + ")");
                                 g.clearRect( ra.paintRects[i].x,
                                              ra.paintRects[i].y,
                                              ra.paintRects[i].width,
                                              ra.paintRects[i].height);
+                                System.out.println("< < RepaintArea.clearRect");
                             }
+                            System.out.println("> > paintComponent(" + comp.getClass().getName() + ")");
                             paintComponent(comp, g);
+                            System.out.println("< < paintComponent(" + comp.getClass().getName() + ")");
                         }
                     } finally {
                         g.dispose();

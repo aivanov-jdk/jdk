@@ -152,8 +152,11 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
     private void postScrollEvent(int orient, int type,
                                  int pos, boolean isAdjusting)
     {
+        System.out.println("> WScrollPanePeer.postScrollEvent(" + orient + ", "
+                           + type + ", " + pos + ", " + isAdjusting);
         Runnable adjustor = new Adjustor(orient, type, pos, isAdjusting);
         WToolkit.executeOnEventHandlerThread(new ScrollEvent(target, adjustor));
+        System.out.println("< WScrollPanePeer.postScrollEvent");
     }
 
     /*
@@ -276,7 +279,9 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
                 }
             }
             WComponentPeer hwPeer = acc.getPeer(hwAncestor);
+            System.out.println("> WScrollPanePeer.paintDamagedAreaImmediately(" + hwPeer + ")");
             hwPeer.paintDamagedAreaImmediately();
+            System.out.println("< WScrollPanePeer.paintDamagedAreaImmediately");
         }
     }
 

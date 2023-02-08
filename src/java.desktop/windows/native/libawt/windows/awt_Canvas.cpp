@@ -179,9 +179,9 @@ MsgRouting AwtCanvas::WmEraseBkgnd(HDC hDC, BOOL& didErase)
        RECT     rc;
 
        ::GetClipBox(hDC, &rc);
-       J2dTraceLn5(J2D_TRACE_VERBOSE,
-                   "Canvas::WmEraseBkgnd hDC=0x%08x rc=(%d, %d, %d, %d)",
-                   hDC, rc.left, rc.top, rc.right, rc.bottom);
+       J2dTraceLn6(J2D_TRACE_VERBOSE,
+                   "Canvas::WmEraseBkgnd hWnd=0x%08x hDC=0x%08x rc=(%d, %d, %d, %d)",
+                   GetHWnd(), hDC, rc.left, rc.top, rc.right, rc.bottom);
        ::FillRect(hDC, &rc, this->GetBackgroundBrush());
     }
 
