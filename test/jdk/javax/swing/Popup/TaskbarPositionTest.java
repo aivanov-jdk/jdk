@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,13 +62,11 @@ import javax.swing.event.PopupMenuEvent;
  */
 public class TaskbarPositionTest implements ActionListener {
 
-    private static TaskbarPositionTest test;
     private static JFrame frame;
     private static JPopupMenu popupMenu;
     private static JPanel panel;
     private static JComboBox<String> combo1;
     private static JComboBox<String> combo2;
-    private static JMenuBar menubar;
     private static JMenu menu1;
     private static JMenu menu2;
     private static JMenu submenu;
@@ -103,7 +101,6 @@ public class TaskbarPositionTest implements ActionListener {
         fullScreenBounds = new Rectangle(new Point(), toolkit.getScreenSize());
         screenBounds = new Rectangle(new Point(), toolkit.getScreenSize());
 
-
         // Reduce the screen bounds by the insets.
         GraphicsConfiguration gc = frame.getGraphicsConfiguration();
         if (gc != null) {
@@ -133,22 +130,19 @@ public class TaskbarPositionTest implements ActionListener {
         public void popupMenuWillBecomeInvisible(PopupMenuEvent ev) {
             JComboBox<?> combo = (JComboBox<?>)ev.getSource();
             if (combo != null) {
-                // TODO Replace with getLocationOnScreen
-                Point cpos = combo.getLocation();
-                SwingUtilities.convertPointToScreen(cpos, panel);
+                Point comboLocation = combo.getLocation();
+                SwingUtilities.convertPointToScreen(comboLocation, panel);
 
-                JPopupMenu pm = (JPopupMenu) combo.getUI().getAccessibleChild(combo, 0);
+                JPopupMenu popupMenu = (JPopupMenu) combo.getUI().getAccessibleChild(combo, 0);
 
-                if (pm != null) {
-                    // TODO Replace with getLocationOnScreen
-                    Point p = pm.getLocation();
-                    SwingUtilities.convertPointToScreen(p, pm);
+                if (popupMenu != null) {
+                    Point popupMenuLocation = popupMenu.getLocation();
+                    SwingUtilities.convertPointToScreen(popupMenuLocation, popupMenu);
 
-                    // TODO No tabs in Java! Never ever
-				   boolean isPopupOutOfScreen = (p.x < 0 || p.y < 0) ? true : false ;//Popup should be within screen
-				   boolean isComboOutOfScreen = (cpos.x < 0)? true : false;//When Frame moved to -ve postion popup should be moved.
-                   if(isPopupOutOfScreen || (isComboOutOfScreen &&  p.y+1 < cpos.y )) {
-                        System.out.println("p.x "+ p.x+ " cpos.x "+ cpos.x+" p.y " + p.y + " cpos.y " + cpos.y);
+                    boolean isPopupOutOfScreen = (popupMenuLocation.x < 0 || popupMenuLocation.y < 0);//Popup should be within screen
+                    boolean isComboOutOfScreen = (comboLocation.x < 0);//When Frame moved to -ve position popup should be moved.
+                    if (isPopupOutOfScreen || (isComboOutOfScreen && popupMenuLocation.y + 1 < comboLocation.y)) {
+                        System.out.println("p.x " + popupMenuLocation.x + " comboLocation.x " + comboLocation.x + " p.y " + popupMenuLocation.y + " comboLocation.y " + comboLocation.y);
                         throw new RuntimeException("ComboBox popup is wrongly aligned");
                     } // check that popup was opened down
                 }
@@ -158,9 +152,9 @@ public class TaskbarPositionTest implements ActionListener {
 
     // TODO Resolve the warnings for PopupHandler and PopupListener
 
-    private class PopupHandler extends AbstractAction {
-
-        @Override public void actionPerformed(ActionEvent e) {
+    private static class PopupHandler extends AbstractAction {
+        @Override 
+        public void actionPerformed(ActionEvent e) {
             if (!popupMenu.isVisible()) {
                 popupMenu.show((Component) e.getSource(), 40, 40);
             }
@@ -169,9 +163,9 @@ public class TaskbarPositionTest implements ActionListener {
     }
 
     // TODO Make it private
-    class PopupListener extends MouseAdapter {
+    private static class PopupListener extends MouseAdapter {
 
-        private JPopupMenu popup;
+        private final JPopupMenu popup;
 
         public PopupListener(JPopupMenu popup) {
             this.popup = popup;
@@ -199,17 +193,16 @@ public class TaskbarPositionTest implements ActionListener {
      * Tests if the popup is on the screen.
      */
     public static void isPopupOnScreen(JPopupMenu popup, Rectangle checkBounds) {
-        // TODO Simplify getting bounds with using popup.getLocationOnScreen()
+        if(!popup.isVisible()) {
+            throw new RuntimeException(" Popup not visible");
+        }
         Dimension dim = popup.getSize();
-        Point pt = new Point();
-        SwingUtilities.convertPointToScreen(pt, popup);
+        Point pt = popup.getLocationOnScreen();
         Rectangle bounds = new Rectangle(pt, dim);
 
         if (!SwingUtilities.isRectangleContainingRectangle(checkBounds, bounds)) {
-            // TODO Make the error message clearer
-            throw new RuntimeException("We do not match! " + checkBounds + " / " + bounds);
+            throw new RuntimeException(" Popup is wrongly aligned! " + checkBounds + " / " + bounds);
         }
-
     }
 
     private JPanel createContentPane() {
@@ -223,7 +216,7 @@ public class TaskbarPositionTest implements ActionListener {
         panel.setSize(300, 200);
         combo1.addPopupMenuListener(new ComboPopupCheckListener());
         combo2.addPopupMenuListener(new ComboPopupCheckListener());
-        popupMenu = new JPopupMenu();
+        popupMenu = new JPopupMenu("Popup menu");
         JMenuItem item;
         for (int i = 0; i < dayData.length; i++) {
             item = popupMenu.add(new JMenuItem(dayData[i], mnDayData[i]));
@@ -243,14 +236,11 @@ public class TaskbarPositionTest implements ActionListener {
     }
 
     private JMenuBar createMenuBar() {
-        // TODO Convert menubar to local variable
-        menubar = new JMenuBar();
+        JMenuBar menubar = new JMenuBar();
 
         menu1 = new JMenu("1 - First Menu");
         menu1.setMnemonic('1');
-
         menubar.add(menu1);
-        // TODO Refactor these loops into a helper method
         for (int i = 0; i < 8; i++) {
             JMenuItem menuitem = new JMenuItem("1 JMenuItem" + i);
             menu1.add(menuitem);
@@ -269,7 +259,6 @@ public class TaskbarPositionTest implements ActionListener {
         for (int i = 0; i < 5; i++) {
             JMenuItem menuitem = new JMenuItem("S JMenuItem" + i);
             submenu.add(menuitem);
-            // TODO Here action listener is required
             menuitem.addActionListener(this);
         }
         menu2.add(new JSeparator());
@@ -281,7 +270,7 @@ public class TaskbarPositionTest implements ActionListener {
     public void actionPerformed(ActionEvent evt) {
         Object obj = evt.getSource();
         if (obj instanceof JMenuItem) {
-            // put the focus on the noneditable combo.
+            // put the focus on the non-editable combo.
             combo1.requestFocus();
         }
     }
@@ -290,14 +279,12 @@ public class TaskbarPositionTest implements ActionListener {
 
         try {
             // Use Robot to automate the test
-            // TODO Combine robot declaration and initialisation
-            Robot robot;
-            robot = new Robot();
+            Robot robot = new Robot();
             robot.setAutoDelay(50);
 
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
-                    test = new TaskbarPositionTest();
+                    TaskbarPositionTest test = new TaskbarPositionTest();
                 }
             });
 
@@ -328,19 +315,14 @@ public class TaskbarPositionTest implements ActionListener {
             robot.keyRelease(KeyEvent.VK_ENTER);
 
             robot.waitForIdle();
-
             // Focus should go to combo1
             // Open combo1 popup
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
 
-            // TODO No tabs in Java! Never ever
-            // TODO isPopupVisible() must be called on EDT
-            // TODO Ensure the popup is within screenBounds
-			if(!combo1.isPopupVisible())
-			{
-				throw new RuntimeException("ComboBox1 popup not visible");
-			}
+            if(!combo1.isPopupVisible()) {
+                throw new RuntimeException("ComboBox1 popup not visible");
+            }
             hidePopup(robot);
 
             // Move focus to combo2, editable combo box
@@ -353,10 +335,9 @@ public class TaskbarPositionTest implements ActionListener {
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
 
-			if(!combo2.isPopupVisible())
-			{
-				throw new RuntimeException("ComboBox2 popup not visible");
-			}
+            if(!combo2.isPopupVisible()) {
+                throw new RuntimeException("ComboBox2 popup not visible");
+            }
             hidePopup(robot);
 
             // Move focus to the text field
@@ -376,20 +357,15 @@ public class TaskbarPositionTest implements ActionListener {
             hidePopup(robot);
 
             // Popup from a mouse click
-            // TODO panel should be accessed only on EDT
-            // TODO Use panel.getLocationOnScreen() to initialise the Point
-            //      object. Use point.translate(4, 4) to move it a bit.
-            //      And return back from EDT to main method.
-            //      You may want to use AtomicReference<Point> for this.
-            Point pt = new Point(4, 4);
-            SwingUtilities.convertPointToScreen(pt, panel);
+            Point pt = panel.getLocationOnScreen();
+            pt.translate(4,4);
             robot.mouseMove(pt.x, pt.y);
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
             // Ensure popupMenu is shown within screen bounds
             robot.waitForIdle();
-            SwingUtilities.invokeAndWait(() -> isPopupOnScreen(popupMenu, screenBounds));
+           SwingUtilities.invokeAndWait(() -> isPopupOnScreen(popupMenu, screenBounds));
 
             hidePopup(robot);
 
@@ -408,10 +384,9 @@ public class TaskbarPositionTest implements ActionListener {
 
             robot.waitForIdle();
 
-			if(!combo1.isPopupVisible())
-			{
-				throw new RuntimeException("ComboBox1 popup not visible Post movement");
-			}
+			if(!combo1.isPopupVisible()) {
+                throw new RuntimeException("ComboBox1 popup not visible Post movement");
+            }
             hidePopup(robot);
             robot.waitForIdle();
         } finally {
