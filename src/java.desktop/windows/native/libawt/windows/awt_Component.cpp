@@ -1898,9 +1898,15 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           break;
 
       case WM_PRINT:
+          J2dTraceLn3(J2D_TRACE_VERBOSE,
+                      "WM_PRINT hWnd=0x%08x wParam(hDC)=0x%08x lParam=0x%x",
+                      GetHWnd(), wParam, lParam);
           mr = WmPrint((HDC)wParam, lParam);
           break;
       case WM_PRINTCLIENT:
+          J2dTraceLn3(J2D_TRACE_VERBOSE,
+                      "WM_PRINTCLIENT hWnd=0x%08x wParam(hDC)=0x%08x lParam=0x%x",
+                      GetHWnd(), wParam, lParam);
           mr = WmPrintClient((HDC)wParam, lParam);
           break;
 
@@ -1909,6 +1915,9 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                             retValue);
           break;
       case WM_NCPAINT:
+          J2dTraceLn2(J2D_TRACE_VERBOSE,
+                      "WM_NCPAINT hWnd=0x%08x wParam(Region)=0x%08x",
+                      GetHWnd(), wParam);
           mr = WmNcPaint((HRGN)wParam);
           break;
       case WM_NCHITTEST:
@@ -4649,6 +4658,10 @@ MsgRouting AwtComponent::WmPrint(HDC hDC, LPARAM flags)
 // there by WmPrint. Windows mangles the DC in ::DefWindowProc.
 MsgRouting AwtComponent::WmPrintClient(HDC hDC, LPARAM)
 {
+    J2dTraceLn2(J2D_TRACE_VERBOSE,
+                "AwtComponent::WmPrintClient hWnd=0x%08x hDC=0x%08x",
+                GetHWnd(), hDC);
+
     // obtain valid DC from GDI stack
     ::RestoreDC(hDC, -1);
 
