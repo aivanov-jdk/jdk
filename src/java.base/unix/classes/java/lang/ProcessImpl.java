@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Locale;
@@ -67,6 +68,10 @@ final class ProcessImpl extends Process {
 
     // Linux platforms support a normal (non-forcible) kill signal.
     static final boolean SUPPORTS_NORMAL_TERMINATION = true;
+
+    // Cache for JNU Charset. The encoding name is guaranteed
+    // to be supported in this environment.
+    static final Charset JNU_CHARSET = Charset.forName(StaticProperty.jnuEncoding());
 
     private final int pid;
     private final ProcessHandleImpl processHandle;
@@ -113,11 +118,11 @@ final class ProcessImpl extends Process {
                     LaunchMechanism lm;
                     if (s == null) {
                         lm = defaultLaunchMechanism;
-                        s = lm.name().toLowerCase(Locale.ENGLISH);
+                        s = lm.name().toLowerCase(Locale.ROOT);
                     } else {
                         try {
                             lm = LaunchMechanism.valueOf(
-                                s.toUpperCase(Locale.ENGLISH));
+                                s.toUpperCase(Locale.ROOT));
                         } catch (IllegalArgumentException e) {
                             lm = null;
                         }
@@ -151,7 +156,7 @@ final class ProcessImpl extends Process {
     private static byte[] toCString(String s) {
         if (s == null)
             return null;
-        byte[] bytes = s.getBytes();
+        byte[] bytes = s.getBytes(JNU_CHARSET);
         byte[] result = new byte[bytes.length + 1];
         System.arraycopy(bytes, 0,
                          result, 0,
@@ -175,7 +180,7 @@ final class ProcessImpl extends Process {
         byte[][] args = new byte[cmdarray.length-1][];
         int size = args.length; // For added NUL bytes
         for (int i = 0; i < args.length; i++) {
-            args[i] = cmdarray[i+1].getBytes();
+            args[i] = cmdarray[i+1].getBytes(JNU_CHARSET);
             size += args[i].length;
         }
         byte[] argBlock = new byte[size];

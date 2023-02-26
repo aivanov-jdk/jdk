@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /*
  * @test
+ * @bug 8284161 8287008
  * @summary Basic test for jcmd Thread.dump_to_file
  * @library /test/lib
- * @run testng/othervm ThreadDumpToFileTest
+ * @run junit/othervm ThreadDumpToFileTest
  */
 
 import java.io.IOException;
@@ -34,16 +35,18 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import jdk.test.lib.threaddump.ThreadDump;
 
-public class ThreadDumpToFileTest {
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+class ThreadDumpToFileTest {
 
     /**
      * Test thread dump, should be in plain text format.
      */
     @Test
-    public void testThreadDump() throws IOException {
+    void testThreadDump() throws IOException {
         Path file = genThreadDumpPath(".txt");
         testPlainThreadDump(file);
     }
@@ -52,7 +55,7 @@ public class ThreadDumpToFileTest {
      * Test thread dump in plain text format.
      */
     @Test
-    public void testPlainThreadDump() throws IOException {
+    void testPlainThreadDump() throws IOException {
         Path file = genThreadDumpPath(".txt");
         testPlainThreadDump(file, "-format=plain");
     }
@@ -61,38 +64,42 @@ public class ThreadDumpToFileTest {
      * Test thread dump in JSON format.
      */
     @Test
-    public void testJsonThreadDump() throws IOException {
+    void testJsonThreadDump() throws IOException {
         Path file = genThreadDumpPath(".json");
         threadDump(file, "-format=json").shouldMatch("Created");
 
-        // test that the threadDump object is present
-        assertTrue(find(file, "threadDump"), "`threadDump` not found in " + file);
+        // parse the JSON text
+        String jsonText = Files.readString(file);
+        ThreadDump threadDump = ThreadDump.parse(jsonText);
 
-        // test that thread dump contains the id of the current thread
-        long tid = Thread.currentThread().threadId();
-        String expected = "\"tid\": " + tid;
-        assertTrue(find(file, expected), expected + " not found in " + file);
+        // test that the process id is this process
+        assertTrue(threadDump.processId() == ProcessHandle.current().pid());
+
+        // test that the current thread is in the root thread container
+        var rootContainer = threadDump.rootThreadContainer();
+        var tid = Thread.currentThread().threadId();
+        rootContainer.findThread(tid).orElseThrow();
     }
 
     /**
      * Test that an existing file is not overwritten.
      */
     @Test
-    public void testDoNotOverwriteFile() throws IOException {
+    void testDoNotOverwriteFile() throws IOException {
         Path file = genThreadDumpPath(".txt");
         Files.writeString(file, "xxx");
 
         threadDump(file, "").shouldMatch("exists");
 
         // file should not be overridden
-        assertEquals(Files.readString(file), "xxx");
+        assertEquals("xxx", Files.readString(file));
     }
 
     /**
      * Test overwriting an existing file.
      */
     @Test
-    public void testOverwriteFile() throws IOException {
+    void testOverwriteFile() throws IOException {
         Path file = genThreadDumpPath(".txt");
         Files.writeString(file, "xxx");
         testPlainThreadDump(file, "-overwrite");

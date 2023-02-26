@@ -22,9 +22,9 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -39,7 +39,6 @@ import sun.misc.Unsafe;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
@@ -49,8 +48,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -58,7 +56,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Fork(value = 3, jvmArgsAppend = "--enable-preview")
-public class LoopOverNonConstantMapped {
+public class LoopOverNonConstantMapped extends JavaLayouts {
 
     static final Unsafe unsafe = Utils.unsafe;
 
@@ -80,8 +78,8 @@ public class LoopOverNonConstantMapped {
         }
     }
 
-    static final VarHandle VH_int = JAVA_INT.arrayElementVarHandle();
     FileChannel fileChannel;
+    Arena arena;
     MemorySegment segment;
     long unsafe_addr;
 
@@ -97,14 +95,15 @@ public class LoopOverNonConstantMapped {
             ((MappedByteBuffer)byteBuffer).force();
         }
         fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE);
-        segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, ALLOC_SIZE, MemorySession.openConfined());
-        unsafe_addr = segment.address().toRawLongValue();
+        arena = Arena.openConfined();
+        segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, ALLOC_SIZE, arena.scope());
+        unsafe_addr = segment.address();
     }
 
     @TearDown
     public void tearDown() throws IOException {
         fileChannel.close();
-        segment.session().close();
+        arena.close();
         unsafe.invokeCleaner(byteBuffer);
     }
 
@@ -117,7 +116,7 @@ public class LoopOverNonConstantMapped {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int segment_get() {
-        return (int) VH_int.get(segment, 0L);
+        return (int) VH_INT.get(segment, 0L);
     }
 
     @Benchmark
@@ -139,7 +138,7 @@ public class LoopOverNonConstantMapped {
     public int segment_loop() {
         int sum = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(segment, (long) i);
+            sum += (int) VH_INT.get(segment, (long) i);
         }
         return sum;
     }
@@ -154,20 +153,11 @@ public class LoopOverNonConstantMapped {
     }
 
     @Benchmark
-    public int segment_loop_instance_address() {
-        int res = 0;
-        for (int i = 0; i < ELEM_SIZE; i ++) {
-            res += segment.address().get(JAVA_INT, i * CARRIER_SIZE);
-        }
-        return res;
-    }
-
-    @Benchmark
     public int segment_loop_slice() {
         int sum = 0;
         MemorySegment base = segment.asSlice(0, segment.byteSize());
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(base, (long) i);
+            sum += (int) VH_INT.get(base, (long) i);
         }
         return sum;
     }
@@ -177,7 +167,7 @@ public class LoopOverNonConstantMapped {
         int sum = 0;
         MemorySegment base = segment.asReadOnly();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(base, (long) i);
+            sum += (int) VH_INT.get(base, (long) i);
         }
         return sum;
     }

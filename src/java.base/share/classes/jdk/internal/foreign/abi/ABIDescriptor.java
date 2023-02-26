@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,12 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.internal.invoke.ABIDescriptorProxy;
-
-public class ABIDescriptor implements ABIDescriptorProxy {
+/**
+ * Carrier class used to communicate with the VM
+ *
+ * It is particularly low-level since the VM will be accessing these fields directly
+ */
+public class ABIDescriptor {
     final Architecture arch;
 
     public final VMStorage[][] inputStorage;
@@ -37,18 +40,40 @@ public class ABIDescriptor implements ABIDescriptorProxy {
     final int stackAlignment;
     final int shadowSpace;
 
+    final VMStorage scratch1;
+    final VMStorage scratch2;
+
+    final VMStorage targetAddrStorage;
+    final VMStorage retBufAddrStorage;
+    final VMStorage capturedStateStorage;
+
     public ABIDescriptor(Architecture arch, VMStorage[][] inputStorage, VMStorage[][] outputStorage,
-                         VMStorage[][] volatileStorage, int stackAlignment, int shadowSpace) {
+                         VMStorage[][] volatileStorage, int stackAlignment, int shadowSpace,
+                         VMStorage scratch1, VMStorage scratch2,
+                         VMStorage targetAddrStorage, VMStorage retBufAddrStorage,
+                         VMStorage capturedStateStorage) {
         this.arch = arch;
         this.inputStorage = inputStorage;
         this.outputStorage = outputStorage;
         this.volatileStorage = volatileStorage;
         this.stackAlignment = stackAlignment;
         this.shadowSpace = shadowSpace;
+        this.scratch1 = scratch1;
+        this.scratch2 = scratch2;
+        this.targetAddrStorage = targetAddrStorage;
+        this.retBufAddrStorage = retBufAddrStorage;
+        this.capturedStateStorage = capturedStateStorage;
     }
 
-    @Override
-    public int shadowSpaceBytes() {
-        return shadowSpace;
+    public VMStorage targetAddrStorage() {
+        return targetAddrStorage;
+    }
+
+    public VMStorage retBufAddrStorage() {
+        return retBufAddrStorage;
+    }
+
+    public VMStorage capturedStateStorage() {
+        return capturedStateStorage;
     }
 }

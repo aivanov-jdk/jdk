@@ -22,10 +22,12 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,13 +40,11 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
-import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -52,7 +52,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Fork(value = 3, jvmArgsAppend = "--enable-preview")
-public class LoopOverNew {
+public class LoopOverNew extends JavaLayouts {
 
     static final Unsafe unsafe = Utils.unsafe;
 
@@ -60,15 +60,12 @@ public class LoopOverNew {
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
     static final MemoryLayout ALLOC_LAYOUT = MemoryLayout.sequenceLayout(ELEM_SIZE, JAVA_INT);
-
-    static final VarHandle VH_int = JAVA_INT.arrayElementVarHandle();
-
-    final MemorySession session = MemorySession.openConfined();
-    final SegmentAllocator recyclingAlloc = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(ALLOC_LAYOUT, session));
+    final Arena arena = Arena.openConfined();
+    final SegmentAllocator recyclingAlloc = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(ALLOC_LAYOUT, arena.scope()));
 
     @TearDown
     public void tearDown() throws Throwable {
-        session.close();
+        arena.close();
     }
 
     @Benchmark
@@ -82,20 +79,20 @@ public class LoopOverNew {
 
     @Benchmark
     public void segment_loop_confined() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, 4, session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = arena.allocate(ALLOC_SIZE, 4);
             for (int i = 0; i < ELEM_SIZE; i++) {
-                VH_int.set(segment, (long) i, i);
+                VH_INT.set(segment, (long) i, i);
             }
         }
     }
 
     @Benchmark
     public void segment_loop_shared() {
-        try (MemorySession session = MemorySession.openShared()) {
-            MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, 4, session);
+        try (Arena arena = Arena.openShared()) {
+            MemorySegment segment = arena.allocate(ALLOC_SIZE, 4);
             for (int i = 0; i < ELEM_SIZE; i++) {
-                VH_int.set(segment, (long) i, i);
+                VH_INT.set(segment, (long) i, i);
             }
         }
     }
@@ -104,7 +101,7 @@ public class LoopOverNew {
     public void segment_loop_recycle() {
         MemorySegment segment = recyclingAlloc.allocate(ALLOC_SIZE, 4);
         for (int i = 0; i < ELEM_SIZE; i++) {
-            VH_int.set(segment, (long) i, i);
+            VH_INT.set(segment, (long) i, i);
         }
     }
 
@@ -138,9 +135,9 @@ public class LoopOverNew {
     @Benchmark
     public void segment_loop_implicit() {
         if (gcCount++ == 0) System.gc(); // GC when we overflow
-        MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, 4, MemorySession.openImplicit());
+        MemorySegment segment = MemorySegment.allocateNative(ALLOC_SIZE, 4, SegmentScope.auto());
         for (int i = 0; i < ELEM_SIZE; i++) {
-            VH_int.set(segment, (long) i, i);
+            VH_INT.set(segment, (long) i, i);
         }
     }
 }

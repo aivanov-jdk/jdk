@@ -22,9 +22,9 @@
  *
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 
@@ -46,8 +46,8 @@ public class TestSlices {
 
     @Test(dataProvider = "slices")
     public void testSlices(VarHandle handle, int lo, int hi, int[] values) {
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(LAYOUT, session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(LAYOUT, arena.scope());;
             //init
             for (long i = 0 ; i < 2 ; i++) {
                 for (long j = 0 ; j < 5 ; j++) {
@@ -56,6 +56,15 @@ public class TestSlices {
             }
 
             checkSlice(segment, handle, lo, hi, values);
+        }
+    }
+
+    @Test(dataProvider = "slices")
+    public void testSliceBadIndex(VarHandle handle, int lo, int hi, int[] values) {
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(LAYOUT, arena.scope());;
+            assertThrows(() -> handle.get(segment, lo, 0));
+            assertThrows(() -> handle.get(segment, 0, hi));
         }
     }
 

@@ -59,17 +59,13 @@ public:
                              int con_size_in_bytes,
                              Register t1, Register t2,
                              Label& slow_case);
-  virtual void eden_allocate(MacroAssembler* masm,
-                             Register thread, Register obj,
-                             Register var_size_in_bytes,
-                             int con_size_in_bytes,
-                             Register t1,
-                             Label& slow_case);
 
   virtual void barrier_stubs_init() {}
 
-  virtual void nmethod_entry_barrier(MacroAssembler* masm);
+  virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
+
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };
 
 #endif // CPU_X86_GC_SHARED_BARRIERSETASSEMBLER_X86_HPP

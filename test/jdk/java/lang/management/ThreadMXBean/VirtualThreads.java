@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,27 @@
  */
 
 /**
- * @test
+ * @test id=default
+ * @bug 8284161 8290562
  * @summary Test java.lang.management.ThreadMXBean with virtual threads
- * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} VirtualThreads.java
- * @run testng/othervm --enable-preview VirtualThreads
+ * @enablePreview
+ * @modules java.base/java.lang:+open java.management
+ * @run junit/othervm VirtualThreads
+ */
+
+/**
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @enablePreview
+ * @modules java.base/java.lang:+open java.management
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreads
  */
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.lang.reflect.Field;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.Selector;
 import java.util.Arrays;
 import java.util.concurrent.Executor;
@@ -41,8 +51,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
 public class VirtualThreads {
 
@@ -51,33 +62,58 @@ public class VirtualThreads {
      * virtual threads.
      */
     @Test
-    public void testGetAllThreadIds() throws Exception {
-        runInVirtualThread(() -> {
-            long currentTid = Thread.currentThread().getId();
+    void testGetAllThreadIds() throws Exception {
+        Thread vthread = Thread.startVirtualThread(LockSupport::park);
+        try {
             long[] tids = ManagementFactory.getThreadMXBean().getAllThreadIds();
-            boolean found = Arrays.stream(tids).anyMatch(tid -> tid == currentTid);
-            assertFalse(found);
-        });
+
+            // current thread should be included
+            long currentTid = Thread.currentThread().threadId();
+            assertTrue(Arrays.stream(tids).anyMatch(tid -> tid == currentTid));
+
+            // virtual thread should not be included
+            long vtid = vthread.threadId();
+            assertFalse(Arrays.stream(tids).anyMatch(tid -> tid == vtid));
+        } finally {
+            LockSupport.unpark(vthread);
+        }
     }
 
     /**
-     * Test that ThreadMXBean::getThreadInfo returns null for a virual thread.
+     * Test that ThreadMXBean.getThreadInfo(long) returns null for a virtual thread.
      */
     @Test
-    public void testGetThreadInfo1() throws Exception {
+    void testGetThreadInfo1() throws Exception {
+        Thread vthread = Thread.startVirtualThread(LockSupport::park);
+        try {
+            long tid = vthread.threadId();
+            ThreadInfo info = ManagementFactory.getThreadMXBean().getThreadInfo(tid);
+            assertTrue(info == null);
+        } finally {
+            LockSupport.unpark(vthread);
+        }
+    }
+
+    /**
+     * Test that ThreadMXBean.getThreadInfo(long) returns null when invoked by a virtual
+     * thread with its own thread id.
+     */
+    @Test
+    void testGetThreadInfo2() throws Exception {
         runInVirtualThread(() -> {
-            long tid = Thread.currentThread().getId();
+            long tid = Thread.currentThread().threadId();
             ThreadInfo info = ManagementFactory.getThreadMXBean().getThreadInfo(tid);
             assertTrue(info == null);
         });
     }
 
     /**
-     * Test that ThreadMXBean::getThreadInfo on a carrier thread. The stack
-     * frames of the virtual thread should not be returned.
+     * Test ThreadMXBean.getThreadInfo(long) with the thread id of a carrier thread.
+     * The stack frames of the virtual thread should not be returned.
      */
     @Test
-    public void testGetThreadInfo2() throws Exception {
+    void testGetThreadInfo3() throws Exception {
+        assumeTrue(supportsCustomScheduler(), "No support for custom schedulers");
         try (ExecutorService pool = Executors.newFixedThreadPool(1)) {
             var carrierRef = new AtomicReference<Thread>();
             Executor scheduler = (task) -> {
@@ -116,26 +152,77 @@ public class VirtualThreads {
     }
 
     /**
-     * Test that getThreadCpuTime returns -1 for a virual thread..
+     * Test that ThreadMXBean.getThreadInfo(long[]) returns a null ThreadInfo for
+     * elements that correspond to a virtual thread.
      */
     @Test
-    public void testGetThreadCpuTime() throws Exception {
+    void testGetThreadInfo4() throws Exception {
+        Thread vthread = Thread.startVirtualThread(LockSupport::park);
+        try {
+            long tid0 = Thread.currentThread().threadId();
+            long tid1 = vthread.threadId();
+            long[] tids = new long[] { tid0, tid1 };
+            ThreadInfo[] infos = ManagementFactory.getThreadMXBean().getThreadInfo(tids);
+            assertTrue(infos[0].getThreadId() == tid0);
+            assertTrue(infos[1] == null);
+        } finally {
+            LockSupport.unpark(vthread);
+        }
+    }
+
+    /**
+     * Test that ThreadMXBean.getThreadCpuTime(long) returns -1 for a virtual thread.
+     */
+    @Test
+    void testGetThreadCpuTime1() {
+        Thread vthread = Thread.startVirtualThread(LockSupport::park);
+        try {
+            long tid = vthread.threadId();
+            long cpuTime = ManagementFactory.getThreadMXBean().getThreadCpuTime(tid);
+            assertTrue(cpuTime == -1L);
+        } finally {
+            LockSupport.unpark(vthread);
+        }
+    }
+
+    /**
+     * Test that ThreadMXBean.getThreadCpuTime(long) returns -1 when invoked by a
+     * virtual thread with its own thread id.
+     */
+    @Test
+    void testGetThreadCpuTime2() throws Exception {
         runInVirtualThread(() -> {
-            long tid = Thread.currentThread().getId();
+            long tid = Thread.currentThread().threadId();
             long cpuTime = ManagementFactory.getThreadMXBean().getThreadCpuTime(tid);
             assertTrue(cpuTime == -1L);
         });
     }
 
     /**
-     * Test that getThreadUserTime returns -1 for a virual thread.
+     * Test that ThreadMXBean.getThreadUserTime(long) returns -1 for a virtual thread.
      */
     @Test
-    public void testGetThreadUserTime() throws Exception {
+    void testGetThreadUserTime1() {
+        Thread vthread = Thread.startVirtualThread(LockSupport::park);
+        try {
+            long tid = vthread.threadId();
+            long userTime = ManagementFactory.getThreadMXBean().getThreadUserTime(tid);
+            assertTrue(userTime == -1L);
+        } finally {
+            LockSupport.unpark(vthread);
+        }
+    }
+
+    /**
+     * Test that ThreadMXBean.getThreadUserTime(long) returns -1 when invoked by a
+     * virtual thread with its own thread id.
+     */
+    @Test
+    void testGetThreadUserTime2() throws Exception {
         runInVirtualThread(() -> {
-            long tid = Thread.currentThread().getId();
-            long cpuTime = ManagementFactory.getThreadMXBean().getThreadUserTime(tid);
-            assertTrue(cpuTime == -1L);
+            long tid = Thread.currentThread().threadId();
+            long userTime = ManagementFactory.getThreadMXBean().getThreadUserTime(tid);
+            assertTrue(userTime == -1L);
         });
     }
 
@@ -143,10 +230,11 @@ public class VirtualThreads {
      * Test that ThreadMXBean::getCurrentThreadCpuTime throws UOE when invoked
      * on a virtual thread.
      */
-    @Test(expectedExceptions = { UnsupportedOperationException.class })
-    public void testGetCurrentThreadCpuTime() throws Exception {
+    @Test
+    void testGetCurrentThreadCpuTime() throws Exception {
         runInVirtualThread(() -> {
-            ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+            assertThrows(UnsupportedOperationException.class,
+                    () -> ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime());
         });
     }
 
@@ -154,10 +242,11 @@ public class VirtualThreads {
      * Test that ThreadMXBean::getCurrentThreadUserTime throws UOE when
      * invoked on a virtual thread.
      */
-    @Test(expectedExceptions = { UnsupportedOperationException.class })
-    public void testGetCurrentThreadUserTime() throws Exception {
+    @Test
+    void testGetCurrentThreadUserTime() throws Exception {
         runInVirtualThread(() -> {
-            ManagementFactory.getThreadMXBean().getCurrentThreadUserTime();
+            assertThrows(UnsupportedOperationException.class,
+                    () -> ManagementFactory.getThreadMXBean().getCurrentThreadUserTime());
         });
     }
 
@@ -166,7 +255,7 @@ public class VirtualThreads {
      * invoked on a virtual thread.
      */
     @Test
-    public void testGetCurrentThreadAllocatedBytes() throws Exception {
+    void testGetCurrentThreadAllocatedBytes() throws Exception {
         runInVirtualThread(() -> {
             long allocated = ManagementFactory.getPlatformMXBean(com.sun.management.ThreadMXBean.class)
                     .getCurrentThreadAllocatedBytes();
@@ -203,18 +292,39 @@ public class VirtualThreads {
                 .anyMatch(className::equals);
     }
 
+    /**
+     * Returns a builder to create virtual threads that use the given scheduler.
+     * @throws UnsupportedOperationException if there is no support for custom schedulers
+     */
     private static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
         Thread.Builder.OfVirtual builder = Thread.ofVirtual();
         try {
             Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
-            Field field = clazz.getDeclaredField("scheduler");
-            field.setAccessible(true);
-            field.set(builder, scheduler);
-        } catch (RuntimeException | Error e) {
-            throw e;
+            Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
+            ctor.setAccessible(true);
+            return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return builder;
+    }
+
+    /**
+     * Return true if custom schedulers are supported.
+     */
+    private static boolean supportsCustomScheduler() {
+        try (var pool = Executors.newCachedThreadPool()) {
+            try {
+                virtualThreadBuilder(pool);
+                return true;
+            } catch (UnsupportedOperationException e) {
+                return false;
+            }
+        }
     }
 }

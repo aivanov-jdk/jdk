@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
@@ -176,8 +175,6 @@ Node* Parse::check_interpreter_type(Node* l, const Type* type,
     bad_type_exit->control()->add_req(bad_type_ctrl);
   }
 
-  BasicType bt_l = _gvn.type(l)->basic_type();
-  BasicType bt_t = type->basic_type();
   assert(_gvn.type(l)->higher_equal(type), "must constrain OSR typestate");
   return l;
 }
@@ -470,8 +467,9 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   for (uint reason = 0; reason < md->trap_reason_limit(); reason++) {
     uint md_count = md->trap_count(reason);
     if (md_count != 0) {
-      if (md_count == md->trap_count_limit())
-        md_count += md->overflow_trap_count();
+      if (md_count >= md->trap_count_limit()) {
+        md_count = md->trap_count_limit() + md->overflow_trap_count();
+      }
       uint total_count = C->trap_count(reason);
       uint old_count   = total_count;
       total_count += md_count;
@@ -546,7 +544,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     return;
   }
 
-  gvn().set_type(root(), root()->bottom_type());
   gvn().transform(top());
 
   // Import the results of the ciTypeFlow.
@@ -578,9 +575,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   } else {
     set_map(entry_map);
     do_method_entry();
-    if (depth() == 1 && C->age_code()) {
-      decrement_age();
-    }
   }
 
   if (depth() == 1 && !failing()) {
@@ -684,6 +678,7 @@ void Parse::do_all_blocks() {
           record_for_igvn(r);
           r->init_req(edges, control());
           set_control(r);
+          block->copy_irreducible_status_to(r, jvms());
           // Add new phis.
           ensure_phis_everywhere();
         }
@@ -1202,7 +1197,7 @@ void Parse::do_method_entry() {
   // Narrow receiver type when it is too broad for the method being parsed.
   if (!method()->is_static()) {
     ciInstanceKlass* callee_holder = method()->holder();
-    const Type* holder_type = TypeInstPtr::make(TypePtr::BotPTR, callee_holder);
+    const Type* holder_type = TypeInstPtr::make(TypePtr::BotPTR, callee_holder, Type::trust_interfaces);
 
     Node* receiver_obj = local(0);
     const TypeInstPtr* receiver_type = _gvn.type(receiver_obj)->isa_instptr();
@@ -1215,7 +1210,7 @@ void Parse::do_method_entry() {
       assert(callee_holder->is_interface(), "missing subtype check");
 
       // Perform dynamic receiver subtype check against callee holder class w/ a halt on failure.
-      Node* holder_klass = _gvn.makecon(TypeKlassPtr::make(callee_holder));
+      Node* holder_klass = _gvn.makecon(TypeKlassPtr::make(callee_holder, Type::trust_interfaces));
       Node* not_subtype_ctrl = gen_subtype_check(receiver_obj, holder_klass);
       assert(!stopped(), "not a subtype");
 
@@ -1505,7 +1500,12 @@ void Parse::do_one_block() {
     for (int i = 0; i < nt; i++) {
       tty->print((( i < ns) ? " %d" : " %d(e)"), b->successor_at(i)->rpo());
     }
-    if (b->is_loop_head()) tty->print("  lphd");
+    if (b->is_loop_head()) {
+      tty->print("  lphd");
+    }
+    if (b->is_irreducible_loop_entry()) {
+      tty->print("  irreducible");
+    }
     tty->cr();
   }
 
@@ -1557,22 +1557,7 @@ void Parse::do_one_block() {
     assert(!have_se || pre_bc_sp >= inputs, "have enough stack to execute this BC: pre_bc_sp=%d, inputs=%d", pre_bc_sp, inputs);
 #endif //ASSERT
 
-    // Try parsing machine-dependently, then if it is not needed then parse
-    // the bytecode in a machine independent manner
-    if (!do_one_bytecode_targeted()) {
-      do_one_bytecode_common();
-    }
-#ifndef PRODUCT
-    if (C->should_print_igv(1)) {
-      IdealGraphPrinter* printer = C->igv_printer();
-      char buffer[256];
-      jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
-      bool old = printer->traverse_outs();
-      printer->set_traverse_outs(true);
-      printer->print_method(buffer, 4);
-      printer->set_traverse_outs(old);
-    }
-#endif
+    do_one_bytecode();
 
     assert(!have_se || stopped() || failing() || (sp() - pre_bc_sp) == depth,
            "incorrect depth prediction: sp=%d, pre_bc_sp=%d, depth=%d", sp(), pre_bc_sp, depth);
@@ -1709,6 +1694,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       // for (int j = 1; j < edges+1; j++) { r->init_req(j, NULL); }
       r->init_req(pnum, control());
       set_control(r);
+      target->copy_irreducible_status_to(r, jvms());
       set_parse_bci(current_bci); // Restore bci
     }
 
@@ -1746,7 +1732,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
     r->init_req(pnum, newin->control());
 
     if (pnum == 1) {            // Last merge for this Region?
-      if (!block()->flow()->is_irreducible_entry()) {
+      if (!block()->flow()->is_irreducible_loop_secondary_entry()) {
         Node* result = _gvn.transform_no_reclaim(r);
         if (r != result && TraceOptoParse) {
           tty->print_cr("Block #%d replace %d with %d", block()->rpo(), r->_idx, result->_idx);
@@ -2150,7 +2136,7 @@ void Parse::clinit_deopt() {
 
   set_parse_bci(0);
 
-  Node* holder = makecon(TypeKlassPtr::make(method()->holder()));
+  Node* holder = makecon(TypeKlassPtr::make(method()->holder(), Type::trust_interfaces));
   guard_klass_being_initialized(holder);
 }
 
@@ -2188,31 +2174,6 @@ void Parse::rtm_deopt() {
     }
   }
 #endif
-}
-
-void Parse::decrement_age() {
-  MethodCounters* mc = method()->ensure_method_counters();
-  if (mc == NULL) {
-    C->record_failure("Must have MCs");
-    return;
-  }
-  assert(!is_osr_parse(), "Not doing this for OSRs");
-
-  // Set starting bci for uncommon trap.
-  set_parse_bci(0);
-
-  const TypePtr* adr_type = TypeRawPtr::make((address)mc);
-  Node* mc_adr = makecon(adr_type);
-  Node* cnt_adr = basic_plus_adr(mc_adr, mc_adr, in_bytes(MethodCounters::nmethod_age_offset()));
-  Node* cnt = make_load(control(), cnt_adr, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-  Node* decr = _gvn.transform(new SubINode(cnt, makecon(TypeInt::ONE)));
-  store_to_memory(control(), cnt_adr, decr, T_INT, adr_type, MemNode::unordered);
-  Node *chk   = _gvn.transform(new CmpINode(decr, makecon(TypeInt::ZERO)));
-  Node* tst   = _gvn.transform(new BoolNode(chk, BoolTest::gt));
-  { BuildCutout unless(this, tst, PROB_ALWAYS);
-    uncommon_trap(Deoptimization::Reason_tenured,
-                  Deoptimization::Action_make_not_entrant);
-  }
 }
 
 //------------------------------return_current---------------------------------
@@ -2254,27 +2215,6 @@ void Parse::return_current(Node* value) {
     // cast from oop to interface allowed by the Verifier.  Make it explicit
     // here.
     Node* phi = _exits.argument(0);
-    const TypeInstPtr *tr = phi->bottom_type()->isa_instptr();
-    if (tr && tr->is_loaded() &&
-        tr->is_interface()) {
-      const TypeInstPtr *tp = value->bottom_type()->isa_instptr();
-      if (tp && tp->is_loaded() &&
-          !tp->is_interface()) {
-        // sharpen the type eagerly; this eases certain assert checking
-        if (tp->higher_equal(TypeInstPtr::NOTNULL))
-          tr = tr->join_speculative(TypeInstPtr::NOTNULL)->is_instptr();
-        value = _gvn.transform(new CheckCastPPNode(0, value, tr));
-      }
-    } else {
-      // Also handle returns of oop-arrays to an arrays-of-interface return
-      const TypeInstPtr* phi_tip;
-      const TypeInstPtr* val_tip;
-      Type::get_arrays_base_elements(phi->bottom_type(), value->bottom_type(), &phi_tip, &val_tip);
-      if (phi_tip != NULL && phi_tip->is_loaded() && phi_tip->is_interface() &&
-          val_tip != NULL && val_tip->is_loaded() && !val_tip->is_interface()) {
-        value = _gvn.transform(new CheckCastPPNode(0, value, phi->bottom_type()));
-      }
-    }
     phi->add_req(value);
   }
 

@@ -22,10 +22,9 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,14 +37,11 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
-import java.lang.foreign.ValueLayout;
-import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -53,7 +49,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Fork(value = 3, jvmArgsAppend = { "--enable-preview", "--enable-native-access=ALL-UNNAMED" })
-public class LoopOverNonConstant {
+public class LoopOverNonConstant extends JavaLayouts {
 
     static final Unsafe unsafe = Utils.unsafe;
 
@@ -61,11 +57,7 @@ public class LoopOverNonConstant {
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
 
-    static final VarHandle VH_int = JAVA_INT.arrayElementVarHandle();
-
-    static final ValueLayout.OfInt JAVA_INT_ALIGNED = JAVA_INT.withBitAlignment(32);
-    static final VarHandle VH_int_aligned = JAVA_INT_ALIGNED.arrayElementVarHandle();
-
+    Arena arena;
     MemorySegment segment;
     long unsafe_addr;
 
@@ -77,9 +69,10 @@ public class LoopOverNonConstant {
         for (int i = 0; i < ELEM_SIZE; i++) {
             unsafe.putInt(unsafe_addr + (i * CARRIER_SIZE) , i);
         }
-        segment = MemorySegment.allocateNative(ALLOC_SIZE, MemorySession.openConfined());
+        arena = Arena.openConfined();
+        segment = MemorySegment.allocateNative(ALLOC_SIZE, arena.scope());
         for (int i = 0; i < ELEM_SIZE; i++) {
-            VH_int.set(segment, (long) i, i);
+            VH_INT.set(segment, (long) i, i);
         }
         byteBuffer = ByteBuffer.allocateDirect(ALLOC_SIZE).order(ByteOrder.nativeOrder());
         for (int i = 0; i < ELEM_SIZE; i++) {
@@ -89,7 +82,7 @@ public class LoopOverNonConstant {
 
     @TearDown
     public void tearDown() {
-        segment.session().close();
+        arena.close();
         unsafe.invokeCleaner(byteBuffer);
         unsafe.freeMemory(unsafe_addr);
     }
@@ -103,7 +96,7 @@ public class LoopOverNonConstant {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int segment_get() {
-        return (int) VH_int.get(segment, 0L);
+        return (int) VH_INT.get(segment, 0L);
     }
 
     @Benchmark
@@ -125,16 +118,16 @@ public class LoopOverNonConstant {
     public int segment_loop() {
         int sum = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(segment, (long) i);
+            sum += (int) VH_INT.get(segment, (long) i);
         }
         return sum;
     }
 
     @Benchmark
-    public int segment_loop_aligned() {
+    public int segment_loop_unaligned() {
         int sum = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int_aligned.get(segment, (long) i);
+            sum += (int) VH_INT_UNALIGNED.get(segment, (long) i);
         }
         return sum;
     }
@@ -160,30 +153,12 @@ public class LoopOverNonConstant {
     }
 
     @Benchmark
-    public int segment_loop_instance_aligned() {
+    public int segment_loop_instance_unaligned() {
         int res = 0;
         for (int i = 0; i < ELEM_SIZE; i ++) {
-            res += segment.get(JAVA_INT_ALIGNED, i * CARRIER_SIZE);
+            res += segment.get(JAVA_INT_UNALIGNED, i * CARRIER_SIZE);
         }
         return res;
-    }
-
-    @Benchmark
-    public int segment_loop_instance_address() {
-        int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += segment.address().get(JAVA_INT, i * CARRIER_SIZE);
-        }
-        return sum;
-    }
-
-    @Benchmark
-    public int segment_loop_instance_address_index() {
-        int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += segment.address().getAtIndex(JAVA_INT, i);
-        }
-        return sum;
     }
 
     @Benchmark
@@ -191,7 +166,7 @@ public class LoopOverNonConstant {
         int sum = 0;
         MemorySegment base = segment.asSlice(0, segment.byteSize());
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(base, (long) i);
+            sum += (int) VH_INT.get(base, (long) i);
         }
         return sum;
     }
@@ -201,7 +176,7 @@ public class LoopOverNonConstant {
         int sum = 0;
         MemorySegment base = segment.asReadOnly();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(base, (long) i);
+            sum += (int) VH_INT.get(base, (long) i);
         }
         return sum;
     }

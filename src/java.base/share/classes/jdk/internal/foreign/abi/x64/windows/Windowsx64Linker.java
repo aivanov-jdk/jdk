@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,87 +24,56 @@
  */
 package jdk.internal.foreign.abi.x64.windows;
 
-import java.lang.foreign.Linker;
+import jdk.internal.foreign.abi.AbstractLinker;
+import jdk.internal.foreign.abi.LinkerOptions;
+
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.VaList;
-
-import jdk.internal.foreign.SystemLookup;
-import jdk.internal.foreign.abi.SharedUtils;
-
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
  * ABI implementation based on Windows ABI AMD64 supplement v.0.99.6
  */
-public final class Windowsx64Linker implements Linker {
-
-    public static final int MAX_INTEGER_ARGUMENT_REGISTERS = 4;
-    public static final int MAX_INTEGER_RETURN_REGISTERS = 1;
-    public static final int MAX_VECTOR_ARGUMENT_REGISTERS = 4;
-    public static final int MAX_VECTOR_RETURN_REGISTERS = 1;
-    public static final int MAX_REGISTER_ARGUMENTS = 4;
-    public static final int MAX_REGISTER_RETURNS = 1;
-
-    private static Windowsx64Linker instance;
-
-    static final long ADDRESS_SIZE = 64; // bits
+public final class Windowsx64Linker extends AbstractLinker {
 
     public static Windowsx64Linker getInstance() {
-        if (instance == null) {
-            instance = new Windowsx64Linker();
+        final class Holder {
+            private static final Windowsx64Linker INSTANCE = new Windowsx64Linker();
         }
-        return instance;
+
+        return Holder.INSTANCE;
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, MemorySession session) {
-        WinVaList.Builder builder = WinVaList.builder(session);
+    private Windowsx64Linker() {
+        // Ensure there is only one instance
+    }
+
+    @Override
+    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
+        return CallArranger.arrangeDowncall(inferredMethodType, function, options);
+    }
+
+    @Override
+    protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, SegmentScope scope) {
+        return CallArranger.arrangeUpcall(target, targetType, function, scope);
+    }
+
+    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
+        WinVaList.Builder builder = WinVaList.builder(scope);
         actions.accept(builder);
         return builder.build();
     }
 
-    @Override
-    public final MethodHandle downcallHandle(FunctionDescriptor function) {
-        Objects.requireNonNull(function);
-        MethodType type = SharedUtils.inferMethodType(function, false);
-        MethodHandle handle = CallArranger.arrangeDowncall(type, function);
-        if (!type.returnType().equals(MemorySegment.class)) {
-            // not returning segment, just insert a throwing allocator
-            handle = MethodHandles.insertArguments(handle, 1, SharedUtils.THROWING_ALLOCATOR);
-        }
-        return SharedUtils.wrapDowncall(handle, function);
-    }
-
-    @Override
-    public final MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, MemorySession session) {
-        Objects.requireNonNull(session);
-        Objects.requireNonNull(target);
-        Objects.requireNonNull(function);
-        SharedUtils.checkExceptions(target);
-        MethodType type = SharedUtils.inferMethodType(function, true);
-        if (!type.equals(target.type())) {
-            throw new IllegalArgumentException("Wrong method handle type: " + target.type());
-        }
-        return CallArranger.arrangeUpcall(target, target.type(), function, session);
-    }
-
-    public static VaList newVaListOfAddress(MemoryAddress ma, MemorySession session) {
-        return WinVaList.ofAddress(ma, session);
+    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
+        return WinVaList.ofAddress(address, scope);
     }
 
     public static VaList emptyVaList() {
         return WinVaList.empty();
     }
-
-    @Override
-    public SystemLookup defaultLookup() {
-        return SystemLookup.getInstance();
-    }
 }
+

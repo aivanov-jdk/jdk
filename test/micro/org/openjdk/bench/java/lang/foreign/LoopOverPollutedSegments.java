@@ -22,9 +22,9 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -37,12 +37,9 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
-import java.lang.foreign.ValueLayout;
-import java.lang.invoke.VarHandle;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -50,7 +47,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Fork(value = 3, jvmArgsAppend = "--enable-preview")
-public class LoopOverPollutedSegments {
+public class LoopOverPollutedSegments extends JavaLayouts {
 
     static final int ELEM_SIZE = 1_000_000;
     static final int CARRIER_SIZE = (int) JAVA_INT.byteSize();
@@ -59,15 +56,10 @@ public class LoopOverPollutedSegments {
     static final Unsafe unsafe = Utils.unsafe;
 
 
-    MemorySession session;
+    Arena confinedArena, sharedArena;
     MemorySegment nativeSegment, nativeSharedSegment, heapSegmentBytes, heapSegmentFloats;
     byte[] arr;
     long addr;
-
-    static final ValueLayout.OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
-    static final ValueLayout.OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withBitAlignment(8);
-    static final VarHandle intHandleUnaligned = JAVA_INT_UNALIGNED.arrayElementVarHandle();
-
 
     @Setup
     public void setup() {
@@ -76,8 +68,10 @@ public class LoopOverPollutedSegments {
             unsafe.putInt(addr + (i * 4), i);
         }
         arr = new byte[ALLOC_SIZE];
-        nativeSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, session = MemorySession.openConfined());
-        nativeSharedSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, session);
+        confinedArena = Arena.openConfined();
+        sharedArena = Arena.openShared();
+        nativeSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, confinedArena.scope());
+        nativeSharedSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, sharedArena.scope());
         heapSegmentBytes = MemorySegment.ofArray(new byte[ALLOC_SIZE]);
         heapSegmentFloats = MemorySegment.ofArray(new float[ELEM_SIZE]);
 
@@ -88,20 +82,21 @@ public class LoopOverPollutedSegments {
                 nativeSegment.setAtIndex(JAVA_FLOAT_UNALIGNED, i, i);
                 nativeSharedSegment.setAtIndex(JAVA_INT_UNALIGNED, i, i);
                 nativeSharedSegment.setAtIndex(JAVA_FLOAT_UNALIGNED, i, i);
-                intHandleUnaligned.set(nativeSegment, (long)i, i);
+                VH_INT_UNALIGNED.set(nativeSegment, (long)i, i);
                 heapSegmentBytes.setAtIndex(JAVA_INT_UNALIGNED, i, i);
                 heapSegmentBytes.setAtIndex(JAVA_FLOAT_UNALIGNED, i, i);
-                intHandleUnaligned.set(heapSegmentBytes, (long)i, i);
+                VH_INT_UNALIGNED.set(heapSegmentBytes, (long)i, i);
                 heapSegmentFloats.setAtIndex(JAVA_INT_UNALIGNED, i, i);
                 heapSegmentFloats.setAtIndex(JAVA_FLOAT_UNALIGNED, i, i);
-                intHandleUnaligned.set(heapSegmentFloats, (long)i, i);
+                VH_INT_UNALIGNED.set(heapSegmentFloats, (long)i, i);
             }
         }
     }
 
     @TearDown
     public void tearDown() {
-        session.close();
+        confinedArena.close();
+        sharedArena.close();
         heapSegmentBytes = null;
         heapSegmentFloats = null;
         arr = null;
@@ -112,8 +107,8 @@ public class LoopOverPollutedSegments {
     public int native_segment_VH() {
         int sum = 0;
         for (int k = 0; k < ELEM_SIZE; k++) {
-            intHandleUnaligned.set(nativeSegment, (long)k, k + 1);
-            int v = (int) intHandleUnaligned.get(nativeSegment, (long)k);
+            VH_INT_UNALIGNED.set(nativeSegment, (long)k, k + 1);
+            int v = (int) VH_INT_UNALIGNED.get(nativeSegment, (long)k);
             sum += v;
         }
         return sum;
@@ -134,8 +129,8 @@ public class LoopOverPollutedSegments {
     public int heap_segment_ints_VH() {
         int sum = 0;
         for (int k = 0; k < ELEM_SIZE; k++) {
-            intHandleUnaligned.set(heapSegmentBytes, (long)k, k + 1);
-            int v = (int) intHandleUnaligned.get(heapSegmentBytes, (long)k);
+            VH_INT_UNALIGNED.set(heapSegmentBytes, (long)k, k + 1);
+            int v = (int) VH_INT_UNALIGNED.get(heapSegmentBytes, (long)k);
             sum += v;
         }
         return sum;
@@ -156,8 +151,8 @@ public class LoopOverPollutedSegments {
     public int heap_segment_floats_VH() {
         int sum = 0;
         for (int k = 0; k < ELEM_SIZE; k++) {
-            intHandleUnaligned.set(heapSegmentFloats, (long)k, k + 1);
-            int v = (int)intHandleUnaligned.get(heapSegmentFloats, (long)k);
+            VH_INT_UNALIGNED.set(heapSegmentFloats, (long)k, k + 1);
+            int v = (int)VH_INT_UNALIGNED.get(heapSegmentFloats, (long)k);
             sum += v;
         }
         return sum;

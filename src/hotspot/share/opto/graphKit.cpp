@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.hpp"
-#include "ci/ciNativeEntryPoint.hpp"
 #include "ci/ciObjArray.hpp"
 #include "asm/register.hpp"
 #include "compiler/compileLog.hpp"
@@ -736,6 +735,29 @@ SafePointNode* GraphKit::clone_map() {
   return clonemap;
 }
 
+//-----------------------------destruct_map_clone------------------------------
+//
+// Order of destruct is important to increase the likelyhood that memory can be re-used. We need
+// to destruct/free/delete in the exact opposite order as clone_map().
+void GraphKit::destruct_map_clone(SafePointNode* sfp) {
+  if (sfp == nullptr) return;
+
+  Node* mem = sfp->memory();
+  JVMState* jvms = sfp->jvms();
+
+  if (jvms != nullptr) {
+    delete jvms;
+  }
+
+  remove_for_igvn(sfp);
+  gvn().clear_type(sfp);
+  sfp->destruct(&_gvn);
+
+  if (mem != nullptr) {
+    gvn().clear_type(mem);
+    mem->destruct(&_gvn);
+  }
+}
 
 //-----------------------------set_map_clone-----------------------------------
 void GraphKit::set_map_clone(SafePointNode* m) {
@@ -1020,15 +1042,15 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
     code = method()->java_code_at_bci(bci() + 1);
   }
 
-  BasicType rtype = T_ILLEGAL;
-  int       rsize = 0;
-
   if (code != Bytecodes::_illegal) {
     depth = Bytecodes::depth(code); // checkcast=0, athrow=-1
-    rtype = Bytecodes::result_type(code); // checkcast=P, athrow=V
-    if (rtype < T_CONFLICT)
-      rsize = type2size[rtype];
   }
+
+  auto rsize = [&]() {
+    assert(code != Bytecodes::_illegal, "code is illegal!");
+    BasicType rtype = Bytecodes::result_type(code); // checkcast=P, athrow=V
+    return (rtype < T_CONFLICT) ? type2size[rtype] : 0;
+  };
 
   switch (code) {
   case Bytecodes::_illegal:
@@ -1090,8 +1112,8 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
       iter.reset_to_bci(bci());
       iter.next();
       inputs = iter.get_dimensions();
-      assert(rsize == 1, "");
-      depth = rsize - inputs;
+      assert(rsize() == 1, "");
+      depth = 1 - inputs;
     }
     break;
 
@@ -1100,8 +1122,8 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_freturn:
   case Bytecodes::_dreturn:
   case Bytecodes::_areturn:
-    assert(rsize == -depth, "");
-    inputs = rsize;
+    assert(rsize() == -depth, "");
+    inputs = -depth;
     break;
 
   case Bytecodes::_jsr:
@@ -1112,7 +1134,7 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
 
   default:
     // bytecode produces a typed result
-    inputs = rsize - depth;
+    inputs = rsize() - depth;
     assert(inputs >= 0, "");
     break;
   }
@@ -1551,7 +1573,8 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
                                 bool require_atomic_access,
                                 bool unaligned,
                                 bool mismatched,
-                                bool unsafe) {
+                                bool unsafe,
+                                int barrier_data) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
   const TypePtr* adr_type = NULL;
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -1566,6 +1589,7 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   if (unsafe) {
     st->as_Store()->set_unsafe_access();
   }
+  st->as_Store()->set_barrier_data(barrier_data);
   st = _gvn.transform(st);
   set_memory(st, adr_idx);
   // Back-to-back stores can only remove intermediate store with DU info
@@ -2019,12 +2043,12 @@ void GraphKit::increment_counter(Node* counter_addr) {
 // Bail out to the interpreter in mid-method.  Implemented by calling the
 // uncommon_trap blob.  This helper function inserts a runtime call with the
 // right debug info.
-void GraphKit::uncommon_trap(int trap_request,
+Node* GraphKit::uncommon_trap(int trap_request,
                              ciKlass* klass, const char* comment,
                              bool must_throw,
                              bool keep_exact_action) {
   if (failing())  stop();
-  if (stopped())  return; // trap reachable?
+  if (stopped())  return NULL; // trap reachable?
 
   // Note:  If ProfileTraps is true, and if a deopt. actually
   // occurs here, the runtime will make sure an MDO exists.  There is
@@ -2140,6 +2164,7 @@ void GraphKit::uncommon_trap(int trap_request,
   root()->add_req(halt);
 
   stop_and_kill_map();
+  return call;
 }
 
 
@@ -2182,7 +2207,7 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, Prof
 
   // Should the klass from the profile be recorded in the speculative type?
   if (current_type->would_improve_type(exact_kls, jvms()->depth())) {
-    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls);
+    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls, Type::trust_interfaces);
     const TypeOopPtr* xtype = tklass->as_instance_type();
     assert(xtype->klass_is_exact(), "Should be exact");
     // Any reason to believe n is not null (from this profiling or a previous one)?
@@ -2563,120 +2588,6 @@ Node* GraphKit::sign_extend_short(Node* in) {
   return _gvn.transform(new RShiftINode(tmp, _gvn.intcon(16)));
 }
 
-//-----------------------------make_native_call-------------------------------
-Node* GraphKit::make_native_call(address call_addr, const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep) {
-  // Select just the actual call args to pass on
-  // [MethodHandle fallback, long addr, HALF addr, ... args , NativeEntryPoint nep]
-  //                                             |          |
-  //                                             V          V
-  //                                             [ ... args ]
-  uint n_filtered_args = nargs - 4; // -fallback, -addr (2), -nep;
-  ResourceMark rm;
-  Node** argument_nodes = NEW_RESOURCE_ARRAY(Node*, n_filtered_args);
-  const Type** arg_types = TypeTuple::fields(n_filtered_args);
-  GrowableArray<VMReg> arg_regs(C->comp_arena(), n_filtered_args, n_filtered_args, VMRegImpl::Bad());
-
-  VMReg* argRegs = nep->argMoves();
-  {
-    for (uint vm_arg_pos = 0, java_arg_read_pos = 0;
-        vm_arg_pos < n_filtered_args; vm_arg_pos++) {
-      uint vm_unfiltered_arg_pos = vm_arg_pos + 3; // +3 to skip fallback handle argument and addr (2 since long)
-      Node* node = argument(vm_unfiltered_arg_pos);
-      const Type* type = call_type->domain()->field_at(TypeFunc::Parms + vm_unfiltered_arg_pos);
-      VMReg reg = type == Type::HALF
-        ? VMRegImpl::Bad()
-        : argRegs[java_arg_read_pos++];
-
-      argument_nodes[vm_arg_pos] = node;
-      arg_types[TypeFunc::Parms + vm_arg_pos] = type;
-      arg_regs.at_put(vm_arg_pos, reg);
-    }
-  }
-
-  uint n_returns = call_type->range()->cnt() - TypeFunc::Parms;
-  GrowableArray<VMReg> ret_regs(C->comp_arena(), n_returns, n_returns, VMRegImpl::Bad());
-  const Type** ret_types = TypeTuple::fields(n_returns);
-
-  VMReg* retRegs = nep->returnMoves();
-  {
-    for (uint vm_ret_pos = 0, java_ret_read_pos = 0;
-        vm_ret_pos < n_returns; vm_ret_pos++) { // 0 or 1
-      const Type* type = call_type->range()->field_at(TypeFunc::Parms + vm_ret_pos);
-      VMReg reg = type == Type::HALF
-        ? VMRegImpl::Bad()
-        : retRegs[java_ret_read_pos++];
-
-      ret_regs.at_put(vm_ret_pos, reg);
-      ret_types[TypeFunc::Parms + vm_ret_pos] = type;
-    }
-  }
-
-  const TypeFunc* new_call_type = TypeFunc::make(
-    TypeTuple::make(TypeFunc::Parms + n_filtered_args, arg_types),
-    TypeTuple::make(TypeFunc::Parms + n_returns, ret_types)
-  );
-
-  if (nep->need_transition()) {
-    RuntimeStub* invoker = SharedRuntime::make_native_invoker(call_addr,
-                                                              nep->shadow_space(),
-                                                              arg_regs, ret_regs);
-    if (invoker == NULL) {
-      C->record_failure("native invoker not implemented on this platform");
-      return NULL;
-    }
-    C->add_native_invoker(invoker);
-    call_addr = invoker->code_begin();
-  }
-  assert(call_addr != NULL, "sanity");
-
-  CallNativeNode* call = new CallNativeNode(new_call_type, call_addr, nep->name(), TypePtr::BOTTOM,
-                                            arg_regs,
-                                            ret_regs,
-                                            nep->shadow_space(),
-                                            nep->need_transition());
-
-  if (call->_need_transition) {
-    add_safepoint_edges(call);
-  }
-
-  set_predefined_input_for_runtime_call(call);
-
-  for (uint i = 0; i < n_filtered_args; i++) {
-    call->init_req(i + TypeFunc::Parms, argument_nodes[i]);
-  }
-
-  Node* c = gvn().transform(call);
-  assert(c == call, "cannot disappear");
-
-  set_predefined_output_for_runtime_call(call);
-
-  Node* ret;
-  if (method() == NULL || method()->return_type()->basic_type() == T_VOID) {
-    ret = top();
-  } else {
-    ret =  gvn().transform(new ProjNode(call, TypeFunc::Parms));
-    // Unpack native results if needed
-    // Need this method type since it's unerased
-    switch (nep->method_type()->rtype()->basic_type()) {
-      case T_CHAR:
-        ret = _gvn.transform(new AndINode(ret, _gvn.intcon(0xFFFF)));
-        break;
-      case T_BYTE:
-        ret = sign_extend_byte(ret);
-        break;
-      case T_SHORT:
-        ret = sign_extend_short(ret);
-        break;
-      default: // do nothing
-        break;
-    }
-  }
-
-  push_node(method()->return_type()->basic_type(), ret);
-
-  return call;
-}
-
 //------------------------------merge_memory-----------------------------------
 // Merge memory from one path into the current memory state.
 void GraphKit::merge_memory(Node* new_mem, Node* region, int new_path) {
@@ -2750,7 +2661,7 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
   case T_ADDRESS: cmp = new CmpPNode(in1, in2); break;
   default: fatal("unexpected comparison type %s", type2name(bt));
   }
-  gvn.transform(cmp);
+  cmp = gvn.transform(cmp);
   Node* bol = gvn.transform(new BoolNode(cmp, test));
   IfNode* iff = new IfNode(ctrl, bol, p, COUNT_UNKNOWN);
   gvn.transform(iff);
@@ -2958,7 +2869,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
                                     Node* *casted_receiver) {
   assert(!klass->is_interface(), "no exact type check on interfaces");
 
-  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass);
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces);
   Node* recv_klass = load_object_klass(receiver);
   Node* want_klass = makecon(tklass);
   Node* cmp = _gvn.transform(new CmpPNode(recv_klass, want_klass));
@@ -2987,7 +2898,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
 //------------------------------subtype_check_receiver-------------------------
 Node* GraphKit::subtype_check_receiver(Node* receiver, ciKlass* klass,
                                        Node** casted_receiver) {
-  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass);
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces)->try_improve();
   Node* want_klass = makecon(tklass);
 
   Node* slow_ctl = gen_subtype_check(receiver, want_klass);
@@ -3110,7 +3021,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
   ciKlass* exact_kls = spec_klass == NULL ? profile_has_unique_klass() : spec_klass;
   if (exact_kls != NULL) {// no cast failures here
     if (require_klass == NULL ||
-        C->static_subtype_check(require_klass, TypeKlassPtr::make(exact_kls)) == Compile::SSC_always_true) {
+        C->static_subtype_check(require_klass, TypeKlassPtr::make(exact_kls, Type::trust_interfaces)) == Compile::SSC_always_true) {
       // If we narrow the type to match what the type profile sees or
       // the speculative type, we can then remove the rest of the
       // cast.
@@ -3296,8 +3207,8 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
 Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
                               Node* *failure_control) {
   kill_dead_locals();           // Benefit all the uncommon traps
-  const TypeKlassPtr *tk = _gvn.type(superklass)->is_klassptr();
-  const Type *toop = tk->cast_to_exactness(false)->as_instance_type();
+  const TypeKlassPtr *tk = _gvn.type(superklass)->is_klassptr()->try_improve();
+  const TypeOopPtr *toop = tk->cast_to_exactness(false)->as_instance_type();
 
   // Fast cutout:  Check the case that the cast is vacuously true.
   // This detects the common cases where the test will short-circuit
@@ -3738,7 +3649,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
 // the type to a constant.
 // The optional arguments are for specialized use by intrinsics:
 //  - If 'extra_slow_test' if not null is an extra condition for the slow-path.
-//  - If 'return_size_val', report the the total object size to the caller.
+//  - If 'return_size_val', report the total object size to the caller.
 //  - deoptimize_on_exception controls how Java exceptions are handled (rethrow vs deoptimize)
 Node* GraphKit::new_instance(Node* klass_node,
                              Node* extra_slow_test,

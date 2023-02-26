@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,38 +24,40 @@
  */
 package jdk.internal.foreign.abi.x64.windows;
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
-import jdk.internal.foreign.abi.ProgrammableInvoker;
-import jdk.internal.foreign.abi.ProgrammableUpcallHandler;
+import jdk.internal.foreign.abi.CallingSequenceBuilder;
+import jdk.internal.foreign.abi.DowncallLinker;
+import jdk.internal.foreign.abi.LinkerOptions;
+import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.x64.X86_64Architecture;
-import jdk.internal.foreign.abi.SharedUtils;
 
+import java.lang.foreign.SegmentScope;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.PlatformLayouts.*;
+import static jdk.internal.foreign.PlatformLayouts.Win64;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
+import static jdk.internal.foreign.abi.x64.X86_64Architecture.Regs.*;
 
 /**
- * For the Windowx x64 C ABI specifically, this class uses the ProgrammableInvoker API, namely CallingSequenceBuilder2
- * to translate a C FunctionDescriptor into a CallingSequence2, which can then be turned into a MethodHandle.
+ * For the Windowx x64 C ABI specifically, this class uses CallingSequenceBuilder
+ * to translate a C FunctionDescriptor into a CallingSequence, which can then be turned into a MethodHandle.
  *
  * This includes taking care of synthetic arguments like pointers to return buffers for 'in-memory' returns.
  */
 public class CallArranger {
+    public static final int MAX_REGISTER_ARGUMENTS = 4;
     private static final int STACK_SLOT_SIZE = 8;
 
     private static final ABIDescriptor CWindows = X86_64Architecture.abiFor(
@@ -67,23 +69,22 @@ public class CallArranger {
         new VMStorage[] { rax, r10, r11 },
         new VMStorage[] { xmm4, xmm5 },
         16,
-        32
+        32,
+        r10, r11 // scratch 1 & 2
     );
 
-    // record
-    public static class Bindings {
-        public final CallingSequence callingSequence;
-        public final boolean isInMemoryReturn;
-
-        Bindings(CallingSequence callingSequence, boolean isInMemoryReturn) {
-            this.callingSequence = callingSequence;
-            this.isInMemoryReturn = isInMemoryReturn;
-        }
+    public record Bindings(
+            CallingSequence callingSequence,
+            boolean isInMemoryReturn) {
     }
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
+        return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
+    }
+
+    public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
         class CallingSequenceBuilderHelper {
-            final CallingSequenceBuilder csb = new CallingSequenceBuilder(forUpcall);
+            final CallingSequenceBuilder csb = new CallingSequenceBuilder(CWindows, forUpcall, options);
             final BindingCalculator argCalc =
                 forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
             final BindingCalculator retCalc =
@@ -101,7 +102,7 @@ public class CallArranger {
 
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
-            Class<?> carrier = MemoryAddress.class;
+            Class<?> carrier = MemorySegment.class;
             MemoryLayout layout = Win64.C_POINTER;
             csb.addArgumentBindings(carrier, layout, false);
             if (forUpcall) {
@@ -112,34 +113,32 @@ public class CallArranger {
         }
 
         for (int i = 0; i < mt.parameterCount(); i++) {
-            csb.addArgumentBindings(mt.parameterType(i), cDesc.argumentLayouts().get(i), SharedUtils.isVarargsIndex(cDesc, i));
+            csb.addArgumentBindings(mt.parameterType(i), cDesc.argumentLayouts().get(i), options.isVarargsIndex(i));
         }
-
-        csb.csb.setTrivial(SharedUtils.isTrivial(cDesc));
 
         return new Bindings(csb.csb.build(), returnInMemory);
     }
 
-    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc) {
-        Bindings bindings = getBindings(mt, cDesc, false);
+    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
+        Bindings bindings = getBindings(mt, cDesc, false, options);
 
-        MethodHandle handle = new ProgrammableInvoker(CWindows, bindings.callingSequence).getBoundMethodHandle();
+        MethodHandle handle = new DowncallLinker(CWindows, bindings.callingSequence).getBoundMethodHandle();
 
         if (bindings.isInMemoryReturn) {
-            handle = SharedUtils.adaptDowncallForIMR(handle, cDesc);
+            handle = SharedUtils.adaptDowncallForIMR(handle, cDesc, bindings.callingSequence);
         }
 
         return handle;
     }
 
-    public static MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, MemorySession session) {
+    public static MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope scope) {
         Bindings bindings = getBindings(mt, cDesc, true);
 
         if (bindings.isInMemoryReturn) {
             target = SharedUtils.adaptUpcallForIMR(target, false /* need the return value as well */);
         }
 
-        return ProgrammableUpcallHandler.make(CWindows, target, bindings.callingSequence, session);
+        return UpcallLinker.make(CWindows, target, bindings.callingSequence, scope);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
@@ -159,14 +158,13 @@ public class CallArranger {
             this.forArguments = forArguments;
         }
 
-        VMStorage nextStorage(int type, MemoryLayout layout) {
-            if (nRegs >= Windowsx64Linker.MAX_REGISTER_ARGUMENTS) {
+        VMStorage nextStorage(int type) {
+            if (nRegs >= MAX_REGISTER_ARGUMENTS) {
                 assert forArguments : "no stack returns";
                 // stack
-                long alignment = Math.max(SharedUtils.alignment(layout, true), STACK_SLOT_SIZE);
-                stackOffset = Utils.alignUp(stackOffset, alignment);
+                assert stackOffset == Utils.alignUp(stackOffset, STACK_SLOT_SIZE); // should always be aligned
 
-                VMStorage storage = X86_64Architecture.stackStorage((int) (stackOffset / STACK_SLOT_SIZE));
+                VMStorage storage = X86_64Architecture.stackStorage((short) STACK_SLOT_SIZE, (int) stackOffset);
                 stackOffset += STACK_SLOT_SIZE;
                 return storage;
             }
@@ -178,7 +176,7 @@ public class CallArranger {
 
         public VMStorage extraVarargsStorage() {
             assert forArguments;
-            return CWindows.inputStorage[StorageClasses.INTEGER][nRegs - 1];
+            return CWindows.inputStorage[StorageType.INTEGER][nRegs - 1];
         }
     }
 
@@ -200,7 +198,7 @@ public class CallArranger {
             switch (argumentClass) {
                 case STRUCT_REGISTER: {
                     assert carrier == MemorySegment.class;
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.bufferLoad(0, type)
                             .vmStore(storage, type);
@@ -209,29 +207,29 @@ public class CallArranger {
                 case STRUCT_REFERENCE: {
                     assert carrier == MemorySegment.class;
                     bindings.copy(layout)
-                            .unboxAddress(MemorySegment.class);
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
+                            .unboxAddress();
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, long.class);
                     break;
                 }
                 case POINTER: {
-                    bindings.unboxAddress(carrier);
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
+                    bindings.unboxAddress();
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, long.class);
                     break;
                 }
                 case INTEGER: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, carrier);
                     break;
                 }
                 case FLOAT: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.VECTOR, layout);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);
                     bindings.vmStore(storage, carrier);
                     break;
                 }
                 case VARARG_FLOAT: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.VECTOR, layout);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);
                     if (!INSTANCE.isStackType(storage.type())) { // need extra for register arg
                         VMStorage extraStorage = storageCalculator.extraVarargsStorage();
                         bindings.dup()
@@ -264,7 +262,7 @@ public class CallArranger {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout)
                             .dup();
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.vmLoad(storage, type)
                             .bufferStore(0, type);
@@ -272,25 +270,24 @@ public class CallArranger {
                 }
                 case STRUCT_REFERENCE: {
                     assert carrier == MemorySegment.class;
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, long.class)
-                            .boxAddress()
-                            .toSegment(layout);
+                            .boxAddress(layout);
                     break;
                 }
                 case POINTER: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, long.class)
-                            .boxAddress();
+                            .boxAddressRaw(Utils.pointeeSize(layout));
                     break;
                 }
                 case INTEGER: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, carrier);
                     break;
                 }
                 case FLOAT: {
-                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.VECTOR, layout);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);
                     bindings.vmLoad(storage, carrier);
                     break;
                 }

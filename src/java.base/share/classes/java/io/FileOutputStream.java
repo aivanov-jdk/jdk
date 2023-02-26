@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class FileOutputStream extends OutputStream
     /**
      * Access to FileDescriptor internals.
      */
-    private static final JavaIOFileDescriptorAccess fdAccess =
+    private static final JavaIOFileDescriptorAccess FD_ACCESS =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
     /**
@@ -314,8 +314,9 @@ public class FileOutputStream extends OutputStream
      * @param      b   the byte to be written.
      * @throws     IOException  if an I/O error occurs.
      */
+    @Override
     public void write(int b) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             write(b, append);
@@ -340,11 +341,12 @@ public class FileOutputStream extends OutputStream
      * Writes {@code b.length} bytes from the specified byte array
      * to this file output stream.
      *
-     * @param      b   the data.
-     * @throws     IOException  if an I/O error occurs.
+     * @param      b   {@inheritDoc}
+     * @throws     IOException  {@inheritDoc}
      */
+    @Override
     public void write(byte[] b) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             writeBytes(b, 0, b.length, append);
@@ -357,13 +359,15 @@ public class FileOutputStream extends OutputStream
      * Writes {@code len} bytes from the specified byte array
      * starting at offset {@code off} to this file output stream.
      *
-     * @param      b     the data.
-     * @param      off   the start offset in the data.
-     * @param      len   the number of bytes to write.
+     * @param      b     {@inheritDoc}
+     * @param      off   {@inheritDoc}
+     * @param      len   {@inheritDoc}
      * @throws     IOException  if an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
+    @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             writeBytes(b, off, len, append);
@@ -392,6 +396,7 @@ public class FileOutputStream extends OutputStream
      *
      * @revised 1.4
      */
+    @Override
     public void close() throws IOException {
         if (closed) {
             return;

@@ -40,6 +40,9 @@ static jvmtiEnv *jvmti = NULL;
 static jrawMonitorID events_monitor = NULL;
 static Tinfo tinfo[MAX_WORKER_THREADS];
 
+static int vthread_mount_count = 0;
+static int vthread_unmount_count = 0;
+static jboolean passed = JNI_TRUE;
 
 static Tinfo*
 find_tinfo(JNIEnv* jni, const char* tname) {
@@ -153,9 +156,7 @@ test_GetCarrierThread(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jthread vthr
 
   // #1: Test JVMTI GetCarrierThread extension function with NULL vthread
   err = GetCarrierThread(jvmti, jni, NULL, &vthread_thread);
-  if (err != JVMTI_ERROR_INVALID_THREAD) {
-    fatal(jni, "event handler: JVMTI GetCarrierThread with NULL vthread failed to return JVMTI_ERROR_INVALID_THREAD");
-  }
+  check_jvmti_status(jni, err, "event handler: error in JVMTI GetCarrierThread");
 
   // #2: Test JVMTI GetCarrierThread extension function with a bad vthread
   err = GetCarrierThread(jvmti, jni, thread, &vthread_thread);
@@ -377,10 +378,15 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread, co
   }
 
   // #0: Test JVMTI GetLocalInstance function for carrier thread
-  err = jvmti->GetLocalInstance(cthread, 3, &obj);
-  check_jvmti_status(jni, err, "event handler: error in JVMTI GetLocalInstance for carrier thread top frame Continuation.run");
+  {
+    suspend_thread(jvmti, jni, cthread);
 
-  LOG("JVMTI GetLocalInstance succeed for carrier thread top frame Continuation.run()\n");
+    err = jvmti->GetLocalInstance(cthread, 3, &obj);
+    check_jvmti_status(jni, err, "event handler: error in JVMTI GetLocalInstance for carrier thread top frame Continuation.run");
+    LOG("JVMTI GetLocalInstance succeed for carrier thread top frame Continuation.run()\n");
+
+    resume_thread(jvmti, jni, cthread);
+  }
 
   depth = find_method_depth(jvmti, jni, vthread, "producer");
   if (depth == -1) {
@@ -535,6 +541,7 @@ VirtualThreadMount(jvmtiEnv *jvmti, ...) {
   va_end(ap);
 
   RawMonitorLocker rml(jvmti, jni, events_monitor);
+  vthread_mount_count++;
   processVThreadEvent(jvmti, jni, thread, "VirtualThreadMount");
 }
 
@@ -551,6 +558,7 @@ VirtualThreadUnmount(jvmtiEnv *jvmti, ...) {
   va_end(ap);
 
   RawMonitorLocker rml(jvmti, jni, events_monitor);
+  vthread_unmount_count++;
   processVThreadEvent(jvmti, jni, thread, "VirtualThreadUnmount");
 }
 
@@ -586,6 +594,7 @@ Agent_OnLoad(JavaVM *jvm, char *options,
   memset(&caps, 0, sizeof(caps));
   caps.can_support_virtual_threads = 1;
   caps.can_access_local_variables = 1;
+  caps.can_suspend = 1;
 
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
@@ -626,6 +635,27 @@ Agent_OnLoad(JavaVM *jvm, char *options,
   events_monitor = create_raw_monitor(jvmti, "Events Monitor");
   LOG("Agent_OnLoad finished\n");
   return JNI_OK;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_VThreadTest_check(JNIEnv *jni, jclass cls) {
+  LOG("\n");
+  LOG("check: started\n");
+
+  LOG("check: vthread_mount_count:   %d\n", vthread_mount_count);
+  LOG("check: vthread_unmount_count: %d\n", vthread_unmount_count);
+
+  if (vthread_mount_count == 0) {
+    passed = JNI_FALSE;
+    LOG("FAILED: vthread_mount_count == 0\n");
+  }
+  if (vthread_unmount_count == 0) {
+    passed = JNI_FALSE;
+    LOG("FAILED: vthread_unmount_count == 0\n");
+  }
+  LOG("check: finished\n");
+  LOG("\n");
+  return passed;
 }
 
 } // extern "C"
