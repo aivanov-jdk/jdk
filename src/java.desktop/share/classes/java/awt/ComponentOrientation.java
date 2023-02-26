@@ -55,22 +55,43 @@ import java.util.ResourceBundle;
   * There are four different orientations used in modern languages
   * as in the following table.<br>
   * <table>
-      <thead>
-        <tr>
-          <th></th>
-          <th>LT</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th style="transform: rotate(180deg)">Layout</th>
-          <td>
-            A B C<br>
-            D E F<br>
-            G H I
-          </td>
-      </tbody>
-    </table>
+  *   <caption>Sample layout of components for
+  *            different orientations</caption>
+  *   <thead>
+  *     <tr>
+  *       <th scope="row">Orientation</th>
+  *       <th scope="col">Left-to-Right<br> Top-to-Bottom</th>
+  *       <th scope="col">Right-to-Left<br> Top-to-Bottom</th>
+  *       <th scope="col">Top-to-Bottom<br> Left-to-Right</th>
+  *       <th scope="col">Top-to-Bottom<br> Right-to-Left</th>
+  *     </tr>
+  *   </thead>
+  *   <tbody>
+  *     <tr>
+  *       <th scope="row">Layout</th>
+  *       <td>
+  *         A B C<br>
+  *         D E F<br>
+  *         G H I
+  *       </td>
+  *       <td>
+  *         C B A<br>
+  *         F E D<br>
+  *         I H G
+  *       </td>
+  *       <td>
+  *         A D G<br>
+  *         B E H<br>
+  *         C F I
+  *       </td>
+  *       <td>
+  *         G D A<br>
+  *         H E B<br>
+  *         I F C
+  *       </td>
+  *     </tr>
+  *   </tbody>
+  * </table>
   * <pre>
   * LT          RT          TL          TR
   * A B C       C B A       A D G       G D A
