@@ -114,8 +114,7 @@ public class TaskbarPositionTest implements ActionListener {
 
         // Place the frame near the bottom.
         frame.setLocation(screenBounds.x,
-                screenBounds.y + screenBounds.height
-                        - frame.getHeight());
+                screenBounds.y + screenBounds.height - frame.getHeight());
         frame.setVisible(true);
     }
 
@@ -141,11 +140,11 @@ public class TaskbarPositionTest implements ActionListener {
                     Point popupMenuLoc = popupMenu.getLocationOnScreen();
 
                     if (popupMenuLoc.x < 0 || popupMenuLoc.y < 0) {
-                        System.out.println("p.x " + popupMenuLoc.x + " comboLocation.x " +
-                                comboLocation.x + " p.y " + popupMenuLoc.y + " comboLocation.y " + comboLocation.y);
+                        System.out.println("popup " + popupMenuLoc
+                                           + " vs. comboLocation " + comboLocation);
                         throw new RuntimeException("ComboBox out of screen");
                     }
-                    //When Frame moved to -ve position popup should be moved.
+                    // When Frame moved to negative position, popup should be moved
                     if (comboLocation.x < 0 && popupMenuLoc.y + 1 < comboLocation.y) {
                         System.out.println("p.x " + popupMenuLoc.x + " comboLocation.x " + comboLocation.x
                                 + " p.y " + popupMenuLoc.y + " comboLocation.y " + comboLocation.y);
@@ -219,7 +218,6 @@ public class TaskbarPositionTest implements ActionListener {
         panel.setSize(300, 200);
         combo1.addPopupMenuListener(new ComboPopupCheckListener());
         combo2.addPopupMenuListener(new ComboPopupCheckListener());
-        // TODO Why did you add "Popup menu" to the constructor?
         contextMenu = new JPopupMenu();
         for (int i = 0; i < dayData.length; i++) {
             JMenuItem item = contextMenu.add(new JMenuItem(dayData[i], mnDayData[i]));
@@ -241,7 +239,7 @@ public class TaskbarPositionTest implements ActionListener {
             JMenuItem menuitem = new JMenuItem(prefix + i);
             menu.add(menuitem);
             if (action != null) {
-                menu.addActionListener(action);
+                menuitem.addActionListener(action);
             }
         }
     }
@@ -268,9 +266,10 @@ public class TaskbarPositionTest implements ActionListener {
         menubar.add(menu2);
         createSubMenu(menu1, "1 JMenuItem", 8, null);
         createSubMenu(menu2, "2 JMenuItem", 4, null);
-        createSubMenu(TaskbarPositionTest.submenu, "S JMenuItem", 4, this);
+        createSubMenu(submenu, "S JMenuItem", 4, this);
         menu2.add(new JSeparator());
         menu2.add(submenu);
+
         return menubar;
     }
 
@@ -294,11 +293,7 @@ public class TaskbarPositionTest implements ActionListener {
             Robot robot = new Robot();
             robot.setAutoDelay(50);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    new TaskbarPositionTest();
-                }
-            });
+            SwingUtilities.invokeAndWait(TaskbarPositionTest::new);
 
             robot.waitForIdle();
             robot.delay(1000);
@@ -330,11 +325,10 @@ public class TaskbarPositionTest implements ActionListener {
 
             // Focus should go to combo1
             // Open combo1 popup
-            robot.keyPress(KeyEvent.VK_TAB);
-            robot.keyRelease(KeyEvent.VK_TAB);
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
 
+            robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> isComboPopupOnScreen(combo1));
             hidePopup(robot);
 
@@ -348,6 +342,7 @@ public class TaskbarPositionTest implements ActionListener {
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
 
+            robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> isComboPopupOnScreen(combo2));
             hidePopup(robot);
 
@@ -355,29 +350,33 @@ public class TaskbarPositionTest implements ActionListener {
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
 
+            robot.waitForIdle();
+
             // Open its popup
             robot.keyPress(KeyEvent.VK_CONTROL);
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_CONTROL);
 
+            robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> isPopupOnScreen(contextMenu, fullScreenBounds));
             hidePopup(robot);
-            // Popup from a mouse click
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    Point pt = panel.getLocationOnScreen();
-                    pt.translate(4, 4);
-                    robot.mouseMove(pt.x, pt.y);
-                }
+            // Popup from a mouse click
+            SwingUtilities.invokeAndWait(() -> {
+                Point pt = panel.getLocationOnScreen();
+                pt.translate(4, 4);
+                robot.mouseMove(pt.x, pt.y);
             });
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
             // Ensure popupMenu is shown within screen bounds
+            robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> isPopupOnScreen(contextMenu, fullScreenBounds));
+
             hidePopup(robot);
+
             robot.waitForIdle();
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
@@ -386,9 +385,14 @@ public class TaskbarPositionTest implements ActionListener {
                 }
             });
 
+            robot.waitForIdle();
+
             // Open combo1 popup again
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
+
+            robot.waitForIdle();
+
             SwingUtilities.invokeAndWait(() -> isComboPopupOnScreen(combo1));
             hidePopup(robot);
             robot.waitForIdle();
