@@ -138,15 +138,30 @@ public class TaskbarPositionTest implements ActionListener {
 
                 if (popupMenu != null) {
                     Point popupMenuLoc = popupMenu.getLocationOnScreen();
+                    Dimension popupSize = popupMenu.getSize();
 
                     isPopupOnScreen(popupMenu, fullScreenBounds);
 
-                    // When Frame moved to negative position, popup should be moved
-                    if (comboLocation.x < 0 && popupMenuLoc.y + 1 < comboLocation.y) {
-                        System.out.println("p.x " + popupMenuLoc.x + " comboLocation.x " + comboLocation.x
-                                + " p.y " + popupMenuLoc.y + " comboLocation.y " + comboLocation.y);
-                        throw new RuntimeException("ComboBox popup is wrongly aligned");
-                    } // check that popup was opened down
+                    if (comboLocation.x > 0) {
+                        System.err.println("Positive");
+                        // The frame located at the bottom of the screen,
+                        // the combo popups should open upwards
+                        if (popupMenuLoc.y + popupSize.height < comboLocation.y) {
+                            System.err.println("popup " + popupMenuLoc
+                                               + " combo " + comboLocation);
+                            throw new RuntimeException("ComboBox popup should open upwards");
+                        }
+                    } else {
+                        System.err.println("Negative");
+                        // The frame is moved to negative position away from
+                        // the bottom of the screen, the combo popup should
+                        // open downwards in this case
+                        if (popupMenuLoc.y + 1 < comboLocation.y) {
+                            System.err.println("popup " + popupMenuLoc
+                                               + " combo " + comboLocation);
+                            throw new RuntimeException("ComboBox popup should open downwards");
+                        }
+                    }
                 }
             }
         }
