@@ -139,11 +139,8 @@ public class TaskbarPositionTest implements ActionListener {
                 if (popupMenu != null) {
                     Point popupMenuLoc = popupMenu.getLocationOnScreen();
 
-                    if (popupMenuLoc.x < 0 || popupMenuLoc.y < 0) {
-                        System.out.println("popup " + popupMenuLoc
-                                           + " vs. comboLocation " + comboLocation);
-                        throw new RuntimeException("ComboBox out of screen");
-                    }
+                    isPopupOnScreen(popupMenu, fullScreenBounds);
+
                     // When Frame moved to negative position, popup should be moved
                     if (comboLocation.x < 0 && popupMenuLoc.y + 1 < comboLocation.y) {
                         System.out.println("p.x " + popupMenuLoc.x + " comboLocation.x " + comboLocation.x
