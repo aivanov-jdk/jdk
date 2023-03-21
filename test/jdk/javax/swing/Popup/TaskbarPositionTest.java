@@ -24,6 +24,8 @@
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -33,8 +35,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 import javax.swing.AbstractAction;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -47,8 +50,10 @@ import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import javax.swing.event.PopupMenuListener;
 import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+
+import jtreg.SkippedException;
 
 /*
  * @test
@@ -57,7 +62,9 @@ import javax.swing.event.PopupMenuEvent;
  * @summary Tests the location of the heavy weight popup portion of JComboBox,
  * JMenu and JPopupMenu.
  * @library ../regtesthelpers
+ * @library /test/lib
  * @build Util
+ * @build jtreg.SkippedException
  * @run main TaskbarPositionTest
  */
 public class TaskbarPositionTest implements ActionListener {
@@ -297,6 +304,17 @@ public class TaskbarPositionTest implements ActionListener {
     }
 
     public static void main(String[] args) throws Throwable {
+        GraphicsDevice[] screens = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                                      .getScreenDevices();
+        for (GraphicsDevice screen : screens) {
+            Rectangle bounds = screen.getDefaultConfiguration()
+                                     .getBounds();
+            if (bounds.x < 0 || bounds.y < 0) {
+                // The test may fail if a screen have negative origin
+                throw new SkippedException("Configurations with negative screen"
+                                           + " origin are not supported");
+            }
+        }
 
         try {
             // Use Robot to automate the test
