@@ -138,33 +138,31 @@ public class TaskbarPositionTest implements ActionListener {
         @Override
         public void popupMenuWillBecomeInvisible(PopupMenuEvent ev) {
             JComboBox<?> combo = (JComboBox<?>) ev.getSource();
-            if (combo != null) {
-                Point comboLoc = combo.getLocationOnScreen();
+            Point comboLoc = combo.getLocationOnScreen();
 
-                JPopupMenu popupMenu = (JPopupMenu) combo.getUI().getAccessibleChild(combo, 0);
+            JPopupMenu popupMenu = (JPopupMenu) combo.getUI().getAccessibleChild(combo, 0);
 
-                Point popupMenuLoc = popupMenu.getLocationOnScreen();
-                Dimension popupSize = popupMenu.getSize();
+            Point popupMenuLoc = popupMenu.getLocationOnScreen();
+            Dimension popupSize = popupMenu.getSize();
 
-                isPopupOnScreen(popupMenu, fullScreenBounds);
+            isPopupOnScreen(popupMenu, fullScreenBounds);
 
-                if (comboLoc.x > 0) {
-                    // The frame is located at the bottom of the screen,
-                    // the combo popups should open upwards
-                    if (popupMenuLoc.y + popupSize.height < comboLoc.y) {
-                        System.err.println("popup " + popupMenuLoc
-                                + " combo " + comboLoc);
-                        throw new RuntimeException("ComboBox popup should open upwards");
-                    }
-                } else {
-                    // The frame has been moved to negative position away from
-                    // the bottom of the screen, the combo popup should
-                    // open downwards in this case
-                    if (popupMenuLoc.y + 1 < comboLoc.y) {
-                        System.err.println("popup " + popupMenuLoc
-                                + " combo " + comboLoc);
-                        throw new RuntimeException("ComboBox popup should open downwards");
-                    }
+            if (comboLoc.x > 0) {
+                // The frame is located at the bottom of the screen,
+                // the combo popups should open upwards
+                if (popupMenuLoc.y + popupSize.height < comboLoc.y) {
+                    System.err.println("popup " + popupMenuLoc
+                            + " combo " + comboLoc);
+                    throw new RuntimeException("ComboBox popup should open upwards");
+                }
+            } else {
+                // The frame has been moved to negative position away from
+                // the bottom of the screen, the combo popup should
+                // open downwards in this case
+                if (popupMenuLoc.y + 1 < comboLoc.y) {
+                    System.err.println("popup " + popupMenuLoc
+                            + " combo " + comboLoc);
+                    throw new RuntimeException("ComboBox popup should open downwards");
                 }
             }
         }
