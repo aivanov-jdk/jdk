@@ -301,15 +301,28 @@ public class TaskbarPositionTest implements ActionListener {
     }
 
     public static void main(String[] args) throws Throwable {
+        GraphicsDevice mainScreen = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                                       .getDefaultScreenDevice();
+        Rectangle mainScreenBounds = mainScreen.getDefaultConfiguration()
+                                               .getBounds();
         GraphicsDevice[] screens = GraphicsEnvironment.getLocalGraphicsEnvironment()
                                                       .getScreenDevices();
         for (GraphicsDevice screen : screens) {
+            if (screen == mainScreen) {
+                continue;
+            }
+
             Rectangle bounds = screen.getDefaultConfiguration()
                                      .getBounds();
-            if (bounds.x < 0 || bounds.y < 0) {
+            if (bounds.x < 0) {
                 // The test may fail if a screen have negative origin
                 throw new SkippedException("Configurations with negative screen"
-                        + " origin are not supported");
+                                           + " origin are not supported");
+            }
+            if (bounds.y >= mainScreenBounds.height) {
+                // The test may fail if there's a screen to bottom of the main monitor
+                throw new SkippedException("Configurations with a screen beneath"
+                                           + " the main one are not supported");
             }
         }
 
