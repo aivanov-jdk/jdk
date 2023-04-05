@@ -70,7 +70,7 @@ import jtreg.SkippedException;
 public class TaskbarPositionTest implements ActionListener {
 
     private static JFrame frame;
-    private static JPopupMenu contextMenu;
+    private static JPopupMenu popupMenu;
     private static JPanel panel;
     private static JComboBox<String> combo1;
     private static JComboBox<String> combo2;
@@ -139,7 +139,7 @@ public class TaskbarPositionTest implements ActionListener {
         public void popupMenuWillBecomeInvisible(PopupMenuEvent ev) {
             JComboBox<?> combo = (JComboBox<?>) ev.getSource();
             if (combo != null) {
-                Point comboLocation = combo.getLocationOnScreen();
+                Point comboLoc = combo.getLocationOnScreen();
 
                 JPopupMenu popupMenu = (JPopupMenu) combo.getUI().getAccessibleChild(combo, 0);
 
@@ -148,13 +148,13 @@ public class TaskbarPositionTest implements ActionListener {
 
                 isPopupOnScreen(popupMenu, fullScreenBounds);
 
-                if (comboLocation.x > 0) {
+                if (comboLoc.x > 0) {
                     System.err.println("Positive");
                     // The frame located at the bottom of the screen,
                     // the combo popups should open upwards
-                    if (popupMenuLoc.y + popupSize.height < comboLocation.y) {
+                    if (popupMenuLoc.y + popupSize.height < comboLoc.y) {
                         System.err.println("popup " + popupMenuLoc
-                                           + " combo " + comboLocation);
+                                + " combo " + comboLoc);
                         throw new RuntimeException("ComboBox popup should open upwards");
                     }
                 } else {
@@ -162,9 +162,9 @@ public class TaskbarPositionTest implements ActionListener {
                     // The frame is moved to negative position away from
                     // the bottom of the screen, the combo popup should
                     // open downwards in this case
-                    if (popupMenuLoc.y + 1 < comboLocation.y) {
+                    if (popupMenuLoc.y + 1 < comboLoc.y) {
                         System.err.println("popup " + popupMenuLoc
-                                           + " combo " + comboLocation);
+                                + " combo " + comboLoc);
                         throw new RuntimeException("ComboBox popup should open downwards");
                     }
                 }
@@ -175,10 +175,10 @@ public class TaskbarPositionTest implements ActionListener {
     private static class PopupHandler extends AbstractAction {
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (!contextMenu.isVisible()) {
-                contextMenu.show((Component) e.getSource(), 40, 40);
+            if (!popupMenu.isVisible()) {
+                popupMenu.show((Component) e.getSource(), 40, 40);
             }
-            isPopupOnScreen(contextMenu, fullScreenBounds);
+            isPopupOnScreen(popupMenu, fullScreenBounds);
         }
     }
 
@@ -235,12 +235,12 @@ public class TaskbarPositionTest implements ActionListener {
         panel.setSize(300, 200);
         combo1.addPopupMenuListener(new ComboPopupCheckListener());
         combo2.addPopupMenuListener(new ComboPopupCheckListener());
-        contextMenu = new JPopupMenu();
+        popupMenu = new JPopupMenu();
         for (int i = 0; i < dayData.length; i++) {
-            JMenuItem item = contextMenu.add(new JMenuItem(dayData[i], mnDayData[i]));
+            JMenuItem item = popupMenu.add(new JMenuItem(dayData[i], mnDayData[i]));
             item.addActionListener(this);
         }
-        panel.addMouseListener(new PopupListener(contextMenu));
+        panel.addMouseListener(new PopupListener(popupMenu));
 
         JTextField field = new JTextField("CTRL+down for Popup");
         // CTRL-down will show the popup.
@@ -274,17 +274,18 @@ public class TaskbarPositionTest implements ActionListener {
 
         menu1 = new JMenu("1 - First Menu");
         menu1.setMnemonic('1');
-        // second menu
+        createSubMenu(menu1, "1 JMenuItem", 8, null);
+        menubar.add(menu1);
+
         menu2 = new JMenu("2 - Second Menu");
         menu2.setMnemonic('2');
+        createSubMenu(menu2, "2 JMenuItem", 4, null);
+        menu2.add(new JSeparator());
+        menubar.add(menu2);
+
         submenu = new JMenu("Sub Menu");
         submenu.setMnemonic('S');
-        menubar.add(menu1);
-        menubar.add(menu2);
-        createSubMenu(menu1, "1 JMenuItem", 8, null);
-        createSubMenu(menu2, "2 JMenuItem", 4, null);
         createSubMenu(submenu, "S JMenuItem", 4, this);
-        menu2.add(new JSeparator());
         menu2.add(submenu);
 
         return menubar;
@@ -305,14 +306,14 @@ public class TaskbarPositionTest implements ActionListener {
 
     public static void main(String[] args) throws Throwable {
         GraphicsDevice[] screens = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                                                      .getScreenDevices();
+                .getScreenDevices();
         for (GraphicsDevice screen : screens) {
             Rectangle bounds = screen.getDefaultConfiguration()
-                                     .getBounds();
+                    .getBounds();
             if (bounds.x < 0 || bounds.y < 0) {
                 // The test may fail if a screen have negative origin
                 throw new SkippedException("Configurations with negative screen"
-                                           + " origin are not supported");
+                        + " origin are not supported");
             }
         }
 
@@ -387,7 +388,7 @@ public class TaskbarPositionTest implements ActionListener {
             robot.keyRelease(KeyEvent.VK_CONTROL);
 
             robot.waitForIdle();
-            SwingUtilities.invokeAndWait(() -> isPopupOnScreen(contextMenu, fullScreenBounds));
+            SwingUtilities.invokeAndWait(() -> isPopupOnScreen(popupMenu, fullScreenBounds));
             hidePopup(robot);
 
             // Popup from a mouse click
@@ -401,7 +402,7 @@ public class TaskbarPositionTest implements ActionListener {
 
             // Ensure popupMenu is shown within screen bounds
             robot.waitForIdle();
-            SwingUtilities.invokeAndWait(() -> isPopupOnScreen(contextMenu, fullScreenBounds));
+            SwingUtilities.invokeAndWait(() -> isPopupOnScreen(popupMenu, fullScreenBounds));
 
             hidePopup(robot);
 
@@ -409,6 +410,7 @@ public class TaskbarPositionTest implements ActionListener {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     frame.setLocation(-30, 100);
+                    combo1.addPopupMenuListener(new ComboPopupCheckListener());
                     combo1.requestFocus();
                 }
             });
