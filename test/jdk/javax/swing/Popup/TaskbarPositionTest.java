@@ -302,10 +302,10 @@ public class TaskbarPositionTest implements ActionListener {
 
     public static void main(String[] args) throws Throwable {
         GraphicsDevice[] screens = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getScreenDevices();
+                                                      .getScreenDevices();
         for (GraphicsDevice screen : screens) {
             Rectangle bounds = screen.getDefaultConfiguration()
-                    .getBounds();
+                                     .getBounds();
             if (bounds.x < 0 || bounds.y < 0) {
                 // The test may fail if a screen have negative origin
                 throw new SkippedException("Configurations with negative screen"
