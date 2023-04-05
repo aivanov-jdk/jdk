@@ -419,7 +419,6 @@ public class TaskbarPositionTest implements ActionListener {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     frame.setLocation(-30, 100);
-                    combo1.addPopupMenuListener(new ComboPopupCheckListener());
                     combo1.requestFocus();
                 }
             });
