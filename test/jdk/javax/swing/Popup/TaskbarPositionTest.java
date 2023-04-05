@@ -416,11 +416,9 @@ public class TaskbarPositionTest implements ActionListener {
             hidePopup(robot);
 
             robot.waitForIdle();
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    frame.setLocation(-30, 100);
-                    combo1.requestFocus();
-                }
+            SwingUtilities.invokeAndWait(() -> {
+                frame.setLocation(-30, 100);
+                combo1.requestFocus();
             });
 
             robot.waitForIdle();
