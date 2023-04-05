@@ -149,8 +149,7 @@ public class TaskbarPositionTest implements ActionListener {
                 isPopupOnScreen(popupMenu, fullScreenBounds);
 
                 if (comboLoc.x > 0) {
-                    System.err.println("Positive");
-                    // The frame located at the bottom of the screen,
+                    // The frame is located at the bottom of the screen,
                     // the combo popups should open upwards
                     if (popupMenuLoc.y + popupSize.height < comboLoc.y) {
                         System.err.println("popup " + popupMenuLoc
@@ -158,8 +157,7 @@ public class TaskbarPositionTest implements ActionListener {
                         throw new RuntimeException("ComboBox popup should open upwards");
                     }
                 } else {
-                    System.err.println("Negative");
-                    // The frame is moved to negative position away from
+                    // The frame has been moved to negative position away from
                     // the bottom of the screen, the combo popup should
                     // open downwards in this case
                     if (popupMenuLoc.y + 1 < comboLoc.y) {
