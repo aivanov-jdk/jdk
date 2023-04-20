@@ -72,11 +72,14 @@ public class TaskbarPositionTest implements ActionListener {
     private static JFrame frame;
     private static JPopupMenu popupMenu;
     private static JPanel panel;
+
     private static JComboBox<String> combo1;
     private static JComboBox<String> combo2;
+
     private static JMenu menu1;
     private static JMenu menu2;
     private static JMenu submenu;
+
     private static Rectangle fullScreenBounds;
     // The usable desktop space: screen size - screen insets.
     private static Rectangle screenBounds;
@@ -256,16 +259,6 @@ public class TaskbarPositionTest implements ActionListener {
         return panel;
     }
 
-    private static void createSubMenu(JMenu menu, String prefix, int count, ActionListener action) {
-        for (int i = 0; i < count; ++i) {
-            JMenuItem menuitem = new JMenuItem(prefix + i);
-            menu.add(menuitem);
-            if (action != null) {
-                menuitem.addActionListener(action);
-            }
-        }
-    }
-
     private JMenuBar createMenuBar() {
         JMenuBar menubar = new JMenuBar();
 
@@ -287,6 +280,17 @@ public class TaskbarPositionTest implements ActionListener {
 
         return menubar;
     }
+
+    private static void createSubMenu(JMenu menu, String prefix, int count, ActionListener action) {
+        for (int i = 0; i < count; ++i) {
+            JMenuItem menuitem = new JMenuItem(prefix + i);
+            menu.add(menuitem);
+            if (action != null) {
+                menuitem.addActionListener(action);
+            }
+        }
+    }
+
 
     public void actionPerformed(ActionEvent evt) {
         Object obj = evt.getSource();
