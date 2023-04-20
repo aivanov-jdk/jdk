@@ -234,28 +234,32 @@ public class TaskbarPositionTest implements ActionListener {
 
 
     private JPanel createContentPane() {
-        JPanel panel = new JPanel();
         combo1 = new JComboBox<>(numData);
-        panel.add(combo1);
+        combo1.addPopupMenuListener(new ComboPopupCheckListener());
+
         combo2 = new JComboBox<>(dayData);
         combo2.setEditable(true);
-        panel.add(combo2);
-        panel.setSize(300, 200);
-        combo1.addPopupMenuListener(new ComboPopupCheckListener());
         combo2.addPopupMenuListener(new ComboPopupCheckListener());
+
         popupMenu = new JPopupMenu();
         for (int i = 0; i < dayData.length; i++) {
             JMenuItem item = popupMenu.add(new JMenuItem(dayData[i], mnDayData[i]));
             item.addActionListener(this);
         }
-        panel.addMouseListener(new PopupListener(popupMenu));
 
         JTextField field = new JTextField("CTRL+down for Popup");
         // CTRL-down will show the popup.
         field.getInputMap().put(KeyStroke.getKeyStroke(
                 KeyEvent.VK_DOWN, InputEvent.CTRL_DOWN_MASK), "OPEN_POPUP");
         field.getActionMap().put("OPEN_POPUP", new PopupHandler());
+
+        JPanel panel = new JPanel();
+        panel.add(combo1);
+        panel.add(combo2);
+        panel.setSize(300, 200);
+        panel.addMouseListener(new PopupListener(popupMenu));
         panel.add(field);
+
         return panel;
     }
 
