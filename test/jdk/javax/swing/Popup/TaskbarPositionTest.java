@@ -85,13 +85,13 @@ public class TaskbarPositionTest implements ActionListener {
     private static Rectangle screenBounds;
 
     private static final String[] numData = {
-            "One", "Two", "Three", "Four", "Five", "Six", "Seven"
+        "One", "Two", "Three", "Four", "Five", "Six", "Seven"
     };
     private static final String[] dayData = {
-            "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
     };
     private static final char[] mnDayData = {
-            'M', 'T', 'W', 'R', 'F', 'S', 'U'
+        'M', 'T', 'W', 'R', 'F', 'S', 'U'
     };
 
     public TaskbarPositionTest() {
@@ -421,7 +421,6 @@ public class TaskbarPositionTest implements ActionListener {
             // Ensure popupMenu is shown within screen bounds
             robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> isPopupOnScreen(popupMenu, fullScreenBounds));
-
             hidePopup(robot);
 
             robot.waitForIdle();
@@ -437,9 +436,9 @@ public class TaskbarPositionTest implements ActionListener {
             robot.keyRelease(KeyEvent.VK_DOWN);
 
             robot.waitForIdle();
-
             SwingUtilities.invokeAndWait(() -> isComboPopupOnScreen(combo1));
             hidePopup(robot);
+
             robot.waitForIdle();
         } finally {
             SwingUtilities.invokeAndWait(() -> {
