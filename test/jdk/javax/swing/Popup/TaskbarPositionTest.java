@@ -221,6 +221,15 @@ public class TaskbarPositionTest implements ActionListener {
         }
     }
 
+    private static void isComboPopupOnScreen(JComboBox<?> comboBox) {
+        if (!comboBox.isPopupVisible()) {
+            throw new RuntimeException("ComboBox popup not visible");
+        }
+        JPopupMenu popupMenu = (JPopupMenu) comboBox.getUI().getAccessibleChild(comboBox, 0);
+        isPopupOnScreen(popupMenu, screenBounds);
+    }
+
+
     private JPanel createContentPane() {
         JPanel panel = new JPanel();
         combo1 = new JComboBox<>(numData);
@@ -255,14 +264,6 @@ public class TaskbarPositionTest implements ActionListener {
                 menuitem.addActionListener(action);
             }
         }
-    }
-
-    private static void isComboPopupOnScreen(JComboBox<?> comboBox) {
-        if (!comboBox.isPopupVisible()) {
-            throw new RuntimeException("ComboBox popup not visible");
-        }
-        JPopupMenu popupMenu = (JPopupMenu) comboBox.getUI().getAccessibleChild(comboBox, 0);
-        isPopupOnScreen(popupMenu, screenBounds);
     }
 
     private JMenuBar createMenuBar() {
