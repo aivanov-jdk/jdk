@@ -193,6 +193,12 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
         //store the address and time stamp of newly allocated GDIWinSDOps structure
         info->wsdo = wsdo;
         info->wsdoTimeStamp = wsdo->timeStamp;
+    } else {
+        if (wsdo->window != NULL) {
+            J2dTraceLn1(J2D_TRACE_VERBOSE, "::SendMessage(hwnd=0x%08x, WM_NULL",
+                        wsdo->window);
+            ::SendMessage(wsdo->window, WM_NULL, 0, 0);
+        }
     }
 }
 
