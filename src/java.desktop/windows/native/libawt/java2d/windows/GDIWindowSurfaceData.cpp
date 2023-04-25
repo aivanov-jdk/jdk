@@ -88,13 +88,10 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
                            ptr_to_jlong(info));
     }
 
-    HDC oldhDC = info->hDC;
     // the hDC is NULL for offscreen surfaces - we don't store it
     // in TLS as it must be created new every time.
 
-    if( ((oldhDC == NULL) && wsdo->window != NULL) ||
-         (info->wsdo != wsdo) ||
-         (info->wsdoTimeStamp != wsdo->timeStamp) )
+    if( true )
     {
 
         // Init graphics state, either because this is our first time
@@ -113,10 +110,12 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
         // the DC is associated with cached wsdo and component peer,
         // which may've been disposed by this time, and we have
         // no means of checking against it.
-        if (oldhDC != NULL) {
-            J2dTraceLn2(J2D_TRACE_VERBOSE, "  toPassive(hdc=0x%08x, hwnd=0x%08x",
+        if (info->hDC != NULL) {
+            J2dTraceLn2(J2D_TRACE_VERBOSE, "  ReleaseDC(hdc=0x%08x, hwnd=0x%08x",
                         info->hDC, info->hWnd);
-            MoveDCToPassiveList(oldhDC, info->hWnd);
+            int result = ::ReleaseDC(info->hWnd, info->hDC);
+            J2dTraceLn1(J2D_TRACE_VERBOSE, "    = %d",
+                        result);
             info->hDC = NULL;
             info->hWnd = NULL;
         }
@@ -131,7 +130,13 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
                 J2dTraceLn(J2D_TRACE_VERBOSE2, "  comp == NULL");
                 return;
             }
-            hDC = comp->GetDCFromComponent();
+            HWND hWnd = comp->GetHWnd();
+            hDC = ::GetDCEx(hWnd, NULL,
+                            DCX_CACHE | DCX_CLIPCHILDREN | DCX_CLIPSIBLINGS);
+            J2dTraceLn2(J2D_TRACE_VERBOSE, "  ::GetDCEx(hWnd=0x%08x > hdc=0x%08x",
+                        hWnd, hDC);
+            J2dTraceLn2(J2D_TRACE_VERBOSE, "    wsdo->window=0x%08x, wsdo=0x%08x",
+                        wsdo->window, wsdo);
             if (hDC == NULL) {
                 J2dTraceLn(J2D_TRACE_VERBOSE2, "  hDC == NULL -> wsdo->invalid = JNI_TRUE");
                 wsdo->invalid = JNI_TRUE;
@@ -193,12 +198,6 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
         //store the address and time stamp of newly allocated GDIWinSDOps structure
         info->wsdo = wsdo;
         info->wsdoTimeStamp = wsdo->timeStamp;
-    } else {
-        if (wsdo->window != NULL) {
-            J2dTraceLn1(J2D_TRACE_VERBOSE, "::SendMessage(hwnd=0x%08x, WM_NULL",
-                        wsdo->window);
-            ::SendMessage(wsdo->window, WM_NULL, 0, 0);
-        }
     }
 }
 
@@ -530,12 +529,20 @@ GDIWindowSurfaceData_GetComp(JNIEnv *env, GDIWinSDOps *wsdo)
         } catch (awt_toolkit_shutdown&) {
             beingShutdown = JNI_TRUE;
             wsdo->invalid = JNI_TRUE;
+            J2dTraceLn1(J2D_TRACE_WARNING,
+                        "GDIWindowSurfaceData_GetComp: awt_toolkit_shutdown -> wsdo(0x%08x)->invalid",
+                        wsdo);
             return (AwtComponent *) NULL;
         }
         if (wsdo->invalid == JNI_TRUE) {
+            J2dTraceLn1(J2D_TRACE_WARNING,
+                        "GDIWindowSurfaceData_GetComp: ThrowInvalidPipeException -> wsdo(0x%08x)->invalid",
+                        wsdo);
             SurfaceData_ThrowInvalidPipeException(env,
                 "GDIWindowSurfaceData: bounds changed");
         } else {
+            J2dTraceLn(J2D_TRACE_WARNING,
+                       "GDIWindowSurfaceData_GetComp: ThrowNullPointerException -> component argument pData");
             JNU_ThrowNullPointerException(env, "component argument pData");
         }
         return (AwtComponent *) NULL;
@@ -1028,7 +1035,11 @@ static HDC GDIWinSD_GetDC(JNIEnv *env, GDIWinSDOps *wsdo,
 
     if (wsdo->invalid == JNI_TRUE) {
         J2dTraceLn(J2D_TRACE_WARNING, "  wsdo->invalid !");
+        J2dTraceLn2(J2D_TRACE_VERBOSE,
+                    "  wsdo=0x%08x wsdo->window=0x%08x",
+                       wsdo, wsdo->window);
         if (beingShutdown != JNI_TRUE) {
+            J2dTraceLn(J2D_TRACE_WARNING, "  SurfaceData_ThrowInvalidPipeException(env, \"bounds changed\")");
             SurfaceData_ThrowInvalidPipeException(env, "bounds changed");
         }
         return (HDC) NULL;

@@ -739,6 +739,8 @@ Java_sun_java2d_windows_GDIRenderer_doShape
     HDC hdc = wsdo->GetDC(env, wsdo, (isfill ? BRUSH : PEN), NULL,
                           clip, comp, color);
     if (hdc == NULL) {
+        J2dTraceLn(J2D_TRACE_WARNING,
+                   "  < hdc == NULL - GDIRenderer_doShape");
         return;
     }
 
