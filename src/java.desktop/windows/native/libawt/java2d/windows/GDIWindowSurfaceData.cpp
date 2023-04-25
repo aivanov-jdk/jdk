@@ -524,12 +524,20 @@ GDIWindowSurfaceData_GetComp(JNIEnv *env, GDIWinSDOps *wsdo)
         } catch (awt_toolkit_shutdown&) {
             beingShutdown = JNI_TRUE;
             wsdo->invalid = JNI_TRUE;
+            J2dTraceLn1(J2D_TRACE_WARNING,
+                        "GDIWindowSurfaceData_GetComp: awt_toolkit_shutdown -> wsdo(0x%08x)->invalid",
+                        wsdo);
             return (AwtComponent *) NULL;
         }
         if (wsdo->invalid == JNI_TRUE) {
+            J2dTraceLn1(J2D_TRACE_WARNING,
+                        "GDIWindowSurfaceData_GetComp: ThrowInvalidPipeException -> wsdo(0x%08x)->invalid",
+                        wsdo);
             SurfaceData_ThrowInvalidPipeException(env,
                 "GDIWindowSurfaceData: bounds changed");
         } else {
+            J2dTraceLn(J2D_TRACE_WARNING,
+                       "GDIWindowSurfaceData_GetComp: ThrowNullPointerException -> component argument pData");
             JNU_ThrowNullPointerException(env, "component argument pData");
         }
         return (AwtComponent *) NULL;
@@ -1022,7 +1030,11 @@ static HDC GDIWinSD_GetDC(JNIEnv *env, GDIWinSDOps *wsdo,
 
     if (wsdo->invalid == JNI_TRUE) {
         J2dTraceLn(J2D_TRACE_WARNING, "  wsdo->invalid !");
+        J2dTraceLn2(J2D_TRACE_VERBOSE,
+                    "  wsdo=0x%08x wsdo->window=0x%08x",
+                       wsdo, wsdo->window);
         if (beingShutdown != JNI_TRUE) {
+            J2dTraceLn(J2D_TRACE_WARNING, "  SurfaceData_ThrowInvalidPipeException(env, \"bounds changed\")");
             SurfaceData_ThrowInvalidPipeException(env, "bounds changed");
         }
         return (HDC) NULL;
