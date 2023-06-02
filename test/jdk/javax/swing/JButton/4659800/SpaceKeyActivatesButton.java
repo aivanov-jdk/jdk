@@ -50,10 +50,10 @@ import static java.util.stream.Collectors.toList;
  */
 public class SpaceKeyActivatesButton {
 
-    private static volatile boolean buttonPressed;
     private static JFrame frame;
     private static JButton focusedButton;
     private static CountDownLatch buttonGainedFocusLatch;
+    private static CountDownLatch buttonPressedLatch;
 
     public static void main(String[] s) throws Exception {
         runTest();
@@ -69,8 +69,8 @@ public class SpaceKeyActivatesButton {
                                   .collect(toList());
         for (String laf : lafs) {
             buttonGainedFocusLatch = new CountDownLatch(1);
+            buttonPressedLatch = new CountDownLatch(1);
             try {
-                buttonPressed = false;
                 System.out.println("Testing laf : " + laf);
                 AtomicBoolean lafSetSuccess = new AtomicBoolean(false);
                 SwingUtilities.invokeAndWait(() -> {
@@ -95,7 +95,7 @@ public class SpaceKeyActivatesButton {
                 robot.keyPress(KeyEvent.VK_SPACE);
                 robot.keyRelease(KeyEvent.VK_SPACE);
 
-                if (buttonPressed) {
+                if (buttonPressedLatch.await(2, TimeUnit.SECONDS)) {
                     System.out.println("Test Passed for laf : " + laf);
                 } else {
                     throw new RuntimeException("Test Failed, button not pressed for laf : " + laf);
@@ -126,7 +126,7 @@ public class SpaceKeyActivatesButton {
         JPanel panel = new JPanel();
         panel.add(new JButton("Button1"));
         focusedButton = new JButton("Button2");
-        focusedButton.addActionListener(e -> buttonPressed = true);
+        focusedButton.addActionListener(e -> buttonPressedLatch.countDown());
         focusedButton.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
