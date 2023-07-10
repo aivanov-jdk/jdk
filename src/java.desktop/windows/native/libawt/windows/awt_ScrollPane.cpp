@@ -162,10 +162,10 @@ void AwtScrollPane::SetInsets(JNIEnv *env)
     DASSERT(!safe_ExceptionOccurred(env));
 
     if (insets != NULL && (inside.top-outside.top) != 0) {
-        (env)->SetIntField(insets, AwtInsets::topID, inside.top - outside.top);
-        (env)->SetIntField(insets, AwtInsets::leftID, inside.left - outside.left);
-        (env)->SetIntField(insets, AwtInsets::bottomID, outside.bottom - inside.bottom);
-        (env)->SetIntField(insets, AwtInsets::rightID, outside.right - inside.right);
+        (env)->SetIntField(insets, AwtInsets::topID, ScaleDownY(inside.top - outside.top));
+        (env)->SetIntField(insets, AwtInsets::leftID, ScaleDownX(inside.left - outside.left));
+        (env)->SetIntField(insets, AwtInsets::bottomID, ScaleDownY(outside.bottom - inside.bottom));
+        (env)->SetIntField(insets, AwtInsets::rightID, ScaleDownX(outside.right - inside.right));
     }
 
     env->DeleteLocalRef(insets);
