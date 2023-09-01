@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.swing.event.UndoableEditListener;
  * <p>
  * The <code>Document</code> is a container for text that serves
  * as the model for swing text components.  The goal for this
- * interface is to scale from very simple needs (a plain text textfield)
+ * interface is to scale from very simple needs (a plain text text field)
  * to complex needs (an HTML or XML document, for example).
  *
  * <p><b>Content</b>
@@ -48,6 +48,8 @@ import javax.swing.event.UndoableEditListener;
  * below shows, a location in a text document can be referred to
  * as a position, or an offset. This position is zero-based.
  * <p style="text-align:center"><img src="doc-files/Document-coord.gif"
+ * alt="The following text describes this graphic.">
+ * <p style="text-align:center"><img src="doc-files/Document-coordinates.svg"
  * alt="The following text describes this graphic.">
  * <p>
  * In the example, if the content of a document is the
@@ -423,33 +425,35 @@ public interface Document {
 
     /**
      * Removes a portion of the content of the document.
-     * This will cause a DocumentEvent of type
-     * DocumentEvent.EventType.REMOVE to be sent to the
-     * registered DocumentListeners, unless an exception
+     * This will cause a {@code DocumentEvent} of type
+     * {@code DocumentEvent.EventType.REMOVE} to be sent to the
+     * registered {@code DocumentListener}s, unless an exception
      * is thrown.  The notification will be sent to the
-     * listeners by calling the removeUpdate method on the
-     * DocumentListeners.
+     * listeners by calling the {@code removeUpdate} method on the
+     * {@code DocumentListener}.
      * <p>
      * To ensure reasonable behavior in the face
      * of concurrency, the event is dispatched after the
      * mutation has occurred. This means that by the time a
      * notification of removal is dispatched, the document
      * has already been updated and any marks created by
-     * <code>createPosition</code> have already changed.
+     * {@code createPosition} have already changed.
      * For a removal, the end of the removal range is collapsed
      * down to the start of the range, and any marks in the removal
      * range are collapsed down to the start of the range.
      * <p style="text-align:center"><img src="doc-files/Document-remove.gif"
      *  alt="Diagram shows removal of 'quick' from 'The quick brown fox.'">
+     * <p style="text-align:center"><img src="doc-files/Document-remove.svg"
+     *  alt="Diagram shows removal of 'quick' from 'The quick brown fox.'">
      * <p>
-     * If the Document structure changed as result of the removal,
-     * the details of what Elements were inserted and removed in
+     * If the {@code Document} structure changed as result of the removal,
+     * the details of what {@code Element}s were inserted and removed in
      * response to the change will also be contained in the generated
-     * DocumentEvent. It is up to the implementation of a Document
+     * {@code DocumentEvent}. It is up to the implementation of a {@code Document}
      * to decide how the structure should change in response to a
      * remove.
      * <p>
-     * If the Document supports undo/redo, an UndoableEditEvent will
+     * If the {@code Document} supports undo/redo, an {@code UndoableEditEvent} will
      * also be generated.
      *
      * @param offs  the offset from the beginning &gt;= 0
@@ -465,24 +469,26 @@ public interface Document {
     public void remove(int offs, int len) throws BadLocationException;
 
     /**
-     * Inserts a string of content.  This will cause a DocumentEvent
-     * of type DocumentEvent.EventType.INSERT to be sent to the
-     * registered DocumentListers, unless an exception is thrown.
-     * The DocumentEvent will be delivered by calling the
-     * insertUpdate method on the DocumentListener.
-     * The offset and length of the generated DocumentEvent
-     * will indicate what change was actually made to the Document.
+     * Inserts a string of content.  This will cause a {@code DocumentEvent}
+     * of type {@code DocumentEvent.EventType.INSERT} to be sent to the
+     * registered {@code DocumentListener}s, unless an exception is thrown.
+     * The {@code DocumentEvent} will be delivered by calling the
+     * {@code insertUpdate} method on the {@code DocumentListener}.
+     * The offset and length of the generated {@code DocumentEvent}
+     * will indicate what change was actually made to the {@code Document}.
      * <p style="text-align:center"><img src="doc-files/Document-insert.gif"
      *  alt="Diagram shows insertion of 'quick' in 'The quick brown fox'">
+     * <p style="text-align:center"><img src="doc-files/Document-insert.svg"
+     *  alt="Diagram shows insertion of 'quick' in 'The quick brown fox'">
      * <p>
-     * If the Document structure changed as result of the insertion,
-     * the details of what Elements were inserted and removed in
+     * If the {@code Document} structure changed as result of the insertion,
+     * the details of what {@code Element}s were inserted and removed in
      * response to the change will also be contained in the generated
-     * DocumentEvent.  It is up to the implementation of a Document
+     * {@code DocumentEvent}.  It is up to the implementation of a {@code Document}
      * to decide how the structure should change in response to an
      * insertion.
      * <p>
-     * If the Document supports undo/redo, an UndoableEditEvent will
+     * If the {@code Document} supports undo/redo, an {@code UndoableEditEvent} will
      * also be generated.
      *
      * @param offset  the offset into the document to insert the content &gt;= 0.
@@ -490,7 +496,7 @@ public interface Document {
      *    will move.
      * @param str    the string to insert
      * @param a      the attributes to associate with the inserted
-     *   content.  This may be null if there are no attributes.
+     *   content.  This may be {@code null} if there are no attributes.
      * @throws BadLocationException  the given insert position is not a valid
      * position within the document
      * @see javax.swing.event.DocumentEvent

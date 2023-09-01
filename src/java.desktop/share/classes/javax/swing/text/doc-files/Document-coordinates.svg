@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<svg width="480" height="100"
+     version="1.1"
+     xmlns="http://www.w3.org/2000/svg">
+    <style><![CDATA[
+        rect, path {
+            fill: none;
+            stroke: black;
+            stroke-width: 1px;
+        }
+        marker path {
+            fill: black;
+        }
+        line {
+            stroke: red;
+            stroke-width: 1px;
+        }
+        text {
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 10px;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        text.bold {
+            font-weight: bold;
+        }
+        text.top {
+            dominant-baseline: hanging;
+        }
+    ]]></style>
+    <defs>
+        <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="10"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto">
+            <path
+                d="M 0 0 L 10 5 L 0 10"
+            />
+        </marker>
+    </defs>
+
+    <text x="60" y="10" class="bold">Position or Offset</text>
+
+    <path d="M 60,20 L 24,50"
+          marker-end="url(#arrow)"/>
+    <path d="M 60,20 L 96,50"
+          marker-end="url(#arrow)"/>
+
+    <line x1="24" y1="52" x2="24" y2="85"/>
+    <text x="24" y="87" class="top">0</text>
+    <line x1="96" y1="52" x2="96" y2="85"/>
+    <text x="96" y="87" class="top">3</text>
+
+    <rect x="26" y="55" width="20" height="20"/>
+    <text x="36" y="65">T</text>
+    <rect x="50" y="55" width="20" height="20"/>
+    <text x="60" y="65">h</text>
+    <rect x="74" y="55" width="20" height="20"/>
+    <text x="84" y="65">e</text>
+    <rect x="98" y="55" width="20" height="20"/>
+    <text x="108" y="65"> </text>
+    <rect x="122" y="55" width="20" height="20"/>
+    <text x="132" y="65">q</text>
+    <rect x="146" y="55" width="20" height="20"/>
+    <text x="156" y="65">u</text>
+    <rect x="170" y="55" width="20" height="20"/>
+    <text x="180" y="65">i</text>
+    <rect x="194" y="55" width="20" height="20"/>
+    <text x="204" y="65">c</text>
+    <rect x="218" y="55" width="20" height="20"/>
+    <text x="228" y="65">k</text>
+    <rect x="242" y="55" width="20" height="20"/>
+    <text x="252" y="65"> </text>
+    <rect x="266" y="55" width="20" height="20"/>
+    <text x="276" y="65">b</text>
+    <rect x="290" y="55" width="20" height="20"/>
+    <text x="300" y="65">r</text>
+    <rect x="314" y="55" width="20" height="20"/>
+    <text x="324" y="65">o</text>
+    <rect x="338" y="55" width="20" height="20"/>
+    <text x="348" y="65">w</text>
+    <rect x="362" y="55" width="20" height="20"/>
+    <text x="372" y="65">n</text>
+    <rect x="386" y="55" width="20" height="20"/>
+    <text x="396" y="65"> </text>
+    <rect x="410" y="55" width="20" height="20"/>
+    <text x="420" y="65">f</text>
+    <rect x="434" y="55" width="20" height="20"/>
+    <text x="444" y="65">o</text>
+    <rect x="458" y="55" width="20" height="20"/>
+    <text x="468" y="65">x</text>
+</svg>
