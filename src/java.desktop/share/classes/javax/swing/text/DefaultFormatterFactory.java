@@ -25,7 +25,7 @@
 package javax.swing.text;
 
 import java.io.Serializable;
-import java.text.ParseException;
+
 import javax.swing.JFormattedTextField;
 
 /**
@@ -182,7 +182,7 @@ public class DefaultFormatterFactory extends JFormattedTextField.AbstractFormatt
 
     /**
      * Sets the <code>JFormattedTextField.AbstractFormatter</code> to use as
-     * a last resort, eg in case a display, edit or null
+     * a last resort, e.g. in case a display, edit or null
      * <code>JFormattedTextField.AbstractFormatter</code> has not been
      * specified.
      *
@@ -195,7 +195,7 @@ public class DefaultFormatterFactory extends JFormattedTextField.AbstractFormatt
 
     /**
      * Returns the <code>JFormattedTextField.AbstractFormatter</code> to use
-     * as a last resort, eg in case a display, edit or null
+     * as a last resort, e.g. in case a display, edit or null
      * <code>JFormattedTextField.AbstractFormatter</code>
      * has not been specified.
      *
@@ -209,7 +209,7 @@ public class DefaultFormatterFactory extends JFormattedTextField.AbstractFormatt
     /**
      * Sets the <code>JFormattedTextField.AbstractFormatter</code> to use if
      * the <code>JFormattedTextField</code> is not being edited and either
-     * the value is not-null, or the value is null and a null formatter has
+     * the value is not-null, or the value is null and a null formatter
      * has not been specified.
      *
      * @param atf JFormattedTextField.AbstractFormatter to use when the
@@ -222,7 +222,7 @@ public class DefaultFormatterFactory extends JFormattedTextField.AbstractFormatt
     /**
      * Returns the <code>JFormattedTextField.AbstractFormatter</code> to use
      * if the <code>JFormattedTextField</code> is not being edited and either
-     * the value is not-null, or the value is null and a null formatter has
+     * the value is not-null, or the value is null and a null formatter
      * has not been specified.
      *
      * @return JFormattedTextField.AbstractFormatter to use when the
@@ -235,7 +235,7 @@ public class DefaultFormatterFactory extends JFormattedTextField.AbstractFormatt
     /**
      * Sets the <code>JFormattedTextField.AbstractFormatter</code> to use if
      * the <code>JFormattedTextField</code> is being edited and either
-     * the value is not-null, or the value is null and a null formatter has
+     * the value is not-null, or the value is null and a null formatter
      * has not been specified.
      *
      * @param atf JFormattedTextField.AbstractFormatter to use when the
@@ -248,7 +248,7 @@ public class DefaultFormatterFactory extends JFormattedTextField.AbstractFormatt
     /**
      * Returns the <code>JFormattedTextField.AbstractFormatter</code> to use
      * if the <code>JFormattedTextField</code> is being edited and either
-     * the value is not-null, or the value is null and a null formatter has
+     * the value is not-null, or the value is null and a null formatter
      * has not been specified.
      *
      * @return JFormattedTextField.AbstractFormatter to use when the
