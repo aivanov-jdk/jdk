@@ -23,10 +23,7 @@
 
 import java.awt.BorderLayout;
 import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.Arrays;
 
@@ -36,7 +33,9 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.WindowConstants;
+
+import static javax.swing.JFileChooser.SELECTED_FILES_CHANGED_PROPERTY;
+import static javax.swing.JFileChooser.SELECTED_FILE_CHANGED_PROPERTY;
 
 /*
  * @test
@@ -101,12 +100,6 @@ public class FileChooserSymLinkTest {
             </ol>
             """;
 
-    static JFrame frame;
-    static JFileChooser jfc;
-    static JPanel panel;
-    static JTextArea pathList;
-    static JCheckBox multiSelection;
-
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
                       .instructions(INSTRUCTIONS)
@@ -117,47 +110,47 @@ public class FileChooserSymLinkTest {
                       .awaitAndCheck();
     }
 
-    private static Window createTestUI() {
-        frame = new JFrame("JFileChooser Symbolic Link test");
-        panel = new JPanel(new BorderLayout());
-        multiSelection = new JCheckBox("Enable Multi-Selection");
-        pathList = new JTextArea(10, 50);
-        jfc = new JFileChooser(new File("C:\\"));
+    private static JTextArea pathList;
 
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        panel.add(multiSelection, BorderLayout.EAST);
-        panel.add(new JScrollPane(pathList), BorderLayout.WEST);
+    private static Window createTestUI() {
+        final JFileChooser jfc = new JFileChooser(new File("C:\\"));
         jfc.setDialogType(JFileChooser.CUSTOM_DIALOG);
         jfc.setControlButtonsAreShown(false);
         jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        jfc.addPropertyChangeListener(FileChooserSymLinkTest::fileSelected);
+
+        JCheckBox multiSelection = new JCheckBox("Enable Multi-Selection");
+        multiSelection.addActionListener(e -> {
+            Object source = e.getSource();
+            jfc.setMultiSelectionEnabled(((JCheckBox)source).isSelected());
+        });
         jfc.setMultiSelectionEnabled(multiSelection.isSelected());
+
+        pathList = new JTextArea(10, 50);
         pathList.append("Path List\n");
 
-        multiSelection.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Object source = e.getSource();
-                jfc.setMultiSelectionEnabled(((JCheckBox)source).isSelected());
-            }
-        });
-        jfc.addPropertyChangeListener(new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent evt) {
-                String msg = null;
-                if (JFileChooser.SELECTED_FILE_CHANGED_PROPERTY.equals(evt.getPropertyName())) {
-                    msg = "Absolute Path : " + evt.getNewValue();
-                } else if (JFileChooser.SELECTED_FILES_CHANGED_PROPERTY.equals(evt.getPropertyName())) {
-                    msg = "Selected Files : " + Arrays.toString((File[]) evt.getNewValue());
-                }
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(multiSelection, BorderLayout.EAST);
+        panel.add(new JScrollPane(pathList), BorderLayout.WEST);
 
-                if (msg != null) {
-                    System.out.println(msg);
-                    pathList.append(msg + "\n");
-                }
-            }
-        });
+        final JFrame frame = new JFrame("JFileChooser Symbolic Link test");
         frame.add(panel, BorderLayout.NORTH);
         frame.add(jfc, BorderLayout.CENTER);
         frame.pack();
         return frame;
+    }
+
+    private static void fileSelected(PropertyChangeEvent e) {
+        String msg = null;
+        if (SELECTED_FILE_CHANGED_PROPERTY.equals(e.getPropertyName())) {
+            msg = "Absolute Path : " + e.getNewValue();
+        } else if (SELECTED_FILES_CHANGED_PROPERTY.equals(e.getPropertyName())) {
+            msg = "Selected Files : " + Arrays.toString((File[]) e.getNewValue());
+        }
+
+        if (msg != null) {
+            System.out.println(msg);
+            pathList.append(msg + "\n");
+        }
     }
 }
