@@ -95,7 +95,7 @@ public class TrayIconPopupTest {
 
     private void initializeGUI() {
         window = new Dialog((Frame) null);
-        window.setSize(5, 5);
+        window.setSize(200, 100);
         window.setVisible(true);
 
         popup = new PopupMenu("");
@@ -129,6 +129,7 @@ public class TrayIconPopupTest {
                 if (event.isPopupTrigger()) {
                     System.out.println("popup trigger - show menu");
                     popup.show(window, 0, 0);
+                    popupShown.countDown();
                 }
             }
         });
@@ -160,15 +161,20 @@ public class TrayIconPopupTest {
         }
 
         System.out.println("iconPosition: " + iconPosition);
+//        SystemTrayIconHelper.saveScreenshot();
         robot.mouseMove(iconPosition.x, iconPosition.y);
         robot.waitForIdle();
+//        SystemTrayIconHelper.saveScreenshot();
+
         Point mousePos = MouseInfo.getPointerInfo().getLocation();
         System.out.println("mousePos: " + mousePos);
+
         System.out.println("press / release mouse on the icon");
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(50);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(6000);
+//        SystemTrayIconHelper.saveScreenshot();
 
         if (!popupShown.await(2, TimeUnit.SECONDS)) {
             throw new RuntimeException("Tray icon popup menu isn't shown");
