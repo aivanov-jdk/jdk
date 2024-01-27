@@ -306,7 +306,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
         private void run0() {
             String threadName = Thread.currentThread().getName();
-            System.err.println("> run0 " + threadName);
+            System.err.println("> run0 " + fid + " - " + threadName);
             FileSystemView fileSystem = fileSystemView;
 
             if (loadThread.isInterrupted()) {
