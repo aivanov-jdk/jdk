@@ -152,18 +152,26 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * Validates content of file cache.
      */
     public void validateFileCache() {
+        String name = Thread.currentThread().getName();
+        System.err.println("> validateFileCache - " + name);
         File currentDirectory = filechooser.getCurrentDirectory();
         if (currentDirectory == null) {
             return;
         }
         if (filesLoader != null) {
+            System.err.println("  > validate - interrupt - " + name
+                               + " - " + filesLoader.fid + ", "
+                               + filesLoader.loadThread);
             filesLoader.loadThread.interrupt();
             filesLoader.cancelRunnables();
+            System.err.println("  < validate - interrupt - " + name);
         }
 
         int fid = fetchID.incrementAndGet();
         setBusy(true, fid);
         filesLoader = new FilesLoader(currentDirectory, fid);
+        System.err.println("< validateFileCache - " + name +
+                           " - " + fid + ", " + filesLoader.loadThread);
     }
 
     /**
@@ -297,15 +305,19 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
 
         private void run0() {
+            String threadName = Thread.currentThread().getName();
+            System.err.println("> run0 " + threadName);
             FileSystemView fileSystem = fileSystemView;
 
             if (loadThread.isInterrupted()) {
+                System.err.println("< run0 " + threadName + " - interrupted 1");
                 return;
             }
 
             File[] list = fileSystem.getFiles(currentDirectory, useFileHiding);
 
             if (loadThread.isInterrupted()) {
+                System.err.println("< run0 " + threadName + " - interrupted 2");
                 return;
             }
 
@@ -326,6 +338,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                     }
 
                     if (loadThread.isInterrupted()) {
+                        System.err.println("< run0 " + threadName + " - interrupted 3");
                         return;
                     }
                 }
@@ -337,10 +350,13 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
             newFileCache.addAll(newFiles);
 
+            System.err.println("  > invoke " + threadName);
             // To avoid loads of synchronizations with Invoker and improve performance we
             // execute the whole block on the COM thread
             runnable = ShellFolder.invoke(new Callable<DoChangeContents>() {
                 public DoChangeContents call() {
+                    String invokedName = Thread.currentThread().getName();
+                    System.err.println("    > invoke.call " + threadName + " : " + invokedName);
                     int newSize = newFileCache.size();
                     int oldSize = fileCache.size();
 
@@ -365,8 +381,12 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                             List<File> listStart_OldSize = new Vector<>(fileCache.subList(start, oldSize));
                             if (newFileCache.subList(end, newSize).equals(listStart_OldSize)) {
                                 if (loadThread.isInterrupted()) {
+                                    System.err.println("    < invoke.call " + threadName
+                                                       + " : " + invokedName + " - interrupted 4");
                                     return null;
                                 }
+                                System.err.println("    < invoke.call " + threadName
+                                                   + " : " + invokedName + " - newSize > oldSize && end > start");
                                 return new DoChangeContents(newFileCache.subList(start, end), start, null, 0, fid);
                             }
                         }
@@ -386,31 +406,47 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                             List<File> listEnd_OldSize = new Vector<>(fileCache.subList(end, oldSize));
                             if (listEnd_OldSize.equals(newFileCache.subList(start, newSize))) {
                                 if (loadThread.isInterrupted()) {
+                                    System.err.println("    < invoke.call " + threadName
+                                                       + " : " + invokedName + " - interrupted 5");
                                     return null;
                                 }
+                                System.err.println("    < invoke.call " + threadName
+                                                   + " : " + invokedName + " - newSize < oldSize && end > start");
                                 return new DoChangeContents(null, 0, new Vector<>(fileCache.subList(start, end)), start, fid);
                             }
                         }
                     }
                     if (!fileCache.equals(newFileCache)) {
                         if (loadThread.isInterrupted()) {
+                            System.err.println("    < invoke.call " + threadName
+                                               + " : " + invokedName + " - interrupted 6");
                             cancelRunnables();
                         }
                         return new DoChangeContents(newFileCache, 0, fileCache, 0, fid);
                     }
+                    System.err.println("    < invoke.call " + threadName + " : "
+                                       + invokedName + " = null");
                     return null;
                 }
             });
+            System.err.println("  < invoke " + threadName);
 
             if (runnable != null && !loadThread.isInterrupted()) {
+                System.err.println("< run0 " + threadName + " - later " + runnable);
                 SwingUtilities.invokeLater(runnable);
+            } else {
+                System.err.println("< run0 " + threadName + " - "
+                                   + loadThread.isInterrupted() + ", " + runnable);
             }
         }
 
         private void cancelRunnables() {
+            System.err.println("      > cancelRunnables " + Thread.currentThread().getName()
+                               + " - " + runnable);
             if (runnable != null) {
                 runnable.cancel();
             }
+            System.err.println("      < cancelRunnables " + Thread.currentThread().getName());
         }
    }
 
