@@ -300,8 +300,11 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
         @Override
         public void run() {
-            run0();
-            setBusy(false, fid);
+            try {
+                run0();
+            } finally {
+                setBusy(false, fid);
+            }
         }
 
         private void run0() {
