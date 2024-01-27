@@ -578,6 +578,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
 
         public synchronized void run() {
+            System.err.println("> DoChangeContents.run - " + Thread.currentThread().getName());
             if (fetchID.get() == fid && doFire) {
                 int remSize = (remFiles == null) ? 0 : remFiles.size();
                 int addSize = (addFiles == null) ? 0 : addFiles.size();
@@ -592,13 +593,17 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                     directories = null;
                 }
                 if (remSize > 0 && addSize == 0) {
+                    System.err.println("  dcc.IntervalRemoved");
                     fireIntervalRemoved(BasicDirectoryModel.this, remStart, remStart + remSize - 1);
                 } else if (addSize > 0 && remSize == 0 && addStart + addSize <= fileCache.size()) {
+                    System.err.println("  dcc.IntervalAdded");
                     fireIntervalAdded(BasicDirectoryModel.this, addStart, addStart + addSize - 1);
                 } else {
+                    System.err.println("  dcc.ContentsChanged");
                     fireContentsChanged();
                 }
             }
+            System.err.println("< DoChangeContents.run - " + Thread.currentThread().getName());
         }
     }
 }
