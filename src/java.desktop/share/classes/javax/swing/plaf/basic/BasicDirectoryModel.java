@@ -152,26 +152,22 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * Validates content of file cache.
      */
     public void validateFileCache() {
-        String name = Thread.currentThread().getName();
-        System.err.println("> validateFileCache - " + name);
         File currentDirectory = filechooser.getCurrentDirectory();
         if (currentDirectory == null) {
             return;
         }
+        System.err.println("> validateFileCache " + Thread.currentThread().getName()
+                           + " - " + filesLoader);
         if (filesLoader != null) {
-            System.err.println("  > validate - interrupt - " + name
-                               + " - " + filesLoader.fid + ", "
-                               + filesLoader.loadThread);
             filesLoader.loadThread.interrupt();
             filesLoader.cancelRunnables();
-            System.err.println("  < validate - interrupt - " + name);
         }
 
         int fid = fetchID.incrementAndGet();
         setBusy(true, fid);
         filesLoader = new FilesLoader(currentDirectory, fid);
-        System.err.println("< validateFileCache - " + name +
-                           " - " + fid + ", " + filesLoader.loadThread);
+        System.err.println("< validateFileCache " + Thread.currentThread().getName()
+                           + " - " + filesLoader);
     }
 
     /**
@@ -287,40 +283,46 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         private volatile DoChangeContents runnable;
         private final Thread loadThread;
 
+        private static int no = 0;
+
         private FilesLoader(File currentDirectory, int fid) {
             this.currentDirectory = currentDirectory;
             this.fid = fid;
             fileSystemView = filechooser.getFileSystemView();
             useFileHiding = filechooser.isFileHidingEnabled();
             fileSelectionEnabled = filechooser.isFileSelectionEnabled();
-            String name = "Basic L&F File Loading Thread";
-            loadThread = new Thread(null, this, name, 0, false);
+            String name = "File Loading Thread " + (++no);
+            loadThread = new Thread(null, this, name, 0, false) {
+                @Override
+                public void interrupt() {
+                    System.err.println("interrupt " + getName());
+                    super.interrupt();
+                }
+            };
             loadThread.start();
         }
 
         @Override
+        public String toString() {
+            return "FilesLoader(" + fid + ", " + loadThread.getName() + ")";
+        }
+
+        @Override
         public void run() {
-            try {
-                run0();
-            } finally {
-                setBusy(false, fid);
-            }
+            run0();
+            setBusy(false, fid);
         }
 
         private void run0() {
-            String threadName = Thread.currentThread().getName();
-            System.err.println("> run0 " + fid + " - " + threadName);
             FileSystemView fileSystem = fileSystemView;
 
             if (loadThread.isInterrupted()) {
-                System.err.println("< run0 " + threadName + " - interrupted 1");
                 return;
             }
 
             File[] list = fileSystem.getFiles(currentDirectory, useFileHiding);
 
             if (loadThread.isInterrupted()) {
-                System.err.println("< run0 " + threadName + " - interrupted 2");
                 return;
             }
 
@@ -341,7 +343,6 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                     }
 
                     if (loadThread.isInterrupted()) {
-                        System.err.println("< run0 " + threadName + " - interrupted 3");
                         return;
                     }
                 }
@@ -353,13 +354,12 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
             newFileCache.addAll(newFiles);
 
-            System.err.println("  > invoke " + threadName);
+            System.err.println("> " + this + " runnable " + runnable);
             // To avoid loads of synchronizations with Invoker and improve performance we
             // execute the whole block on the COM thread
             runnable = ShellFolder.invoke(new Callable<DoChangeContents>() {
                 public DoChangeContents call() {
-                    String invokedName = Thread.currentThread().getName();
-                    System.err.println("    > invoke.call " + threadName + " : " + invokedName);
+                    System.err.println("ShellFolder.invoke.call " + Thread.currentThread().getName());
                     int newSize = newFileCache.size();
                     int oldSize = fileCache.size();
 
@@ -384,12 +384,8 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                             List<File> listStart_OldSize = new Vector<>(fileCache.subList(start, oldSize));
                             if (newFileCache.subList(end, newSize).equals(listStart_OldSize)) {
                                 if (loadThread.isInterrupted()) {
-                                    System.err.println("    < invoke.call " + threadName
-                                                       + " : " + invokedName + " - interrupted 4");
                                     return null;
                                 }
-                                System.err.println("    < invoke.call " + threadName
-                                                   + " : " + invokedName + " - newSize > oldSize && end > start");
                                 return new DoChangeContents(newFileCache.subList(start, end), start, null, 0, fid);
                             }
                         }
@@ -409,47 +405,36 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                             List<File> listEnd_OldSize = new Vector<>(fileCache.subList(end, oldSize));
                             if (listEnd_OldSize.equals(newFileCache.subList(start, newSize))) {
                                 if (loadThread.isInterrupted()) {
-                                    System.err.println("    < invoke.call " + threadName
-                                                       + " : " + invokedName + " - interrupted 5");
                                     return null;
                                 }
-                                System.err.println("    < invoke.call " + threadName
-                                                   + " : " + invokedName + " - newSize < oldSize && end > start");
                                 return new DoChangeContents(null, 0, new Vector<>(fileCache.subList(start, end)), start, fid);
                             }
                         }
                     }
                     if (!fileCache.equals(newFileCache)) {
                         if (loadThread.isInterrupted()) {
-                            System.err.println("    < invoke.call " + threadName
-                                               + " : " + invokedName + " - interrupted 6");
                             cancelRunnables();
                         }
                         return new DoChangeContents(newFileCache, 0, fileCache, 0, fid);
                     }
-                    System.err.println("    < invoke.call " + threadName + " : "
-                                       + invokedName + " = null");
                     return null;
                 }
             });
-            System.err.println("  < invoke " + threadName);
 
             if (runnable != null && !loadThread.isInterrupted()) {
-                System.err.println("< run0 " + threadName + " - later " + runnable);
+                System.err.println("  invokeLater(" + runnable + ") " + Thread.currentThread().getName());
                 SwingUtilities.invokeLater(runnable);
-            } else {
-                System.err.println("< run0 " + threadName + " - "
-                                   + loadThread.isInterrupted() + ", " + runnable);
             }
+            System.err.println("< " + this + " runnable " + runnable);
         }
 
         private void cancelRunnables() {
-            System.err.println("      > cancelRunnables " + Thread.currentThread().getName()
-                               + " - " + runnable);
             if (runnable != null) {
+                System.err.println("runnable(" + runnable + ").cancel() "
+                                   + Thread.currentThread().getName());
+                // runnable can become null
                 runnable.cancel();
             }
-            System.err.println("      < cancelRunnables " + Thread.currentThread().getName());
         }
    }
 
@@ -573,12 +558,19 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             this.fid = fid;
         }
 
+        @Override
+        public String toString() {
+            return "DCC(fid=" + fid
+                   + ", addFiles=" + (addFiles != null ? addFiles.size() : "null")
+                   + ", remFiles=" + (remFiles != null ? remFiles.size() : "null") + ")";
+        }
+
         synchronized void cancel() {
             doFire = false;
         }
 
         public synchronized void run() {
-            System.err.println("> DoChangeContents.run - " + Thread.currentThread().getName());
+            System.err.println("> " + this + ".run");
             if (fetchID.get() == fid && doFire) {
                 int remSize = (remFiles == null) ? 0 : remFiles.size();
                 int addSize = (addFiles == null) ? 0 : addFiles.size();
@@ -593,17 +585,16 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                     directories = null;
                 }
                 if (remSize > 0 && addSize == 0) {
-                    System.err.println("  dcc.IntervalRemoved");
                     fireIntervalRemoved(BasicDirectoryModel.this, remStart, remStart + remSize - 1);
                 } else if (addSize > 0 && remSize == 0 && addStart + addSize <= fileCache.size()) {
-                    System.err.println("  dcc.IntervalAdded");
                     fireIntervalAdded(BasicDirectoryModel.this, addStart, addStart + addSize - 1);
                 } else {
-                    System.err.println("  dcc.ContentsChanged");
                     fireContentsChanged();
                 }
+            } else {
+                System.err.println("!! cancelled " + fid + " vs " + fetchID.get());
             }
-            System.err.println("< DoChangeContents.run - " + Thread.currentThread().getName());
+            System.err.println("< " + this + ".run");
         }
     }
 }
