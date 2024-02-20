@@ -27,7 +27,7 @@ import javax.swing.plaf.basic.BasicDirectoryModel;
  */
 public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     /** Initial number of files. */
-    private static final long NUMBER_OF_FILES = 1_000;
+    private static final long NUMBER_OF_FILES = 100;
     /** Maximum number of files created on a timer tick. */
     private static final long LIMIT_FILES = 20;
 
@@ -37,7 +37,7 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     /**
      * Number of threads running {@code fileChooser.rescanCurrentDirectory()}.
      */
-    private static final int NUMBER_OF_THREADS = 5;
+    private static final int NUMBER_OF_THREADS = 2;
     /** Number of repeated calls to {@code rescanCurrentDirectory}. */
     private static final int NUMBER_OF_REPEATS = 2_000;
     /** Maximum amount a thread waits before initiating rescan. */
@@ -50,6 +50,7 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     private static final CyclicBarrier edtBlocker = new CyclicBarrier(2);
     private static final CyclicBarrier eventBlocker = new CyclicBarrier(2);
     private static final CyclicBarrier scannerBlocker = new CyclicBarrier(NUMBER_OF_THREADS + 1);
+    private static final CyclicBarrier scannerBlocker2 = new CyclicBarrier(NUMBER_OF_THREADS + 1);
 
     private static final List<Thread> threads = new ArrayList<>(NUMBER_OF_THREADS);
 
@@ -136,13 +137,13 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
 
             int counter = 0;
             do {
-                System.out.println("Attempt " + counter);
+//                System.out.println("Attempt " + counter);
                 // Block EDT
                 SwingUtilities.invokeLater(() -> {
                     try {
-                        System.out.println("> EDT blocked");
+//                        System.out.println("> EDT blocked");
                         edtBlocker.await();
-                        System.out.println("< EDT unblocked");
+//                        System.out.println("< EDT unblocked");
                     } catch (InterruptedException | BrokenBarrierException e) {
                         handleException(e);
                     }
@@ -150,19 +151,24 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
                 // Create new files and schedule update
                 fileCreator.run();
 
-                System.out.println(counter + " validateFileCache 1");
+//                System.out.println(counter + " validateFileCache 1");
                 bdm.validateFileCache();
                 // Allow some time to post the event to EDT
-                Thread.sleep(100);
+                Thread.sleep(50);
 
                 fileCreator.run();
 
                 // Unblock EDT and updates file cache again
+//                System.out.println("unblock EDT");
                 edtBlocker.await();
-                System.out.println(counter + " validateFileCache 2");
-                bdm.validateFileCache();
+//                System.out.println("unblock scanners");
+                scannerBlocker.await();
+//                System.out.println(counter + " validateFileCache 2");
+//                bdm.validateFileCache();
+
 //                scannerBlocker.await();
-                Thread.sleep(200);
+//                System.out.println("wait scanners");
+                scannerBlocker2.await();
 //                bdm.validateFileCache();
 //                eventBlocker.await();
             } while (++counter < NUMBER_OF_REPEATS);
@@ -171,7 +177,8 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
 //            timer.scheduleAtFixedRate(new CreateFilesTimerTask(temp),
 //                                      0, TIMER_PERIOD);
 
-//            end.await();
+            System.out.println("end.await");
+            end.await();
         } catch (Throwable e) {
             threads.forEach(Thread::interrupt);
             throw e;
@@ -232,8 +239,13 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
                 int counter = 0;
                 try {
                     do {
+//                        System.out.println("Scanner " + Thread.currentThread().getName() + " - block 1");
                         scannerBlocker.await();
+//                        System.out.println("Scanner " + Thread.currentThread().getName() + " - validate");
                         bdm.validateFileCache();
+
+//                        System.out.println("Scanner " + Thread.currentThread().getName() + " - block 2");
+                        scannerBlocker2.await();
 //                        Thread.sleep((long) (Math.random() * LIMIT_SLEEP));
                     } while (++counter < NUMBER_OF_REPEATS
                              && !Thread.interrupted());
@@ -243,11 +255,12 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
             } catch (Throwable throwable) {
                 handleException(throwable);
             } finally {
-//                try {
-//                    end.await();
-//                } catch (InterruptedException | BrokenBarrierException e) {
-//                    handleException(e);
-//                }
+                try {
+                    System.out.println("end.await" + Thread.currentThread().getName());
+                    end.await();
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    handleException(e);
+                }
             }
         }
     }
