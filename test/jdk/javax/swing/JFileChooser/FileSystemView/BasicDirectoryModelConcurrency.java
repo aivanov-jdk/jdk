@@ -131,7 +131,6 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
             throw e;
         } finally {
             try {
-                System.out.println("end.await");
                 end.await();
             } catch (InterruptedException | BrokenBarrierException ignored) {
                 // Ignore - just exit the thread
@@ -192,7 +191,6 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
                 handleException(throwable);
             } finally {
                 try {
-                    System.out.println("end.await" + Thread.currentThread().getName());
                     end.await();
                 } catch (InterruptedException | BrokenBarrierException ignored) {
                     // Ignore - just exit the thread
