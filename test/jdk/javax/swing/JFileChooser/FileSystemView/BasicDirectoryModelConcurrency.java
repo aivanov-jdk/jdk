@@ -23,15 +23,15 @@ import javax.swing.plaf.basic.BasicDirectoryModel;
  */
 public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     /** Initial number of files. */
-    private static final long NUMBER_OF_FILES = 100;
-    /** Maximum number of files created on a timer tick. */
-    private static final long LIMIT_FILES = 20;
+    private static final long NUMBER_OF_FILES = 2_000;
+    /** Maximum number of files created or removed on a timer tick. */
+    private static final long LIMIT_FILES = 200;
 
 
     /**
      * Number of threads running {@code fileChooser.rescanCurrentDirectory()}.
      */
-    private static final int NUMBER_OF_THREADS = 2;
+    private static final int NUMBER_OF_THREADS = 5;
     /** Number of repeated calls to {@code rescanCurrentDirectory}. */
     private static final int NUMBER_OF_REPEATS = 2_000;
 
@@ -246,8 +246,14 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
         public void run() {
             try {
                 long count = (long) (Math.random() * LIMIT_FILES);
-                createFiles(temp, no, no + count);
-                no += count;
+                if (no > NUMBER_OF_FILES / 2) {
+                    LongStream.range(no - count, no)
+                              .forEach(n -> deleteFile(temp.resolve(n + ".file")));
+                    no -= count;
+                } else {
+                    createFiles(temp, no, no + count);
+                    no += count;
+                }
             } catch (Throwable t) {
                 handleException(t);
             }
