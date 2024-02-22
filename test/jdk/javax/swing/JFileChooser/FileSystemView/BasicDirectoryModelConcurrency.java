@@ -123,7 +123,7 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
                     scannerScanEnd.await();
                 } while (++counter < NUMBER_OF_REPEATS
                          && !Thread.interrupted());
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | BrokenBarrierException e) {
                 // Just exit the loop
             }
         } catch (Throwable e) {
@@ -133,6 +133,8 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
             try {
                 System.out.println("end.await");
                 end.await();
+            } catch (InterruptedException | BrokenBarrierException ignored) {
+                // Ignore - just exit the thread
             } finally {
                 deleteFiles(temp);
                 Files.delete(temp);
@@ -183,7 +185,7 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
                         scannerScanEnd.await();
                     } while (++counter < NUMBER_OF_REPEATS
                              && !Thread.interrupted());
-                } catch (InterruptedException e) {
+                } catch (InterruptedException | BrokenBarrierException e) {
                     // Just exit the loop
                 }
             } catch (Throwable throwable) {
@@ -192,8 +194,8 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
                 try {
                     System.out.println("end.await" + Thread.currentThread().getName());
                     end.await();
-                } catch (InterruptedException | BrokenBarrierException e) {
-                    handleException(e);
+                } catch (InterruptedException | BrokenBarrierException ignored) {
+                    // Ignore - just exit the thread
                 }
             }
         }
