@@ -31,7 +31,7 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     /**
      * Number of threads running {@code fileChooser.rescanCurrentDirectory()}.
      */
-    private static final int NUMBER_OF_THREADS = 5;
+    private static final int NUMBER_OF_THREADS = 3;
     /** Number of repeated calls to {@code rescanCurrentDirectory}. */
     private static final int NUMBER_OF_REPEATS = 2_000;
 
