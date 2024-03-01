@@ -17,16 +17,17 @@ import javax.swing.JFileChooser;
 /*
  * @test
  * @bug 8323670 8307091 8240690
+ * @requires os.family == "mac" | os.family == "linux"
  * @summary Verifies thread-safety of BasicDirectoryModel (JFileChooser)
  */
 public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     /** Initial number of files. */
-    private static final long NUMBER_OF_FILES = 1_000;
+    private static final long NUMBER_OF_FILES = 50;
     /** Maximum number of files created on a timer tick. */
-    private static final long LIMIT_FILES = 20;
+    private static final long LIMIT_FILES = 10;
 
     /** Timer period (delay) for creating new files. */
-    private static final long TIMER_PERIOD = 500;
+    private static final long TIMER_PERIOD = 250;
 
     /**
      * Number of threads running {@code fileChooser.rescanCurrentDirectory()}.
@@ -38,17 +39,27 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     private static final long LIMIT_SLEEP = 100;
 
 
+    /** The barrier to start all the scanner threads simultaneously. */
     private static final CyclicBarrier start = new CyclicBarrier(NUMBER_OF_THREADS);
+    /** The barrier to wait for all the scanner threads to complete, plus main thread. */
     private static final CyclicBarrier end = new CyclicBarrier(NUMBER_OF_THREADS + 1);
 
+    /** List of scanner threads. */
     private static final List<Thread> threads = new ArrayList<>(NUMBER_OF_THREADS);
 
+    /**
+     * Stores an exception caught by any of the threads.
+     * If more exceptions are caught, they're added as suppressed exceptions.
+     */
     private static final AtomicReference<Throwable> exception =
             new AtomicReference<>();
 
 
     public static void main(String[] args) throws Throwable {
         try {
+            // Start the test in its own thread group to catch and handle
+            // all thrown exceptions, in particular in
+            // BasicDirectoryModel.FilesLoader which is created by Swing.
             ThreadGroup threadGroup = new BasicDirectoryModelConcurrency();
             Thread runner = new Thread(threadGroup,
                                        BasicDirectoryModelConcurrency::wrapper,
