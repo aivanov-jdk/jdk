@@ -158,15 +158,18 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
         System.err.println("> validateFileCache " + Thread.currentThread().getName()
                            + " - " + filesLoader);
-        if (filesLoader != null) {
-            filesLoader.loadThread.interrupt();
-            filesLoader.cancelRunnables();
-        }
+        synchronized (this) {
+            if (filesLoader != null) {
+                filesLoader.loadThread.interrupt();
+                filesLoader.cancelRunnables();
+            }
 
-        int fid = fetchID.incrementAndGet();
-        setBusy(true, fid);
-        filesLoader = new FilesLoader(currentDirectory, fid);
-        System.err.println("< validateFileCache " + Thread.currentThread().getName()
+            int fid = fetchID.incrementAndGet();
+            setBusy(true, fid);
+            filesLoader = new FilesLoader(currentDirectory, fid);
+        }
+        System.err.println("< validateFileCache " + Thread.currentThread()
+                                                          .getName()
                            + " - " + filesLoader);
     }
 
