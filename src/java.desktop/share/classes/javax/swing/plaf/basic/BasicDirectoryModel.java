@@ -296,7 +296,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             loadThread = new Thread(null, this, name, 0, false) {
                 @Override
                 public void interrupt() {
-                    System.err.println("interrupt " + getName());
+                    System.err.println("interrupt " + getName() + "  (via " + Thread.currentThread().getName() + ")");
                     super.interrupt();
                 }
             };
