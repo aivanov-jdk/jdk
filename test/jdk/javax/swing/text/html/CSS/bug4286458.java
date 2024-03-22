@@ -44,7 +44,6 @@ public class bug4286458 {
          PassFailJFrame.builder()
                 .title("CSS tag Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(5)
                 .columns(30)
                 .testUI(bug4286458::createTestUI)
                 .build()

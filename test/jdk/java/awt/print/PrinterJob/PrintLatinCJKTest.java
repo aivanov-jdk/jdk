@@ -112,8 +112,6 @@ public class PrintLatinCJKTest implements Printable {
                       .title("Print Latin CJK Test")
                       .instructions(INFO)
                       .testTimeOut(10)
-                      .rows(12)
-                      .columns(30)
                       .splitUI(PrintLatinCJKTest::createTestUI)
                       .build()
                       .awaitAndCheck();

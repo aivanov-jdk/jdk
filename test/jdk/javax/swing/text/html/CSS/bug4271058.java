@@ -54,8 +54,6 @@ public class bug4271058 {
          PassFailJFrame.builder()
                 .title("CSS html tag verification Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(15)
-                .columns(30)
                 .testUI(bug4271058::createTestUI)
                 .screenCapture()
                 .build()
@@ -70,12 +68,14 @@ public class bug4271058 {
             "<td>aaaaaa</td>" +
             "<td>bbbbbbb</td>" +
             "</tr></table>" +
+            "<br>" +
             "<table border width=300>" +
             "<tr><th>A</th><th>B</th></tr>" +
             "<tr>" +
             "<td width=\"80%\">a</td>" +
             "<td width=\"20%\">b</td>" +
             "</tr></table>" +
+            "<br>" +
             "<table align=right border width=200>" +
             "<tr><th>col A</th><th>col B</th></tr>" +
             "<tr>" +

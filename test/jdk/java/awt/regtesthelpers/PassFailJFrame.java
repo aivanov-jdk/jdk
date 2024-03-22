@@ -55,6 +55,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -498,7 +499,31 @@ public final class PassFailJFrame {
 
     private static JTextComponent configurePlainText(String instructions,
                                                      int rows, int columns) {
-        JTextArea text = new JTextArea(instructions, rows, columns);
+        JTextArea text;
+        if (columns == 0 && rows == 0) {
+            System.out.println("columns == 0 && rows == 0");
+            text = new JTextArea(instructions);
+        } else if (columns != 0) {
+            System.out.println("columns != 0");
+            System.out.println("rows = " + rows + ", effective "
+                               + (rows == 0
+                                  ? (int) instructions.lines()
+                                                      .count() + 1
+                                  : rows));
+            text = new JTextArea(instructions,
+                                 rows == 0
+                                     ? (int) instructions.lines().count() + 1
+                                     : rows,
+                                 columns);
+        } else {
+            System.out.println("else rows = " + rows + "; "
+                               + "def columns " + COLUMNS
+                               + " (" + columns + ")");
+            text = new JTextArea(instructions,
+                                 rows,
+                                 COLUMNS);
+        }
+        text.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
         return text;
@@ -1455,14 +1480,6 @@ public final class PassFailJFrame {
 
             if (testTimeOut == 0L) {
                 testTimeOut = TEST_TIMEOUT;
-            }
-
-            if (rows == 0) {
-                rows = ROWS;
-            }
-
-            if (columns == 0) {
-                columns = COLUMNS;
             }
 
             if (position == null
