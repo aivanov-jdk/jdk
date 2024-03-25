@@ -526,6 +526,8 @@ public final class PassFailJFrame {
         text.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
+        text.setSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        System.out.println(text.getPreferredSize());
         return text;
     }
 
