@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -40,7 +41,6 @@ import javax.swing.JFileChooser;
 /*
  * @test
  * @bug 8325179
- * @requires os.family == "windows"
  * @summary Verifies there's only one BasicDirectoryModel.FilesLoader thread
  *          at any given moment
  * @run main/othervm -Djava.awt.headless=true LoaderThreadCount
@@ -151,21 +151,19 @@ public final class LoaderThreadCount extends ThreadGroup {
 
             System.out.println("Number of snapshots: " + loaderCount.size());
 
-            long ones = loaderCount.stream()
-                                   .filter(n -> n == 1)
-                                   .count();
-            long twos = loaderCount.stream()
-                                   .filter(n -> n == 2)
-                                   .count();
-            long count = loaderCount.stream()
-                                    .filter(n -> n > 2)
-                                    .count();
+            long ones = getLoaderThreadCount(loaderCount, n -> n == 1);
+            long twos = getLoaderThreadCount(loaderCount, n -> n == 2);
+            long threes = getLoaderThreadCount(loaderCount, n -> n == 3);
+            long fours = getLoaderThreadCount(loaderCount, n -> n == 4);
+            long more = getLoaderThreadCount(loaderCount, n -> n > 4);
             System.out.println("Number of snapshots where number of loader threads:");
             System.out.println("  = 1: " + ones);
             System.out.println("  = 2: " + twos);
-            System.out.println("  > 2: " + count);
-            if (count > 0) {
-                throw new RuntimeException("Detected " + count + " snapshots "
+            System.out.println("  = 3: " + threes);
+            System.out.println("  = 4: " + fours);
+            System.out.println("  > 4: " + more);
+            if ((fours + more) > 0) {
+                throw new RuntimeException("Detected " + (fours + more) + " snapshots "
                                            + "with several loading threads");
             }
         } catch (Throwable e) {
@@ -175,6 +173,13 @@ public final class LoaderThreadCount extends ThreadGroup {
             deleteFiles(temp);
             deleteFile(temp);
         }
+    }
+
+    private static long getLoaderThreadCount(final List<Long> loaderCount,
+                                             final Predicate<Long> condition) {
+        return loaderCount.stream()
+                          .filter(condition)
+                          .count();
     }
 
     private static Thread[] getThreadSnapshot() {
