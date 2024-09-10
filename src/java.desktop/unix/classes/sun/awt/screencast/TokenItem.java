@@ -119,10 +119,10 @@ final class TokenItem {
 
         try {
             int[] integers = Arrays.stream(String.valueOf(input)
-                    .split("_"))
-                    .filter(s -> !s.isBlank())
-                    .mapToInt(Integer::parseInt)
-                    .toArray();
+                                                 .split("_"))
+                                   .filter(s -> !s.isBlank())
+                                   .mapToInt(Integer::parseInt)
+                                   .toArray();
 
             if (integers.length % 4 == 0) {
                 TokenItem tokenItem = new TokenItem(token, integers);
