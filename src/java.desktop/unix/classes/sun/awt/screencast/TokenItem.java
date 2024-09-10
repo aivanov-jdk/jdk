@@ -141,10 +141,9 @@ final class TokenItem {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Token: " + token + "\n");
-        for (Rectangle bounds : allowedScreensBounds) {
-            sb.append("\t").append(bounds).append("\n");
-        }
-        return sb.toString();
+        return "Token: " + token + "\n" +
+               allowedScreensBounds.stream()
+                                   .map(Rectangle::toString)
+                                   .collect(Collectors.joining("\n\t", "\t", "\n"));
     }
 }
