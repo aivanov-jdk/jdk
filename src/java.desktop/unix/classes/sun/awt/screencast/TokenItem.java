@@ -38,10 +38,10 @@ import static sun.awt.screencast.ScreencastHelper.SCREENCAST_DEBUG;
 /**
  * Helper class used by {@link TokenStorage} as restore token record
  * with its associated screen boundaries.
- *
+ * <p>
  * It helps in serialization/deserialization of screen boundaries
  * to/from string format.
- *
+ * <p>
  * The screen boundary is represented as {@code _x_y_width_height}
  * and can be repeated several times.
  */
