@@ -96,17 +96,13 @@ final class TokenItem {
     private static final int MIN_SIZE = 1;
 
     public boolean hasValidBounds() {
-        //This check is very rough, in order to filter out abnormal values
-        for (Rectangle bounds : allowedScreensBounds) {
-            if (bounds.x < -MAX_SIZE || bounds.x > MAX_SIZE
-                    || bounds.y < -MAX_SIZE || bounds.y > MAX_SIZE
-                    || bounds.width < MIN_SIZE || bounds.width > MAX_SIZE
-                    || bounds.height < MIN_SIZE || bounds.height > MAX_SIZE
-            ) {
-                return false;
-            }
-        }
-        return true;
+        // This check is very rough, in order to filter out abnormal values
+        return allowedScreensBounds
+                .stream()
+                .noneMatch(bounds -> bounds.x < -MAX_SIZE || bounds.x > MAX_SIZE
+                                     || bounds.y < -MAX_SIZE || bounds.y > MAX_SIZE
+                                     || bounds.width < MIN_SIZE || bounds.width > MAX_SIZE
+                                     || bounds.height < MIN_SIZE || bounds.height > MAX_SIZE);
     }
 
     public String dump() {
