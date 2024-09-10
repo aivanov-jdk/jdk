@@ -106,12 +106,12 @@ final class TokenItem {
     }
 
     public String dump() {
-        StringBuilder sb = new StringBuilder();
-        for (Rectangle bounds : allowedScreensBounds) {
-            sb.append("_%d_%d_%d_%d"
-                    .formatted(bounds.x, bounds.y, bounds.width, bounds.height));
-        }
-        return sb.toString();
+        return allowedScreensBounds
+                .stream()
+                .map(bounds -> String.format("_%d_%d_%d_%d",
+                                             bounds.x, bounds.y,
+                                             bounds.width, bounds.height))
+                .collect(Collectors.joining());
     }
 
     public static TokenItem parse(String token, Object input) {
