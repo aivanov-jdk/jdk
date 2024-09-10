@@ -83,7 +83,7 @@ final class TokenItem {
 
         List<Dimension> tokenSizes = allowedScreensBounds
                 .stream()
-                .map(bounds -> new Dimension(bounds.width, bounds.height))
+                .map(Rectangle::getSize)
                 .collect(Collectors.toCollection(ArrayList::new));
 
         return screenSizes.size() == screenSizes
