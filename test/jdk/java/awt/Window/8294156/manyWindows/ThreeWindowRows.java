@@ -24,6 +24,6 @@ public class ThreeWindowRows {
     }
 
     private static List<? extends Window> createTestUI() {
-        return TwoWindowColumnsH.createTestUI(8);
+        return TwoWindowColumnsH.createTestWindows(8);
     }
 }

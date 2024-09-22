@@ -168,10 +168,10 @@ public class TwoWindowColumnsH {
     }
 
     public static List<? extends Window> createTestUI() {
-        return createTestUI(6);
+        return createTestWindows(6);
     }
 
-    public static List<? extends Window> createTestUI(final int windowLimit) {
+    public static List<JFrame> createTestWindows(final int windowLimit) {
         return IntStream.rangeClosed(1, windowLimit)
                         .mapToObj(TwoWindowColumnsH::createFrame)
                         .toList();
