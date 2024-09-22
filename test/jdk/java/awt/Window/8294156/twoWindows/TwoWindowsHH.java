@@ -25,7 +25,9 @@ import static java.awt.Toolkit.getDefaultToolkit;
 public class TwoWindowsHH {
     public static final String INSTRUCTIONS = """
             A simple demo to position two test windows
-            side by side horizontally or vertically.
+            side by side horizontally or vertically
+            to the right or to the bottom of the
+            instruction frame.
             """;
     private static final Dimension SIZE = new Dimension(300, 200);
 
