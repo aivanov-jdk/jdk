@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,14 +227,6 @@ public class Names {
     public final Name enumSwitch;
     public final Name enumConstant;
 
-    // templated string
-    public final Name process;
-    public final Name STR;
-    public final Name RAW;
-    public final Name newStringTemplate;
-    public final Name newLargeStringTemplate;
-    public final Name processStringTemplate;
-
     public final Name.Table table;
 
     @SuppressWarnings("this-escape")
@@ -413,13 +405,6 @@ public class Names {
         permits = fromString("permits");
         sealed = fromString("sealed");
 
-        // templated string
-        process = fromString("process");
-        STR = fromString("STR");
-        RAW = fromString("RAW");
-        newStringTemplate = fromString("newStringTemplate");
-        newLargeStringTemplate = fromString("newLargeStringTemplate");
-        processStringTemplate = fromString("processStringTemplate");
 
         // pattern switches
         typeSwitch = fromString("typeSwitch");
@@ -428,17 +413,18 @@ public class Names {
     }
 
     protected Name.Table createTable(Options options) {
-        boolean useStringTable = options.isSet("useStringTable");
-        if (useStringTable)
-            return newStringNameTable();
         boolean useUnsharedTable = options.isSet("useUnsharedTable");
         if (useUnsharedTable)
             return newUnsharedNameTable();
-        return newSharedNameTable();
+        boolean useSharedTable = options.isSet("useSharedTable");
+        if (useSharedTable)
+            return newSharedNameTable();
+        boolean internStringTable = options.isSet("internStringTable");
+        return newStringNameTable(internStringTable);
     }
 
-    public StringNameTable newStringNameTable() {
-        return StringNameTable.create(this);
+    public StringNameTable newStringNameTable(boolean intern) {
+        return StringNameTable.create(this, intern);
     }
 
     public SharedNameTable newSharedNameTable() {

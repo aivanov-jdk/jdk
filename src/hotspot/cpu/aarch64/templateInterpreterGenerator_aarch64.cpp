@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,6 +42,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -67,12 +68,6 @@
 int TemplateInterpreter::InterpreterCodeSize = 200 * 1024;
 
 #define __ _masm->
-
-//-----------------------------------------------------------------------------
-
-extern "C" void entry(CodeBuffer*);
-
-//-----------------------------------------------------------------------------
 
 address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   address entry = __ pc();
@@ -369,6 +364,7 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
     __ ldr(rscratch1, Address(rfp,
                        frame::interpreter_frame_monitor_block_top_offset *
                        wordSize));
+    __ lea(rscratch1, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
     __ mov(rscratch2, sp);
     __ cmp(rscratch1, rscratch2); // maximal rsp for current rfp (stack
                            // grows negative)
@@ -492,10 +488,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ add(esp, esp, cache, Assembler::LSL, 3);
   } else {
     // Pop N words from the stack
-    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-    __ ldr(cache, Address(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-    __ andr(cache, cache, ConstantPoolCacheEntry::parameter_size_mask);
-
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
     __ add(esp, esp, cache, Assembler::LSL, 3);
   }
 
@@ -751,8 +746,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // Note: the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
-  __ far_jump(RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
+  __ far_jump(RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
 
   // all done with frame size check
   __ bind(after_frame_check);
@@ -816,7 +811,10 @@ void TemplateInterpreterGenerator::lock_method() {
   __ sub(rscratch1, sp, rfp);
   __ asr(rscratch1, rscratch1, Interpreter::logStackElementSize);
   __ str(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
-  __ str(esp, monitor_block_top);  // set new monitor block top
+  __ sub(rscratch1, esp, rfp);
+  __ asr(rscratch1, rscratch1, Interpreter::logStackElementSize);
+  __ str(rscratch1, monitor_block_top);  // set new monitor block top
+
   // store object
   __ str(r0, Address(esp, BasicObjectLock::obj_offset()));
   __ mov(c_rarg1, esp); // object address
@@ -837,14 +835,16 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   if (native_call) {
     __ sub(esp, sp, 14 *  wordSize);
     __ mov(rbcp, zr);
-    __ stp(esp, zr, Address(__ pre(sp, -14 * wordSize)));
+    __ mov(rscratch1, frame::interpreter_frame_initial_sp_offset);
+    __ stp(rscratch1, zr, Address(__ pre(sp, -14 * wordSize)));
     // add 2 zero-initialized slots for native calls
     __ stp(zr, zr, Address(sp, 12 * wordSize));
   } else {
     __ sub(esp, sp, 12 *  wordSize);
     __ ldr(rscratch1, Address(rmethod, Method::const_offset()));    // get ConstMethod
     __ add(rbcp, rscratch1, in_bytes(ConstMethod::codes_offset())); // get codebase
-    __ stp(esp, rbcp, Address(__ pre(sp, -12 * wordSize)));
+    __ mov(rscratch1, frame::interpreter_frame_initial_sp_offset);
+    __ stp(rscratch1, rbcp, Address(__ pre(sp, -12 * wordSize)));
   }
 
   if (ProfileInterpreter) {
@@ -1258,6 +1258,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     const Address monitor_block_top(rfp,
                  frame::interpreter_frame_monitor_block_top_offset * wordSize);
     __ ldr(rscratch1, monitor_block_top);
+    __ lea(rscratch1, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
     __ cmp(esp, rscratch1);
     __ br(Assembler::EQ, L);
     __ stop("broken stack frame setup in interpreter 1");
@@ -1330,8 +1331,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ ldr(r10, Address(rmethod, Method::native_function_offset()));
-    address unsatisfied = (SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
-    __ mov(rscratch2, unsatisfied);
+    ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
+    __ lea(rscratch2, unsatisfied);
     __ ldr(rscratch2, rscratch2);
     __ cmp(r10, rscratch2);
     __ br(Assembler::NE, L);
@@ -1376,6 +1377,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ get_method(rmethod);
   // result potentially in r0 or v0
 
+  // Restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni(rscratch1, rscratch2);
+
   // make room for the pushes we're about to do
   __ sub(rscratch1, esp, 4 * wordSize);
   __ andr(sp, rscratch1, -16);
@@ -1403,15 +1407,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L, Continue;
 
-    // We need an acquire here to ensure that any subsequent load of the
-    // global SafepointSynchronize::_state flag is ordered after this load
-    // of the thread-local polling word.  We don't want this poll to
-    // return false (i.e. not safepointing) and a later poll of the global
-    // SafepointSynchronize::_state spuriously to return true.
-    //
-    // This is to avoid a race when we're in a native->Java transition
-    // racing the code which wakes up from a safepoint.
-    __ safepoint_poll(L, true /* at_return */, true /* acquire */, false /* in_nmethod */);
+    // No need for acquire as Java threads always disarm themselves.
+    __ safepoint_poll(L, true /* at_return */, false /* acquire */, false /* in_nmethod */);
     __ ldrw(rscratch2, Address(rthread, JavaThread::suspend_flags_offset()));
     __ cbz(rscratch2, Continue);
     __ bind(L);
@@ -1422,7 +1419,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mov(c_rarg0, rthread);
-    __ mov(rscratch2, CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
     __ blr(rscratch2);
     __ get_method(rmethod);
     __ reinit_heapbase();
@@ -1472,7 +1469,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     __ push_call_clobbered_registers();
     __ mov(c_rarg0, rthread);
-    __ mov(rscratch2, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
+    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
     __ blr(rscratch2);
     __ pop_call_clobbered_registers();
 
@@ -1710,6 +1707,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
      const Address monitor_block_top (rfp,
                  frame::interpreter_frame_monitor_block_top_offset * wordSize);
     __ ldr(rscratch1, monitor_block_top);
+    __ lea(rscratch1, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
     __ cmp(esp, rscratch1);
     __ br(Assembler::EQ, L);
     __ stop("broken stack frame setup in interpreter 2");
@@ -1833,7 +1831,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     Label caller_not_deoptimized;
     __ ldr(c_rarg1, Address(rfp, frame::return_addr_offset * wordSize));
     // This is a return address, so requires authenticating for PAC.
-    __ authenticate_return_address(c_rarg1, rscratch1);
+    __ authenticate_return_address(c_rarg1);
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
                                InterpreterRuntime::interpreter_contains), c_rarg1);
     __ cbnz(r0, caller_not_deoptimized);
@@ -2074,7 +2072,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
 
   assert(Interpreter::trace_code(t->tos_in()) != nullptr,
          "entry must have been generated");
-  __ bl(Interpreter::trace_code(t->tos_in()));
+  __ bl(RuntimeAddress(Interpreter::trace_code(t->tos_in())));
   __ reinit_heapbase();
 }
 

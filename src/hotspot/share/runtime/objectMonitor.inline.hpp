@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,13 @@
 
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline bool ObjectMonitor::is_entered(JavaThread* current) const {
   if (LockingMode == LM_LIGHTWEIGHT) {
@@ -49,16 +53,38 @@ inline bool ObjectMonitor::is_entered(JavaThread* current) const {
   return false;
 }
 
-inline markWord ObjectMonitor::header() const {
-  return Atomic::load(&_header);
+inline uintptr_t ObjectMonitor::metadata() const {
+  return Atomic::load(&_metadata);
 }
 
-inline volatile markWord* ObjectMonitor::header_addr() {
-  return &_header;
+inline void ObjectMonitor::set_metadata(uintptr_t value) {
+  Atomic::store(&_metadata, value);
+}
+
+inline volatile uintptr_t* ObjectMonitor::metadata_addr() {
+  STATIC_ASSERT(std::is_standard_layout<ObjectMonitor>::value);
+  STATIC_ASSERT(offsetof(ObjectMonitor, _metadata) == 0);
+  return &_metadata;
+}
+
+inline markWord ObjectMonitor::header() const {
+  assert(!UseObjectMonitorTable, "Lightweight locking with OM table does not use header");
+  return markWord(metadata());
 }
 
 inline void ObjectMonitor::set_header(markWord hdr) {
-  Atomic::store(&_header, hdr);
+  assert(!UseObjectMonitorTable, "Lightweight locking with OM table does not use header");
+  set_metadata(hdr.value());
+}
+
+inline intptr_t ObjectMonitor::hash() const {
+  assert(UseObjectMonitorTable, "Only used by lightweight locking with OM table");
+  return metadata();
+}
+
+inline void ObjectMonitor::set_hash(intptr_t hash) {
+  assert(UseObjectMonitorTable, "Only used by lightweight locking with OM table");
+  set_metadata(hash);
 }
 
 inline int ObjectMonitor::waiters() const {
@@ -100,6 +126,12 @@ inline int ObjectMonitor::contentions() const {
 // Add value to the contentions field.
 inline void ObjectMonitor::add_to_contentions(int value) {
   Atomic::add(&_contentions, value);
+}
+
+inline void ObjectMonitor::set_recursions(size_t recursions) {
+  assert(_recursions == 0, "must be");
+  assert(has_owner(), "must be owned");
+  _recursions = checked_cast<intx>(recursions);
 }
 
 // Clear _owner field; current value must match old_value.
@@ -172,6 +204,33 @@ inline ObjectMonitor* ObjectMonitor::next_om() const {
 // Simply set _next_om field to new_value.
 inline void ObjectMonitor::set_next_om(ObjectMonitor* new_value) {
   Atomic::store(&_next_om, new_value);
+}
+
+inline ObjectMonitorContentionMark::ObjectMonitorContentionMark(ObjectMonitor* monitor)
+  : _monitor(monitor) {
+  _monitor->add_to_contentions(1);
+}
+
+inline ObjectMonitorContentionMark::~ObjectMonitorContentionMark() {
+  _monitor->add_to_contentions(-1);
+}
+
+inline oop ObjectMonitor::object_peek() const {
+  if (_object.is_null()) {
+    return nullptr;
+  }
+  return _object.peek();
+}
+
+inline bool ObjectMonitor::object_is_dead() const {
+  return object_peek() == nullptr;
+}
+
+inline bool ObjectMonitor::object_refers_to(oop obj) const {
+  if (_object.is_null()) {
+    return false;
+  }
+  return _object.peek() == obj;
 }
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP

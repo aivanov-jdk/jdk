@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,8 @@ package jdk.internal.classfile.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.BufWriter;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
 
 public class AttributeHolder {
     private final List<Attribute<?>> attributes = new ArrayList<>();
@@ -50,10 +49,16 @@ public class AttributeHolder {
         return attributes.size();
     }
 
-    public void writeTo(BufWriter buf) {
-        buf.writeU2(attributes.size());
+    public void writeTo(BufWriterImpl buf) {
+        Util.writeAttributes(buf, attributes);
+    }
+
+    @SuppressWarnings("unchecked")
+    <A extends Attribute<A>> A get(AttributeMapper<A> am) {
         for (Attribute<?> a : attributes)
-            a.writeTo(buf);
+            if (a.attributeMapper() == am)
+                return (A)a;
+        return null;
     }
 
     boolean isPresent(AttributeMapper<?> am) {

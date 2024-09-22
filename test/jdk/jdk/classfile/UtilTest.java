@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,10 +23,17 @@
 
 /*
  * @test
- * @summary Testing Classfile Util.
+ * @summary Testing ClassFile Util.
  * @run junit UtilTest
  */
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Opcode;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodHandles;
+import java.util.Arrays;
+import java.util.BitSet;
+
+import jdk.internal.classfile.impl.RawBytecodeHelper;
 import jdk.internal.classfile.impl.Util;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -77,5 +82,22 @@ class UtilTest {
 
     private void assertSlots(String methodDesc, int slots) {
         assertEquals(Util.parameterSlots(MethodTypeDesc.ofDescriptor(methodDesc)), slots);
+    }
+
+    @Test
+    void testOpcodeLengthTable() {
+        var lengths = new byte[0x100];
+        Arrays.fill(lengths, (byte) -1);
+        for (var op : Opcode.values()) {
+            if (!op.isWide()) {
+                lengths[op.bytecode()] = (byte) op.sizeIfFixed();
+            } else {
+                // Wide pseudo-opcodes have double the length as normal variants
+                // Must match logic in checkSpecialInstruction()
+                assertEquals(op.sizeIfFixed(), lengths[op.bytecode() & 0xFF] * 2, op + " size");
+            }
+        }
+
+        assertArrayEquals(lengths, RawBytecodeHelper.LENGTHS);
     }
 }

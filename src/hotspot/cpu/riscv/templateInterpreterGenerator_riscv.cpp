@@ -41,6 +41,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -332,6 +333,7 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   {
     Label L;
     __ ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    __ shadd(t0, t0, fp, t0, LogBytesPerWord);
     // maximal sp for current fp (stack grows negative)
     // check if frame is complete
     __ bge(t0, sp, L);
@@ -453,9 +455,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ shadd(esp, cache, esp, t0, 3);
   } else {
     // Pop N words from the stack
-    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-    __ ld(cache, Address(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-    __ andi(cache, cache, ConstantPoolCacheEntry::parameter_size_mask);
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
 
     __ shadd(esp, cache, esp, t0, 3);
   }
@@ -656,8 +658,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // Note: the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
-  __ far_jump(RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
+  __ far_jump(RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
 
   // all done with frame size check
   __ bind(after_frame_check);
@@ -713,7 +715,9 @@ void TemplateInterpreterGenerator::lock_method() {
   __ sub(t0, sp, fp);
   __ srai(t0, t0, Interpreter::logStackElementSize);
   __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
-  __ sd(esp, monitor_block_top);  // set new monitor block top
+  __ sub(t0, esp, fp);
+  __ srai(t0, t0, Interpreter::logStackElementSize);
+  __ sd(t0, monitor_block_top);  // set new monitor block top
   // store object
   __ sd(x10, Address(esp, BasicObjectLock::obj_offset()));
   __ mv(c_rarg1, esp); // object address
@@ -745,7 +749,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ add(sp, sp, - 12 * wordSize);
   }
   __ sd(xbcp, Address(sp, wordSize));
-  __ sd(esp, Address(sp, 0));
+  __ mv(t0, frame::interpreter_frame_initial_sp_offset);
+  __ sd(t0, Address(sp, 0));
 
   if (ProfileInterpreter) {
     Label method_data_continue;
@@ -1106,8 +1111,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ ld(x28, Address(xmethod, Method::native_function_offset()));
-    address unsatisfied = (SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
-    __ mv(t, unsatisfied);
+    ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
+    __ la(t, unsatisfied);
     __ load_long_misaligned(t1, Address(t, 0), t0, 2); // 2 bytes aligned, but not 4 or 8
 
     __ bne(x28, t1, L);
@@ -1151,6 +1156,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ bind(native_return);
   __ get_method(xmethod);
   // result potentially in x10 or f10
+
+  // Restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni(t0);
 
   // make room for the pushes we're about to do
   __ sub(t0, esp, 4 * wordSize);
@@ -1198,7 +1206,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mv(c_rarg0, xthread);
-    __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
     __ get_method(xmethod);
     __ reinit_heapbase();
     __ bind(Continue);
@@ -1247,7 +1255,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     __ push_call_clobbered_registers();
     __ mv(c_rarg0, xthread);
-    __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
     __ pop_call_clobbered_registers();
     __ bind(no_reguard);
   }
@@ -1807,7 +1815,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // the tosca in-state for the given template.
 
   assert(Interpreter::trace_code(t->tos_in()) != nullptr, "entry must have been generated");
-  __ jal(Interpreter::trace_code(t->tos_in()));
+  __ rt_call(Interpreter::trace_code(t->tos_in()));
   __ reinit_heapbase();
 }
 

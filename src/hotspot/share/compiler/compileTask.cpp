@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,7 @@ void CompileTask::initialize(int compile_id,
   _nm_total_size = 0;
   _failure_reason = nullptr;
   _failure_reason_on_C_heap = false;
+  _arena_bytes = 0;
 
   if (LogCompilation) {
     if (hot_method.not_null()) {
@@ -142,7 +143,7 @@ void CompileTask::initialize(int compile_id,
 /**
  * Returns the compiler for this task.
  */
-AbstractCompiler* CompileTask::compiler() {
+AbstractCompiler* CompileTask::compiler() const {
   return CompileBroker::compiler(_comp_level);
 }
 
@@ -221,13 +222,13 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
                              jlong time_queued, jlong time_started) {
   if (!short_form) {
     // Print current time
-    st->print("%7d ", (int)tty->time_stamp().milliseconds());
+    st->print(UINT64_FORMAT " ", (uint64_t) tty->time_stamp().milliseconds());
     if (Verbose && time_queued != 0) {
       // Print time in queue and time being processed by compiler thread
       jlong now = os::elapsed_counter();
-      st->print("%d ", (int)TimeHelper::counter_to_millis(now-time_queued));
+      st->print("%.0f ", TimeHelper::counter_to_millis(now-time_queued));
       if (time_started != 0) {
-        st->print("%d ", (int)TimeHelper::counter_to_millis(now-time_started));
+        st->print("%.0f ", TimeHelper::counter_to_millis(now-time_started));
       }
     }
   }

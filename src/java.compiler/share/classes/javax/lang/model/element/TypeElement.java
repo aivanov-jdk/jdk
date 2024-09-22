@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package javax.lang.model.element;
-
-import jdk.internal.javac.PreviewFeature;
 
 import java.util.List;
 import javax.lang.model.type.*;
@@ -155,7 +153,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the fully qualified name of this class or interface
      * element.  More precisely, it returns the <i>canonical</i> name.
-     * For local, anonymous, and {@linkplain #isUnnamed() unnamed} classes, which do not have canonical
+     * For local, and anonymous classes, which do not have canonical
      * names, an {@linkplain Name##empty_name empty name} is
      * returned.
      *
@@ -171,7 +169,6 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @see Elements#getBinaryName
      * @jls 6.7 Fully Qualified Names and Canonical Names
-     * @jls 7.3 Compilation Units
      */
     Name getQualifiedName();
 
@@ -181,32 +178,12 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * For an anonymous class, an {@linkplain Name##empty_name empty
      * name} is returned.
      *
-     * For an {@linkplain #isUnnamed() unnamed} class, a name matching
-     * the base name of the hosting file, minus any extension, is
-     * returned.
-     *
      * @return the simple name of this class or interface,
      * an empty name for an anonymous class
      *
      */
     @Override
     Name getSimpleName();
-
-    /**
-     * {@return {@code true} if this is an unnamed class and {@code
-     * false} otherwise}
-     *
-     * @implSpec
-     * The default implementation of this method returns {@code false}.
-     *
-     * @jls 7.3 Compilation Units
-     * @since 21
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED_CLASSES,
-                    reflective=true)
-    default boolean isUnnamed() {
-        return false;
-    }
 
     /**
      * Returns the direct superclass of this class or interface element.
@@ -255,6 +232,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the permitted classes of this class or interface
      * element in declaration order.
+     * Note that for an interface, permitted subclasses and
+     * subinterfaces can be returned.
      *
      * @implSpec The default implementations of this method returns an
      * empty and unmodifiable list.
@@ -262,6 +241,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * @return the permitted classes, or an empty list if there are none
      *
      * @since 17
+     * @jls 8.1.6 Permitted Direct Subclasses
+     * @jls 9.1.4 Permitted Direct Subclasses and Subinterfaces
      */
     default List<? extends TypeMirror> getPermittedSubclasses() {
         return List.of();

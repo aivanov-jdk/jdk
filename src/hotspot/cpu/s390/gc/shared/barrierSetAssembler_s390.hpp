@@ -29,6 +29,12 @@
 #include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
+#ifdef COMPILER2
+#include "code/vmreg.hpp"
+#include "opto/optoreg.hpp"
+
+class Node;
+#endif // COMPILER2
 
 class InterpreterMacroAssembler;
 
@@ -45,6 +51,7 @@ public:
                         const Address& addr, Register val, Register tmp1, Register tmp2, Register tmp3);
 
   virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2);
+  virtual void resolve_global_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2);
 
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
@@ -52,6 +59,11 @@ public:
   virtual void nmethod_entry_barrier(MacroAssembler* masm);
 
   virtual void barrier_stubs_init() {}
+
+#ifdef COMPILER2
+  OptoReg::Name refine_register(const Node* node,
+                                OptoReg::Name opto_reg);
+#endif // COMPILER2
 };
 
 #endif // CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP
