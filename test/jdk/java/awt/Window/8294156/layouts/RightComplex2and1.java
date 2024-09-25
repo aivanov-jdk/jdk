@@ -7,7 +7,7 @@ import java.util.List;
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Position test windows in a row to the right of the instructions
- * @run main/manual RightOneRow
+ * @run main/manual RightComplex2and1
  */
 public class RightComplex2and1 {
     public static void main(String[] args) throws Exception {
