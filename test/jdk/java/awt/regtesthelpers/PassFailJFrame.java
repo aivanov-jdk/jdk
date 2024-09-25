@@ -691,17 +691,12 @@ public final class PassFailJFrame {
 
         public static void rightOneColumnCentered(List<? extends Window> windows,
                                                   InstructionUI instructionUI) {
-            final Point center = getScreenCenter();
-
-            final int height = windows.stream()
-                                      .mapToInt(Component::getHeight)
-                                      .sum()
-                               + WINDOW_GAP * (windows.size() - 1);
             final int x = instructionUI.getLocation().x
                           + instructionUI.getSize().width
                           + WINDOW_GAP;
 
-            int y = center.y - height / 2;
+            int y = getScreenCenter().y
+                    - getWindowListHeight(windows) / 2;
             for (Window w : windows) {
                 w.setLocation(x, y);
                 y += w.getHeight() + WINDOW_GAP;
@@ -727,11 +722,8 @@ public final class PassFailJFrame {
                           + instructionUI.getSize().height
                           + WINDOW_GAP;
 
-            final int width = windows.stream()
-                                     .mapToInt(Component::getWidth)
-                                     .sum()
-                              + WINDOW_GAP * (windows.size() - 1);
-            int x = getScreenCenter().x - width / 2;
+            int x = getScreenCenter().x
+                    - getWindowListWidth(windows) / 2;
             for (Window w : windows) {
                 w.setLocation(x, y);
                 x += w.getWidth() + WINDOW_GAP;
@@ -749,6 +741,20 @@ public final class PassFailJFrame {
                 w.setLocation(x, y);
                 y += w.getHeight() + WINDOW_GAP;
             }
+        }
+
+        public static int getWindowListWidth(List<? extends Window> windows) {
+            return windows.stream()
+                          .mapToInt(Component::getWidth)
+                          .sum()
+                   + WINDOW_GAP * (windows.size() - 1);
+        }
+
+        public static int getWindowListHeight(List<? extends Window> windows) {
+            return windows.stream()
+                          .mapToInt(Component::getHeight)
+                          .sum()
+                   + WINDOW_GAP * (windows.size() - 1);
         }
     }
 
