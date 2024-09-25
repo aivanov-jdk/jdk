@@ -1,0 +1,22 @@
+public class BottomOneRow {
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame.builder()
+                      .instructions(INSTRUCTIONS)
+                      .rows(15)
+                      .columns(30)
+                      .testUI(() -> WindowCreator.createTestWindows(3))
+                      .positionTestUI(PassFailJFrame.WindowLayouts::bottomOneRow)
+                      .position(PassFailJFrame.Position.VERTICAL)
+                      .build()
+                      .awaitAndCheck();
+    }
+
+    private static final String INSTRUCTIONS = """
+            A simple demo with 3 test windows positioned to
+            the bottom of the instruction frame in one row.
+            The left of the first test window is aligned with
+            the left of the instructions.
+            
+            Layout: WindowLayouts::bottomOneRow
+            """;
+}

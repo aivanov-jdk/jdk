@@ -648,8 +648,7 @@ public final class PassFailJFrame {
         }
 
         /**
-         * Returns the center point of the screen
-         * @return
+         * {@return the center point of the main screen}
          */
         public static Point getScreenCenter() {
             GraphicsConfiguration gc = getLocalGraphicsEnvironment()
@@ -703,6 +702,49 @@ public final class PassFailJFrame {
                           + WINDOW_GAP;
 
             int y = center.y - height / 2;
+            for (Window w : windows) {
+                w.setLocation(x, y);
+                y += w.getHeight() + WINDOW_GAP;
+            }
+        }
+
+        public static void bottomOneRow(List<? extends Window> windows,
+                                        InstructionUI instructionUI) {
+            final int y = instructionUI.getLocation().y
+                          + instructionUI.getSize().height
+                          + WINDOW_GAP;
+
+            int x = instructionUI.getLocation().x;
+            for (Window w : windows) {
+                w.setLocation(x, y);
+                x += w.getWidth() + WINDOW_GAP;
+            }
+        }
+
+        public static void bottomOneRowCentered(List<? extends Window> windows,
+                                                InstructionUI instructionUI) {
+            final int y = instructionUI.getLocation().y
+                          + instructionUI.getSize().height
+                          + WINDOW_GAP;
+
+            final int width = windows.stream()
+                                     .mapToInt(Component::getWidth)
+                                     .sum()
+                              + WINDOW_GAP * (windows.size() - 1);
+            int x = getScreenCenter().x - width / 2;
+            for (Window w : windows) {
+                w.setLocation(x, y);
+                x += w.getWidth() + WINDOW_GAP;
+            }
+        }
+
+        public static void bottomOneColumn(List<? extends Window> windows,
+                                           InstructionUI instructionUI) {
+            final int x = instructionUI.getLocation().x;
+
+            int y = instructionUI.getLocation().y
+                    + instructionUI.getSize().height
+                    + WINDOW_GAP;
             for (Window w : windows) {
                 w.setLocation(x, y);
                 y += w.getHeight() + WINDOW_GAP;
