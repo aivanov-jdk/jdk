@@ -1,0 +1,22 @@
+
+public class RightOneRow {
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame.builder()
+                      .instructions(INSTRUCTIONS)
+                      .rows(15)
+                      .columns(30)
+                      .testUI(() -> WindowCreator.createTestWindows(3))
+                      .positionTestUI(PassFailJFrame.WindowLayouts::rightOneRow)
+                      .build()
+                      .awaitAndCheck();
+    }
+
+    private static final String INSTRUCTIONS = """
+            A simple demo with 3 test windows positioned to
+            the right of the instruction frame in one row.
+            The top of the test windows is aligned with
+            the top of the instructions.
+            
+            Layout: WindowLayouts::rightOneColumn
+            """;
+}
