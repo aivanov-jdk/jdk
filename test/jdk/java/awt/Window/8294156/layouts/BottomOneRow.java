@@ -1,3 +1,11 @@
+/*
+ * @test
+ * @bug 8294156 8317116
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary Position test windows in a row to the bottom of the instructions
+ * @run main/manual BottomOneRow
+ */
 public class BottomOneRow {
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
