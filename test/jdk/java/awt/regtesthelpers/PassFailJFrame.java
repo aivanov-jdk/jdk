@@ -1288,6 +1288,7 @@ public final class PassFailJFrame {
             return this;
         }
 
+
         /**
          * Adds an implementation of {@link PositionWindows PositionWindows}
          * which the framework will use to position multiple test UI windows.
@@ -1310,6 +1311,77 @@ public final class PassFailJFrame {
             this.positionWindows = positionWindows;
             return this;
         }
+
+        /**
+         * Positions the test UI windows in a row to the right of
+         * the instruction frame. The top of the windows is aligned to
+         * that of the instruction frame.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIRightRow() {
+            return position(Position.HORIZONTAL)
+                   .positionTestUI(WindowLayouts::rightOneRow);
+        }
+
+        /**
+         * Positions the test UI windows in a column to the right of
+         * the instruction frame. The top of the first window is aligned to
+         * that of the instruction frame.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIRightColumn() {
+            return position(Position.HORIZONTAL)
+                   .positionTestUI(WindowLayouts::rightOneColumn);
+        }
+
+        /**
+         * Positions the test UI windows in a column to the right of
+         * the instruction frame centering the stack of the windows.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIRightColumnCentered() {
+            return position(Position.HORIZONTAL)
+                   .positionTestUI(WindowLayouts::rightOneColumnCentered);
+        }
+
+        /**
+         * Positions the test UI windows in a row to the bottom of
+         * the instruction frame. The left of the first window is aligned to
+         * that of the instruction frame.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIBottomRow() {
+            return position(Position.VERTICAL)
+                   .positionTestUI(WindowLayouts::bottomOneRow);
+        }
+
+        /**
+         * Positions the test UI windows in a row to the bottom of
+         * the instruction frame centering the row of the windows.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIBottomRowCentered() {
+            return position(Position.VERTICAL)
+                   .positionTestUI(WindowLayouts::bottomOneRowCentered);
+        }
+
+        /**
+         * Positions the test UI windows in a column to the bottom of
+         * the instruction frame. The left of the first window is aligned to
+         * that of the instruction frame.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIBottomColumn() {
+            return position(Position.VERTICAL)
+                    .positionTestUI(WindowLayouts::bottomOneColumn);
+        }
+
 
         /**
          * Adds a {@code WindowListCreator} which the framework will use
@@ -1412,6 +1484,7 @@ public final class PassFailJFrame {
             this.panelCreator = panelCreator;
             return this;
         }
+
 
         /**
          * Adds a {@code PanelCreator} which the framework will use

@@ -13,8 +13,7 @@ public class BottomOneRow {
                       .rows(15)
                       .columns(30)
                       .testUI(() -> WindowCreator.createTestWindows(3))
-                      .positionTestUI(WindowLayouts::bottomOneRow)
-                      .position(PassFailJFrame.Position.VERTICAL)
+                      .positionTestUIBottomRow()
                       .build()
                       .awaitAndCheck();
     }
@@ -22,8 +21,8 @@ public class BottomOneRow {
     private static final String INSTRUCTIONS = """
             A simple demo with 3 test windows positioned to
             the bottom of the instruction frame in one row.
-            The left of the first test window is aligned with
-            the left of the instructions.
+            The left of the first test window is aligned to
+            that of the instruction frame.
             
             Layout: WindowLayouts::bottomOneRow
             """;

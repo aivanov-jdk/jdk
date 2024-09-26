@@ -13,8 +13,7 @@ public class BottomOneRowCentered {
                       .rows(7)
                       .columns(30)
                       .testUI(() -> WindowCreator.createTestWindows(4))
-                      .positionTestUI(WindowLayouts::bottomOneRowCentered)
-                      .position(PassFailJFrame.Position.VERTICAL)
+                      .positionTestUIBottomRowCentered()
                       .build()
                       .awaitAndCheck();
     }

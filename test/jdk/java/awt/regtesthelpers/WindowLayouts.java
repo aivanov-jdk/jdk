@@ -55,7 +55,7 @@ public final class WindowLayouts {
     /**
      * Lays out the window list in one row to the right of
      * the instruction frame. The top of the windows is aligned to
-     * the instructions.
+     * that of the instruction frame.
      *
      * @param windows the list of windows to lay out
      * @param instructionUI information about the instruction frame
@@ -72,7 +72,7 @@ public final class WindowLayouts {
     /**
      * Lays out the window list in one column to the right of
      * the instruction frame. The top of the first window is aligned to
-     * the instructions.
+     * that of the instruction frame.
      *
      * @param windows the list of windows to lay out
      * @param instructionUI information about the instruction frame
@@ -103,10 +103,11 @@ public final class WindowLayouts {
                      windows);
     }
 
+
     /**
      * Lays out the window list in one row to the bottom of
      * the instruction frame. The left of the first window is aligned to
-     * the instructions.
+     * that of the instruction frame.
      *
      * @param windows the list of windows to lay out
      * @param instructionUI information about the instruction frame
@@ -140,7 +141,7 @@ public final class WindowLayouts {
     /**
      * Lays out the window list in one column to the bottom of
      * the instruction frame. The left of the first window is aligned to
-     * the instructions.
+     * that of the instruction frame.
      *
      * @param windows the list of windows to lay out
      * @param instructionUI information about the instruction frame

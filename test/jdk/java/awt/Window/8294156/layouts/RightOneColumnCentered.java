@@ -13,7 +13,7 @@ public class RightOneColumnCentered {
                       .rows(15)
                       .columns(30)
                       .testUI(() -> WindowCreator.createTestWindows(5))
-                      .positionTestUI(WindowLayouts::rightOneColumnCentered)
+                      .positionTestUIRightColumnCentered()
                       .build()
                       .awaitAndCheck();
     }
