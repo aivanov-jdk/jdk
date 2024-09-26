@@ -32,11 +32,152 @@ import java.util.List;
 import static java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment;
 import static java.awt.Toolkit.getDefaultToolkit;
 
-public  final class WindowLayouts {
+/**
+ * A utility class which provides standard window layouts for multi-window
+ * manual tests using the {@link PassFailJFrame} framework.
+ * The layout methods {@code right-} and {@code bottom-} implement the
+ * {@link PassFailJFrame.PositionWindows PositionWindows} interface and
+ * can be used directly or via builder methods.
+ * <p>
+ * There are several helper methods, such as
+ * {@link #getScreenCenter() getScreenCenter} which could help you
+ * implement customized windows layouts.
+ */
+public final class WindowLayouts {
+
+    /** Private constructor to prevent instantiating the utility class. */
     private WindowLayouts() {
     }
 
+    /** A gap between windows. (Local copy makes expressions shorter.) */
     private static final int WINDOW_GAP = PassFailJFrame.WINDOW_GAP;
+
+    /**
+     * Lays out the window list in one row to the right of
+     * the instruction frame. The top of the windows is aligned to
+     * the instructions.
+     *
+     * @param windows the list of windows to lay out
+     * @param instructionUI information about the instruction frame
+     */
+    public static void rightOneRow(List<? extends Window> windows,
+                                   PassFailJFrame.InstructionUI instructionUI) {
+        final int y = instructionUI.getLocation().y;
+
+        int x = instructionUI.getLocation().x
+                + instructionUI.getSize().width
+                + WINDOW_GAP;
+        for (Window w : windows) {
+            w.setLocation(x, y);
+            x += w.getWidth() + WINDOW_GAP;
+        }
+    }
+
+    /**
+     * Lays out the window list in one column to the right of
+     * the instruction frame. The top of the first window is aligned to
+     * the instructions.
+     *
+     * @param windows the list of windows to lay out
+     * @param instructionUI information about the instruction frame
+     */
+    public static void rightOneColumn(List<? extends Window> windows,
+                                      PassFailJFrame.InstructionUI instructionUI) {
+        final int x = instructionUI.getLocation().x
+                      + instructionUI.getSize().width
+                      + WINDOW_GAP;
+
+        int y = instructionUI.getLocation().y;
+        for (Window w : windows) {
+            w.setLocation(x, y);
+            y += w.getHeight() + WINDOW_GAP;
+        }
+    }
+
+    /**
+     * Lays out the window list in one column to the right of
+     * the instruction frame centering the stack of the windows.
+     *
+     * @param windows the list of windows to lay out
+     * @param instructionUI information about the instruction frame
+     */
+    public static void rightOneColumnCentered(List<? extends Window> windows,
+                                              PassFailJFrame.InstructionUI instructionUI) {
+        final int x = instructionUI.getLocation().x
+                      + instructionUI.getSize().width
+                      + WINDOW_GAP;
+
+        int y = getScreenCenter().y
+                - getWindowListHeight(windows) / 2;
+        for (Window w : windows) {
+            w.setLocation(x, y);
+            y += w.getHeight() + WINDOW_GAP;
+        }
+    }
+
+    /**
+     * Lays out the window list in one row to the bottom of
+     * the instruction frame. The left of the first window is aligned to
+     * the instructions.
+     *
+     * @param windows the list of windows to lay out
+     * @param instructionUI information about the instruction frame
+     */
+    public static void bottomOneRow(List<? extends Window> windows,
+                                    PassFailJFrame.InstructionUI instructionUI) {
+        final int y = instructionUI.getLocation().y
+                      + instructionUI.getSize().height
+                      + WINDOW_GAP;
+
+        int x = instructionUI.getLocation().x;
+        for (Window w : windows) {
+            w.setLocation(x, y);
+            x += w.getWidth() + WINDOW_GAP;
+        }
+    }
+
+    /**
+     * Lays out the window list in one row to the bottom of
+     * the instruction frame centering the row of the windows.
+     *
+     * @param windows the list of windows to lay out
+     * @param instructionUI information about the instruction frame
+     */
+    public static void bottomOneRowCentered(List<? extends Window> windows,
+                                            PassFailJFrame.InstructionUI instructionUI) {
+        final int y = instructionUI.getLocation().y
+                      + instructionUI.getSize().height
+                      + WINDOW_GAP;
+
+        int x = getScreenCenter().x
+                - getWindowListWidth(windows) / 2;
+        for (Window w : windows) {
+            w.setLocation(x, y);
+            x += w.getWidth() + WINDOW_GAP;
+        }
+    }
+
+    /**
+     * Lays out the window list in one column to the bottom of
+     * the instruction frame. The left of the first window is aligned to
+     * the instructions.
+     *
+     * @param windows the list of windows to lay out
+     * @param instructionUI information about the instruction frame
+     */
+    public static void bottomOneColumn(List<? extends Window> windows,
+                                       PassFailJFrame.InstructionUI instructionUI) {
+        final int x = instructionUI.getLocation().x;
+
+        int y = instructionUI.getLocation().y
+                + instructionUI.getSize().height
+                + WINDOW_GAP;
+        for (Window w : windows) {
+            w.setLocation(x, y);
+            y += w.getHeight() + WINDOW_GAP;
+        }
+    }
+
 
     /**
      * {@return the center point of the main screen}
@@ -54,86 +195,12 @@ public  final class WindowLayouts {
                          (size.height - insets.top - insets.bottom) / 2);
     }
 
-    public static void rightOneRow(List<? extends Window> windows,
-                                   PassFailJFrame.InstructionUI instructionUI) {
-        final int y = instructionUI.getLocation().y;
-
-        int x = instructionUI.getLocation().x
-                + instructionUI.getSize().width
-                + WINDOW_GAP;
-        for (Window w : windows) {
-            w.setLocation(x, y);
-            x += w.getWidth() + WINDOW_GAP;
-        }
-    }
-
-    public static void rightOneColumn(List<? extends Window> windows,
-                                      PassFailJFrame.InstructionUI instructionUI) {
-        final int x = instructionUI.getLocation().x
-                      + instructionUI.getSize().width
-                      + WINDOW_GAP;
-
-        int y = instructionUI.getLocation().y;
-        for (Window w : windows) {
-            w.setLocation(x, y);
-            y += w.getHeight() + WINDOW_GAP;
-        }
-    }
-
-    public static void rightOneColumnCentered(List<? extends Window> windows,
-                                              PassFailJFrame.InstructionUI instructionUI) {
-        final int x = instructionUI.getLocation().x
-                      + instructionUI.getSize().width
-                      + WINDOW_GAP;
-
-        int y = getScreenCenter().y
-                - getWindowListHeight(windows) / 2;
-        for (Window w : windows) {
-            w.setLocation(x, y);
-            y += w.getHeight() + WINDOW_GAP;
-        }
-    }
-
-    public static void bottomOneRow(List<? extends Window> windows,
-                                    PassFailJFrame.InstructionUI instructionUI) {
-        final int y = instructionUI.getLocation().y
-                      + instructionUI.getSize().height
-                      + WINDOW_GAP;
-
-        int x = instructionUI.getLocation().x;
-        for (Window w : windows) {
-            w.setLocation(x, y);
-            x += w.getWidth() + WINDOW_GAP;
-        }
-    }
-
-    public static void bottomOneRowCentered(List<? extends Window> windows,
-                                            PassFailJFrame.InstructionUI instructionUI) {
-        final int y = instructionUI.getLocation().y
-                      + instructionUI.getSize().height
-                      + WINDOW_GAP;
-
-        int x = getScreenCenter().x
-                - getWindowListWidth(windows) / 2;
-        for (Window w : windows) {
-            w.setLocation(x, y);
-            x += w.getWidth() + WINDOW_GAP;
-        }
-    }
-
-    public static void bottomOneColumn(List<? extends Window> windows,
-                                       PassFailJFrame.InstructionUI instructionUI) {
-        final int x = instructionUI.getLocation().x;
-
-        int y = instructionUI.getLocation().y
-                + instructionUI.getSize().height
-                + WINDOW_GAP;
-        for (Window w : windows) {
-            w.setLocation(x, y);
-            y += w.getHeight() + WINDOW_GAP;
-        }
-    }
-
+    /**
+     * {@return width of the windows in the list, taking into account
+     * the gap between windows}
+     *
+     * @param windows the list of windows to get the width of
+     */
     public static int getWindowListWidth(List<? extends Window> windows) {
         return windows.stream()
                       .mapToInt(Component::getWidth)
@@ -141,6 +208,12 @@ public  final class WindowLayouts {
                + WINDOW_GAP * (windows.size() - 1);
     }
 
+    /**
+     * {@return height of the windows in the list, taking into account
+     * the gap between windows}
+     *
+     * @param windows the list of windows to get the height of
+     */
     public static int getWindowListHeight(List<? extends Window> windows) {
         return windows.stream()
                       .mapToInt(Component::getHeight)
