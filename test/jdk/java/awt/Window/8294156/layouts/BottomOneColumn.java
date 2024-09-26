@@ -13,7 +13,7 @@ public class BottomOneColumn {
                       .rows(7)
                       .columns(30)
                       .testUI(() -> WindowCreator.createTestWindows(2))
-                      .positionTestUI(PassFailJFrame.WindowLayouts::bottomOneColumn)
+                      .positionTestUI(WindowLayouts::bottomOneColumn)
                       .position(PassFailJFrame.Position.VERTICAL)
                       .build()
                       .awaitAndCheck();

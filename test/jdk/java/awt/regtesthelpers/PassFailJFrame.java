@@ -23,7 +23,6 @@
 
 import java.awt.AWTException;
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GraphicsConfiguration;
@@ -74,8 +73,6 @@ import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
-import static java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment;
-import static java.awt.Toolkit.getDefaultToolkit;
 import static java.util.Collections.unmodifiableList;
 import static javax.swing.BorderFactory.createEmptyBorder;
 import static javax.swing.SwingUtilities.invokeAndWait;
@@ -642,121 +639,6 @@ public final class PassFailJFrame {
     }
 
     public static final int WINDOW_GAP = 8;
-
-    public static final class WindowLayouts {
-        private WindowLayouts() {
-        }
-
-        /**
-         * {@return the center point of the main screen}
-         */
-        public static Point getScreenCenter() {
-            GraphicsConfiguration gc = getLocalGraphicsEnvironment()
-                                       .getDefaultScreenDevice()
-                                       .getDefaultConfiguration();
-            Dimension size = gc.getBounds()
-                               .getSize();
-            Insets insets = getDefaultToolkit()
-                            .getScreenInsets(gc);
-
-            return new Point((size.width - insets.left - insets.right) / 2,
-                             (size.height - insets.top - insets.bottom) / 2);
-        }
-
-        public static void rightOneRow(List<? extends Window> windows,
-                                       InstructionUI instructionUI) {
-            final int y = instructionUI.getLocation().y;
-
-            int x = instructionUI.getLocation().x
-                    + instructionUI.getSize().width
-                    + WINDOW_GAP;
-            for (Window w : windows) {
-                w.setLocation(x, y);
-                x += w.getWidth() + WINDOW_GAP;
-            }
-        }
-
-        public static void rightOneColumn(List<? extends Window> windows,
-                                          InstructionUI instructionUI) {
-            final int x = instructionUI.getLocation().x
-                          + instructionUI.getSize().width
-                          + WINDOW_GAP;
-
-            int y = instructionUI.getLocation().y;
-            for (Window w : windows) {
-                w.setLocation(x, y);
-                y += w.getHeight() + WINDOW_GAP;
-            }
-        }
-
-        public static void rightOneColumnCentered(List<? extends Window> windows,
-                                                  InstructionUI instructionUI) {
-            final int x = instructionUI.getLocation().x
-                          + instructionUI.getSize().width
-                          + WINDOW_GAP;
-
-            int y = getScreenCenter().y
-                    - getWindowListHeight(windows) / 2;
-            for (Window w : windows) {
-                w.setLocation(x, y);
-                y += w.getHeight() + WINDOW_GAP;
-            }
-        }
-
-        public static void bottomOneRow(List<? extends Window> windows,
-                                        InstructionUI instructionUI) {
-            final int y = instructionUI.getLocation().y
-                          + instructionUI.getSize().height
-                          + WINDOW_GAP;
-
-            int x = instructionUI.getLocation().x;
-            for (Window w : windows) {
-                w.setLocation(x, y);
-                x += w.getWidth() + WINDOW_GAP;
-            }
-        }
-
-        public static void bottomOneRowCentered(List<? extends Window> windows,
-                                                InstructionUI instructionUI) {
-            final int y = instructionUI.getLocation().y
-                          + instructionUI.getSize().height
-                          + WINDOW_GAP;
-
-            int x = getScreenCenter().x
-                    - getWindowListWidth(windows) / 2;
-            for (Window w : windows) {
-                w.setLocation(x, y);
-                x += w.getWidth() + WINDOW_GAP;
-            }
-        }
-
-        public static void bottomOneColumn(List<? extends Window> windows,
-                                           InstructionUI instructionUI) {
-            final int x = instructionUI.getLocation().x;
-
-            int y = instructionUI.getLocation().y
-                    + instructionUI.getSize().height
-                    + WINDOW_GAP;
-            for (Window w : windows) {
-                w.setLocation(x, y);
-                y += w.getHeight() + WINDOW_GAP;
-            }
-        }
-
-        public static int getWindowListWidth(List<? extends Window> windows) {
-            return windows.stream()
-                          .mapToInt(Component::getWidth)
-                          .sum()
-                   + WINDOW_GAP * (windows.size() - 1);
-        }
-
-        public static int getWindowListHeight(List<? extends Window> windows) {
-            return windows.stream()
-                          .mapToInt(Component::getHeight)
-                          .sum()
-                   + WINDOW_GAP * (windows.size() - 1);
-        }
-    }
 
 
     private static final class TimeoutHandlerPanel

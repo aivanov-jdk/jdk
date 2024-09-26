@@ -13,7 +13,7 @@ public class RightOneColumn {
                       .rows(15)
                       .columns(30)
                       .testUI(() -> WindowCreator.createTestWindows(3))
-                      .positionTestUI(PassFailJFrame.WindowLayouts::rightOneColumn)
+                      .positionTestUI(WindowLayouts::rightOneColumn)
                       .build()
                       .awaitAndCheck();
     }
