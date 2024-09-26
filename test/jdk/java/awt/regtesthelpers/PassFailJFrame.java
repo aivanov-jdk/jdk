@@ -1012,13 +1012,13 @@ public final class PassFailJFrame {
 
         switch (position) {
             case HORIZONTAL:
-                int newX = ((screenSize.width / 2) - frame.getWidth());
+                int newX = (((screenSize.width + WINDOW_GAP) / 2) - frame.getWidth());
                 frame.setLocation((newX + screenInsets.left),
                                   (frame.getY() + screenInsets.top));
                 break;
 
             case VERTICAL:
-                int newY = ((screenSize.height / 2) - frame.getHeight());
+                int newY = ((screenSize.height + WINDOW_GAP / 2) - frame.getHeight());
                 frame.setLocation((frame.getX() + screenInsets.left),
                                   (newY + screenInsets.top));
                 break;
@@ -1066,13 +1066,13 @@ public final class PassFailJFrame {
             switch (position) {
                 case HORIZONTAL:
                 case TOP_LEFT_CORNER:
-                    testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
+                    testWindow.setLocation((frame.getX() + frame.getWidth() + WINDOW_GAP),
                                            frame.getY());
                     break;
 
                 case VERTICAL:
                     testWindow.setLocation(frame.getX(),
-                                           (frame.getY() + frame.getHeight() + 5));
+                                           (frame.getY() + frame.getHeight() + WINDOW_GAP));
                     break;
             }
         }
