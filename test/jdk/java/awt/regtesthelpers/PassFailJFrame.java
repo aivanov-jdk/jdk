@@ -171,6 +171,11 @@ public final class PassFailJFrame {
     private static final int COLUMNS = 40;
 
     /**
+     * A gap between windows.
+     */
+    public static final int WINDOW_GAP = 8;
+
+    /**
      * Prefix for the user-provided failure reason.
      */
     private static final String FAILURE_REASON = "Failure Reason:\n";
@@ -717,8 +722,6 @@ public final class PassFailJFrame {
          */
         Position getPosition();
     }
-
-    public static final int WINDOW_GAP = 8;
 
 
     private static final class TimeoutHandlerPanel
