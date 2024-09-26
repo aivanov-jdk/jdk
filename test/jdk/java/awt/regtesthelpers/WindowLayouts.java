@@ -60,7 +60,7 @@ public final class WindowLayouts {
      * @param windows the list of windows to lay out
      * @param instructionUI information about the instruction frame
      */
-    public static void rightOneRow(final List<? extends Window> windows,
+    public static void rightOneRow(final List<Window> windows,
                                    final PassFailJFrame.InstructionUI instructionUI) {
         layoutRow(instructionUI.getLocation().x
                   + instructionUI.getSize().width
@@ -77,7 +77,7 @@ public final class WindowLayouts {
      * @param windows the list of windows to lay out
      * @param instructionUI information about the instruction frame
      */
-    public static void rightOneColumn(final List<? extends Window> windows,
+    public static void rightOneColumn(final List<Window> windows,
                                       final PassFailJFrame.InstructionUI instructionUI) {
         layoutColumn(instructionUI.getLocation().x
                      + instructionUI.getSize().width
@@ -93,7 +93,7 @@ public final class WindowLayouts {
      * @param windows the list of windows to lay out
      * @param instructionUI information about the instruction frame
      */
-    public static void rightOneColumnCentered(final List<? extends Window> windows,
+    public static void rightOneColumnCentered(final List<Window> windows,
                                               final PassFailJFrame.InstructionUI instructionUI) {
         layoutColumn(instructionUI.getLocation().x
                      + instructionUI.getSize().width
@@ -112,7 +112,7 @@ public final class WindowLayouts {
      * @param windows the list of windows to lay out
      * @param instructionUI information about the instruction frame
      */
-    public static void bottomOneRow(final List<? extends Window> windows,
+    public static void bottomOneRow(final List<Window> windows,
                                     final PassFailJFrame.InstructionUI instructionUI) {
         layoutRow(instructionUI.getLocation().x,
                   instructionUI.getLocation().y
@@ -128,7 +128,7 @@ public final class WindowLayouts {
      * @param windows the list of windows to lay out
      * @param instructionUI information about the instruction frame
      */
-    public static void bottomOneRowCentered(final List<? extends Window> windows,
+    public static void bottomOneRowCentered(final List<Window> windows,
                                             final PassFailJFrame.InstructionUI instructionUI) {
         layoutColumn(getScreenCenter().x
                      - getWindowListWidth(windows) / 2,
@@ -146,7 +146,7 @@ public final class WindowLayouts {
      * @param windows the list of windows to lay out
      * @param instructionUI information about the instruction frame
      */
-    public static void bottomOneColumn(final List<? extends Window> windows,
+    public static void bottomOneColumn(final List<Window> windows,
                                        final PassFailJFrame.InstructionUI instructionUI) {
         layoutColumn(instructionUI.getLocation().x,
                      instructionUI.getLocation().y
@@ -166,7 +166,7 @@ public final class WindowLayouts {
      */
     public static void layoutRow(final int x0,
                                  final int y,
-                                 final List<? extends Window> windows) {
+                                 final List<Window> windows) {
         int x = x0;
         for (Window w : windows) {
             w.setLocation(x, y);
@@ -185,7 +185,7 @@ public final class WindowLayouts {
      */
     public static void layoutColumn(final int x,
                                     final int y0,
-                                    final List<? extends Window> windows) {
+                                    final List<Window> windows) {
         int y = y0;
         for (Window w : windows) {
             w.setLocation(x, y);
@@ -216,7 +216,7 @@ public final class WindowLayouts {
      *
      * @param windows the list of windows to get the width of
      */
-    public static int getWindowListWidth(final List<? extends Window> windows) {
+    public static int getWindowListWidth(final List<Window> windows) {
         return windows.stream()
                       .mapToInt(Component::getWidth)
                       .sum()
@@ -229,7 +229,7 @@ public final class WindowLayouts {
      *
      * @param windows the list of windows to get the height of
      */
-    public static int getWindowListHeight(final List<? extends Window> windows) {
+    public static int getWindowListHeight(final List<Window> windows) {
         return windows.stream()
                       .mapToInt(Component::getHeight)
                       .sum()
