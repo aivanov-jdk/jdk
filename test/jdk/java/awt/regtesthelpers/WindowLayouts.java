@@ -40,7 +40,7 @@ import static java.awt.Toolkit.getDefaultToolkit;
  * can be used directly or via builder methods.
  * <p>
  * There are several helper methods, such as
- * {@link #getScreenCenter() getScreenCenter} which could help you
+ * {@link #getScreenCenter() getScreenCenter}, which could help you
  * implement customized windows layouts.
  */
 public final class WindowLayouts {
@@ -130,12 +130,12 @@ public final class WindowLayouts {
      */
     public static void bottomOneRowCentered(final List<Window> windows,
                                             final PassFailJFrame.InstructionUI instructionUI) {
-        layoutColumn(getScreenCenter().x
-                     - getWindowListWidth(windows) / 2,
-                     instructionUI.getLocation().y
-                     + instructionUI.getSize().height
-                     + WINDOW_GAP,
-                     windows);
+        layoutRow(getScreenCenter().x
+                  - getWindowListWidth(windows) / 2,
+                  instructionUI.getLocation().y
+                  + instructionUI.getSize().height
+                  + WINDOW_GAP,
+                  windows);
     }
 
     /**
@@ -172,7 +172,6 @@ public final class WindowLayouts {
             w.setLocation(x, y);
             x += w.getWidth() + WINDOW_GAP;
         }
-
     }
 
     /**
@@ -199,12 +198,12 @@ public final class WindowLayouts {
      */
     public static Point getScreenCenter() {
         GraphicsConfiguration gc = getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice()
-                .getDefaultConfiguration();
+                                   .getDefaultScreenDevice()
+                                   .getDefaultConfiguration();
         Dimension size = gc.getBounds()
                            .getSize();
         Insets insets = getDefaultToolkit()
-                .getScreenInsets(gc);
+                        .getScreenInsets(gc);
 
         return new Point((size.width - insets.left - insets.right) / 2,
                          (size.height - insets.top - insets.bottom) / 2);
