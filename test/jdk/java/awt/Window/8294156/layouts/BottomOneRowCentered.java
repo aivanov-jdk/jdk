@@ -13,8 +13,7 @@ public class BottomOneRowCentered {
                       .rows(7)
                       .columns(30)
                       .testUI(() -> WindowCreator.createTestWindows(4))
-                      .positionTestUI(PassFailJFrame.WindowLayouts::bottomOneRowCentered)
-                      .position(PassFailJFrame.Position.VERTICAL)
+                      .positionTestUIBottomRowCentered()
                       .build()
                       .awaitAndCheck();
     }
@@ -23,7 +22,7 @@ public class BottomOneRowCentered {
             A simple demo with 4 test windows positioned to
             the bottom of the instruction frame in one row.
             The row of the test windows is centered on the screen.
-            
+
             Layout: WindowLayouts::bottomOneRowCentered
             """;
 }

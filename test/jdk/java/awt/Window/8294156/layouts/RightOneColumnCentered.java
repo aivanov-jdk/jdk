@@ -13,7 +13,7 @@ public class RightOneColumnCentered {
                       .rows(15)
                       .columns(30)
                       .testUI(() -> WindowCreator.createTestWindows(5))
-                      .positionTestUI(PassFailJFrame.WindowLayouts::rightOneColumnCentered)
+                      .positionTestUIRightColumnCentered()
                       .build()
                       .awaitAndCheck();
     }
@@ -23,7 +23,7 @@ public class RightOneColumnCentered {
             the right of the instruction frame in one column.
             The column of the windows is centered vertically
             on the screen.
-            
+
             Layout: WindowLayouts::rightOneColumnCentered
             """;
 }

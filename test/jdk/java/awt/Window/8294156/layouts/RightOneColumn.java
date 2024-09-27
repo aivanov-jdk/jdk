@@ -13,7 +13,7 @@ public class RightOneColumn {
                       .rows(15)
                       .columns(30)
                       .testUI(() -> WindowCreator.createTestWindows(3))
-                      .positionTestUI(PassFailJFrame.WindowLayouts::rightOneColumn)
+                      .positionTestUIRightColumn()
                       .build()
                       .awaitAndCheck();
     }
@@ -21,9 +21,9 @@ public class RightOneColumn {
     private static final String INSTRUCTIONS = """
             A simple demo with 3 test windows positioned to
             the right of the instruction frame in one column.
-            The top of the first test window is aligned with
-            the top of the instructions.
-            
+            The top of the first test window is aligned to
+            that of the instruction frame.
+
             Layout: WindowLayouts::rightOneColumn
             """;
 }

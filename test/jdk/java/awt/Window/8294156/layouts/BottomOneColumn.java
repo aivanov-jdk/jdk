@@ -13,8 +13,7 @@ public class BottomOneColumn {
                       .rows(7)
                       .columns(30)
                       .testUI(() -> WindowCreator.createTestWindows(2))
-                      .positionTestUI(PassFailJFrame.WindowLayouts::bottomOneColumn)
-                      .position(PassFailJFrame.Position.VERTICAL)
+                      .positionTestUIBottomColumn()
                       .build()
                       .awaitAndCheck();
     }
@@ -22,8 +21,9 @@ public class BottomOneColumn {
     private static final String INSTRUCTIONS = """
             A simple demo with 2 test windows positioned to
             the bottom of the instruction frame in one column.
-            The test windows are aligned to the left of the instructions.
-            
+            The test windows are aligned to the left of the
+            instruction frame.
+
             Layout: WindowLayouts::bottomOneColumn
             """;
 }
