@@ -21,16 +21,16 @@ public class RightOneRowMoved {
                       .awaitAndCheck();
     }
 
-    private static void positionWindows(List<? extends Window> windows,
+    private static void positionWindows(List<Window> windows,
                                         PassFailJFrame.InstructionUI instructionUI) {
         int width = instructionUI.getSize().width
-                    + PassFailJFrame.WindowLayouts.getWindowListWidth(windows)
+                    + WindowLayouts.getWindowListWidth(windows)
                     + PassFailJFrame.WINDOW_GAP;
-        instructionUI.setLocation(PassFailJFrame.WindowLayouts.getScreenCenter().x
+        instructionUI.setLocation(WindowLayouts.getScreenCenter().x
                                   - width / 2,
                                   instructionUI.getLocation().y);
-        PassFailJFrame.WindowLayouts.rightOneRow(windows,
-                                                 instructionUI);
+        WindowLayouts.rightOneRow(windows,
+                                  instructionUI);
     }
 
     private static final String INSTRUCTIONS = """

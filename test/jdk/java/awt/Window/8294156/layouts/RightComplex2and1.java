@@ -21,13 +21,13 @@ public class RightComplex2and1 {
                       .awaitAndCheck();
     }
 
-    private static void positionWindows(List<? extends Window> windows,
+    private static void positionWindows(List<Window> windows,
                                         PassFailJFrame.InstructionUI instructionUI) {
-        PassFailJFrame.WindowLayouts.rightOneRow(windows.subList(0, 2),
-                                                 instructionUI);
-        PassFailJFrame.WindowLayouts.rightOneColumn(List.of(windows.get(0),
-                                                            windows.get(2)),
-                                                    instructionUI);
+        WindowLayouts.rightOneRow(windows.subList(0, 2),
+                                  instructionUI);
+        WindowLayouts.rightOneColumn(List.of(windows.get(0),
+                                             windows.get(2)),
+                                     instructionUI);
     }
 
     private static final String INSTRUCTIONS = """
