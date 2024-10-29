@@ -78,6 +78,7 @@ public final class FunctionKeyTest {
             keyPress.await(2, SECONDS);
         } catch (TimeoutException e) {
             keyPress.reset();
+            saveScreenshot();
             failures.add(new Error(keyText + " key press is not received", e));
         }
 
@@ -86,6 +87,7 @@ public final class FunctionKeyTest {
             keyRelease.await(2, SECONDS);
         } catch (TimeoutException e) {
             keyRelease.reset();
+            saveScreenshot();
             failures.add(new Error(keyText + " key release is not received", e));
         }
     }
@@ -116,19 +118,6 @@ public final class FunctionKeyTest {
 
             testKey(KeyEvent.VK_F11, "F11");
             testKey(KeyEvent.VK_F12, "F12");
-        } catch (Throwable t) {
-            Dimension screenSize = Toolkit.getDefaultToolkit()
-                                          .getScreenSize();
-            BufferedImage screenshot =
-                    robot.createScreenCapture(new Rectangle(new Point(),
-                                                            screenSize));
-            try {
-                ImageIO.write(screenshot, "png",
-                              new File("screenshot.png"));
-            } catch (IOException ignored) {
-            }
-
-            throw t;
         } finally {
             EventQueue.invokeAndWait(() -> {
                 if (frame != null) {
@@ -200,6 +189,21 @@ public final class FunctionKeyTest {
         public boolean keyDown(Event e, int key) {
             l.setText("e.key=" + e.key);
             return false;
+        }
+    }
+
+    private static int screenshotNo;
+
+    private static void saveScreenshot() {
+        Dimension screenSize = Toolkit.getDefaultToolkit()
+                                      .getScreenSize();
+        BufferedImage screenshot =
+                robot.createScreenCapture(new Rectangle(new Point(),
+                                                        screenSize));
+        try {
+            ImageIO.write(screenshot, "png",
+                          new File("screenshot" + (++screenshotNo) + ".png"));
+        } catch (IOException ignored) {
         }
     }
 }
