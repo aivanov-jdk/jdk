@@ -24,21 +24,30 @@
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Event;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Label;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.TextArea;
+import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.imageio.ImageIO;
 
 import static java.awt.Event.KEY_ACTION;
 import static java.awt.Event.KEY_ACTION_RELEASE;
@@ -107,6 +116,19 @@ public final class FunctionKeyTest {
 
             testKey(KeyEvent.VK_F11, "F11");
             testKey(KeyEvent.VK_F12, "F12");
+        } catch (Throwable t) {
+            Dimension screenSize = Toolkit.getDefaultToolkit()
+                                          .getScreenSize();
+            BufferedImage screenshot =
+                    robot.createScreenCapture(new Rectangle(new Point(),
+                                                            screenSize));
+            try {
+                ImageIO.write(screenshot, "png",
+                              new File("screenshot.png"));
+            } catch (IOException ignored) {
+            }
+
+            throw t;
         } finally {
             EventQueue.invokeAndWait(() -> {
                 if (frame != null) {
