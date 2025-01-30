@@ -875,47 +875,11 @@ public class WindowsIconFactory implements Serializable
                             skin.paintSkin(g, x, y,
                                 getIconWidth(), getIconHeight(), backgroundState);
                             skin = xp.getSkin(c, part);
-                            if (icon == null) {
-                                skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
-                            } else {
-                                skin.paintSkin(g, x - 3 * OFFSET, y + OFFSET, state);
-                            }
+                            skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
                         }
                     }
                 }
                 if (icon != null) {
-                    if (!((AbstractButton) c).isSelected()) {
-                        Part backgroundPart = Part.MP_POPUPCHECKBACKGROUND;
-                        Part part;
-                        if (type == JRadioButtonMenuItem.class) {
-                            part = Part.BP_RADIOBUTTON;
-                        } else {
-                            part = Part.MP_POPUPCHECK;
-                        }
-                        State backgroundState;
-                        State state;
-                        if (isEnabled(c, null)) {
-                            backgroundState = State.NORMAL;
-                            state = (type == JRadioButtonMenuItem.class)
-                                    ? State.BULLETNORMAL
-                                    : State.CHECKMARKNORMAL;
-                        } else {
-                            backgroundState = State.DISABLEDPUSHED;
-                            state =
-                                    (type == JRadioButtonMenuItem.class)
-                                            ? State.BULLETDISABLED
-                                            : State.CHECKMARKDISABLED;
-                        }
-                        XPStyle xp = XPStyle.getXP();
-                        if (xp != null) {
-                            Skin skin;
-                            skin = xp.getSkin(c, backgroundPart);
-                            skin.paintSkin(g, x, y,
-                                    getIconWidth(), getIconHeight(), backgroundState);
-                            skin = xp.getSkin(c, part);
-                            skin.paintSkin(g, x - 2 * OFFSET, y + OFFSET, state);
-                        }
-                    }
                     icon.paintIcon(c, g, x + 3 * OFFSET, y + OFFSET);
                 }
             }
