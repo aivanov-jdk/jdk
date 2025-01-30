@@ -32,15 +32,17 @@
  * @run main/manual TestImageIconWithJRadioButtonMenuItem
  */
 
+import java.io.File;
+
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.UIManager;
-
-import java.io.File;
 
 public class TestImageIconWithJRadioButtonMenuItem {
 
@@ -68,6 +70,7 @@ public class TestImageIconWithJRadioButtonMenuItem {
         String imgDir = System.getProperty("test.src", ".");
         String imgPath = imgDir + File.separator + "duke.gif";
 
+
         JFrame frame = new JFrame("RadioButtonWithImageIcon");
         ImageIcon imageIcon1 = new ImageIcon(imgPath);
         AbstractButton button1 = new JRadioButtonMenuItem("JRadioButtonMenuItem 1",
@@ -79,12 +82,16 @@ public class TestImageIconWithJRadioButtonMenuItem {
         buttonGroup.add(button1);
         buttonGroup.add(button2);
 
-        JPanel panel = new JPanel();
-        panel.add(button1);
-        panel.add(button2);
+        JMenuItem topLevel = new JMenu("Radio menus");
+        topLevel.add(button1);
+        topLevel.add(button2);
 
-        frame.getContentPane().add(panel);
-        frame.pack();
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.add(topLevel);
+
+        frame.setJMenuBar(menuBar);
+
+        frame.setSize(300, 200);
         return frame;
     }
 }
