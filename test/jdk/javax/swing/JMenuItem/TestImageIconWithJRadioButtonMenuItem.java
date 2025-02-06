@@ -35,13 +35,14 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.UIManager;
 
@@ -67,18 +68,18 @@ public class TestImageIconWithJRadioButtonMenuItem {
                 .awaitAndCheck();
     }
 
-    public static JFrame doTest() {
+    private static ImageIcon createIcon(Color color) {
         BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         Graphics g = img.getGraphics();
-        g.setColor(Color.red);
+        g.setColor(color);
         g.fillRect(0, 0, img.getWidth(), img.getHeight());
         g.dispose();
+        return new ImageIcon(img);
+    }
 
-
-        JFrame frame = new JFrame("RadioButtonWithImageIcon");
-        ImageIcon imageIcon1 = new ImageIcon(img);
+    public static JFrame doTest() {
         AbstractButton button1 = new JRadioButtonMenuItem("JRadioButtonMenuItem 1",
-                imageIcon1);
+                                                          createIcon(Color.RED));
         button1.setSelected(true);
         AbstractButton button2 = new JRadioButtonMenuItem("JRadioButtonMenuItem 2");
 
@@ -86,13 +87,21 @@ public class TestImageIconWithJRadioButtonMenuItem {
         buttonGroup.add(button1);
         buttonGroup.add(button2);
 
-        JMenuItem topLevel = new JMenu("Radio menus");
+        JMenu topLevel = new JMenu("Test menu");
         topLevel.add(button1);
         topLevel.add(button2);
+
+        topLevel.addSeparator();
+
+        topLevel.add(new JCheckBoxMenuItem("JCheckBoxMenuItem 1",
+                                           createIcon(Color.CYAN)));
+        topLevel.getItem(topLevel.getItemCount() - 1).setSelected(true);
+        topLevel.add(new JCheckBoxMenuItem("JCheckBoxMenuItem 2"));
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(topLevel);
 
+        JFrame frame = new JFrame("RadioButtonWithImageIcon");
         frame.setJMenuBar(menuBar);
 
         frame.setSize(300, 200);
