@@ -43,6 +43,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.UIManager;
 
@@ -97,6 +98,13 @@ public class TestImageIconWithJRadioButtonMenuItem {
                                            createIcon(Color.CYAN)));
         topLevel.getItem(topLevel.getItemCount() - 1).setSelected(true);
         topLevel.add(new JCheckBoxMenuItem("JCheckBoxMenuItem 2"));
+        topLevel.getItem(topLevel.getItemCount() - 1).setSelected(true);
+
+        topLevel.addSeparator();
+
+        topLevel.add(new JMenuItem("Menu item with icon",
+                                   createIcon(Color.GREEN)));
+        topLevel.add(new JMenuItem("Menu item without icon"));
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(topLevel);
