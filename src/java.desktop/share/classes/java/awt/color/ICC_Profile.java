@@ -113,45 +113,32 @@ public sealed class ICC_Profile implements Serializable
      * This check is used in {@link #setData(int, byte[])} to prevent modifying
      * BuiltInProfile.
      */
-    private boolean isBuiltIn = false;
+    private final boolean isBuiltIn;
 
     /**
      * The lazy registry of singleton profile objects for specific built-in
      * color spaces defined in the ColorSpace class (e.g. CS_sRGB),
      * see getInstance(int cspace) factory method.
      */
-    private static class BuiltInProfile {
+    private interface BuiltInProfile {
         /*
          * Deferral is only used for standard profiles. Enabling the appropriate
          * access privileges is handled at a lower level.
          */
-        private static final ICC_Profile SRGB;
-        private static final ICC_Profile LRGB;
-        private static final ICC_Profile XYZ;
-        private static final ICC_Profile PYCC;
-        private static final ICC_Profile GRAY;
+        ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+               "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY), true);
 
-        static {
-            SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-                    "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
-            SRGB.isBuiltIn = true;
+        ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+               "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY), true);
 
-            LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-                    "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
-            LRGB.isBuiltIn = true;
+        ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
+               "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT), true);
 
-            XYZ = new ICC_Profile(new ProfileDeferralInfo(
-                    "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
-            XYZ.isBuiltIn = true;
+        ICC_Profile PYCC = new ICC_Profile(new ProfileDeferralInfo(
+               "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION), true);
 
-            PYCC = new ICC_Profile(new ProfileDeferralInfo(
-                    "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
-            PYCC.isBuiltIn = true;
-
-            GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
-                    "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
-            GRAY.isBuiltIn = true;
-        }
+        ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
+               "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY), true);
     }
 
     static {
@@ -784,6 +771,7 @@ public sealed class ICC_Profile implements Serializable
      */
     ICC_Profile(Profile p) {
         cmmProfile = p;
+        isBuiltIn = false;
     }
 
     /**
@@ -791,7 +779,12 @@ public sealed class ICC_Profile implements Serializable
      * The ID will be 0 until the profile is loaded.
      */
     ICC_Profile(ProfileDeferralInfo pdi) {
+        this(pdi, false);
+    }
+
+    ICC_Profile(ProfileDeferralInfo pdi, boolean builtIn) {
         deferralInfo = pdi;
+        isBuiltIn = builtIn;
     }
 
     /**
