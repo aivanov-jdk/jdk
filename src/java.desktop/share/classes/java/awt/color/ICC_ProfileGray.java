@@ -88,10 +88,6 @@ public final class ICC_ProfileGray extends ICC_Profile {
         super(pdi);
     }
 
-    ICC_ProfileGray(ProfileDeferralInfo pdi, boolean builtIn) {
-        super(pdi, builtIn);
-    }
-
     /**
      * Returns a float array of length 3 containing the X, Y, and Z components
      * of the mediaWhitePointTag in the ICC profile.

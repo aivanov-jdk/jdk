@@ -126,19 +126,19 @@ public sealed class ICC_Profile implements Serializable
          * access privileges is handled at a lower level.
          */
         ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-               "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY), true);
+               "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
         ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-               "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY), true);
+               "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
         ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
-               "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT), true);
+               "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
 
         ICC_Profile PYCC = new ICC_Profile(new ProfileDeferralInfo(
-               "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION), true);
+               "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
 
         ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
-               "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY), true);
+               "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
     }
 
     static {
@@ -779,12 +779,8 @@ public sealed class ICC_Profile implements Serializable
      * The ID will be 0 until the profile is loaded.
      */
     ICC_Profile(ProfileDeferralInfo pdi) {
-        this(pdi, false);
-    }
-
-    ICC_Profile(ProfileDeferralInfo pdi, boolean builtIn) {
         deferralInfo = pdi;
-        isBuiltIn = builtIn;
+        isBuiltIn = true;
     }
 
     /**

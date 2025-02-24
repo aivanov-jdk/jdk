@@ -122,10 +122,6 @@ public final class ICC_ProfileRGB extends ICC_Profile {
         super(pdi);
     }
 
-    ICC_ProfileRGB(ProfileDeferralInfo pdi, boolean builtIn) {
-        super(pdi, builtIn);
-    }
-
     /**
      * Returns an array that contains the components of the profile's
      * {@code mediaWhitePointTag}.
