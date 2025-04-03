@@ -523,13 +523,18 @@ public final class PassFailJFrame {
                    .forEach(w -> w.addWindowListener(windowClosingHandler));
 
             if (builder.positionWindows != null) {
-                positionInstructionFrame(builder.position);
+                positionInstructionFrame(builder.position,
+                                         calculateMaxSize(frame.getSize(),
+                                                          builder.testWindows
+                                                                 .get(0)
+                                                                 .getSize()));
                 invokeOnEDT(() ->
                         builder.positionWindows
                                .positionTestWindows(unmodifiableList(builder.testWindows),
                                                     builder.instructionUIHandler));
             } else {
-                Window window = builder.testWindows.get(0);
+                Window window = builder.testWindows
+                                       .get(0);
                 positionTestWindow(window, builder.position);
             }
         }
@@ -1128,7 +1133,17 @@ public final class PassFailJFrame {
         windowList.forEach(Window::dispose);
     }
 
-    private static void positionInstructionFrame(final Position position) {
+    /**
+     * Positions the instruction frame on the screen according to
+     * the provided size.
+     *
+     * @param position the position for calculating the location of
+     *                 the instruction frame
+     * @param size     the size for calculating the location of
+     *                 the instruction frame
+     */
+    private static void positionInstructionFrame(final Position position,
+                                                 final Dimension size) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
         // Get the screen insets to position the frame by taking into
@@ -1138,24 +1153,43 @@ public final class PassFailJFrame {
                                                       .getDefaultConfiguration();
         Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
 
+        int hInsets = screenInsets.left + screenInsets.right;
+        int vInsets = screenInsets.top + screenInsets.bottom;
+
+        int newX, newY;
         switch (position) {
             case HORIZONTAL:
-                int newX = (((screenSize.width + WINDOW_GAP) / 2) - frame.getWidth());
-                frame.setLocation((newX + screenInsets.left),
-                                  (frame.getY() + screenInsets.top));
+                newX = ((screenSize.width - hInsets + WINDOW_GAP) / 2) - frame.getWidth();
+                newY = (screenSize.height - vInsets - size.height) / 2;
                 break;
 
             case VERTICAL:
-                int newY = (((screenSize.height + WINDOW_GAP) / 2) - frame.getHeight());
-                frame.setLocation((frame.getX() + screenInsets.left),
-                                  (newY + screenInsets.top));
+                newX = (screenSize.width - hInsets - size.width) / 2;
+                newY = ((screenSize.height - vInsets + WINDOW_GAP) / 2) - frame.getHeight();
                 break;
 
             case TOP_LEFT_CORNER:
-                frame.setLocation(screenInsets.left, screenInsets.top);
+                newX = screenInsets.left;
+                newY = screenInsets.top;
                 break;
+
+            default:
+                throw new IllegalStateException("Unsupported position: " + position);
         }
+        frame.setLocation(newX + screenInsets.left,
+                          newY + screenInsets.top);
         syncLocationToWindowManager();
+    }
+
+    /**
+     * {@return maximum size of two {@code Dimension} objects}
+     * @param d1 the first size
+     * @param d2 the second size
+     */
+    private static Dimension calculateMaxSize(final Dimension d1,
+                                              final Dimension d2) {
+        return new Dimension(Math.max(d1.width, d2.width),
+                             Math.max(d1.height, d2.height));
     }
 
     /**
@@ -1188,21 +1222,28 @@ public final class PassFailJFrame {
      *                  </ul>
      */
     public static void positionTestWindow(Window testWindow, Position position) {
-        positionInstructionFrame(position);
+        if (testWindow == null) {
+            // Don't change the position of the instruction frame
+            // if there's no test window
+            frame.setVisible(true);
+            return;
+        }
 
-        if (testWindow != null) {
-            switch (position) {
-                case HORIZONTAL:
-                case TOP_LEFT_CORNER:
-                    testWindow.setLocation((frame.getX() + frame.getWidth() + WINDOW_GAP),
-                                           frame.getY());
-                    break;
+        positionInstructionFrame(position,
+                                 calculateMaxSize(frame.getSize(),
+                                                  testWindow.getSize()));
 
-                case VERTICAL:
-                    testWindow.setLocation(frame.getX(),
-                                           (frame.getY() + frame.getHeight() + WINDOW_GAP));
-                    break;
-            }
+        switch (position) {
+            case HORIZONTAL:
+            case TOP_LEFT_CORNER:
+                testWindow.setLocation((frame.getX() + frame.getWidth() + WINDOW_GAP),
+                                       frame.getY());
+                break;
+
+            case VERTICAL:
+                testWindow.setLocation(frame.getX(),
+                                       (frame.getY() + frame.getHeight() + WINDOW_GAP));
+                break;
         }
 
         // make instruction frame visible after updating
