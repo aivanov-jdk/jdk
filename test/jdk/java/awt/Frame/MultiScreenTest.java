@@ -119,7 +119,7 @@ public class MultiScreenTest {
                     ditherfs.setBounds(300, 200, 300, 200);
                     ditherfs.setLocation(750 + xoffs, (i * 50) + yoffs);
                     ditherfs.pack();
-                    ditherfs.show();
+                    ditherfs.setVisible(true);
                     ditherTest.start();
                 }
             }
