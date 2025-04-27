@@ -98,8 +98,10 @@ public class MultiScreenTest {
         List<JFrame> list = new ArrayList<>();
         for (int j = 0; j < gs.length; j++) {
             GraphicsConfiguration[] gc = gs[j].getConfigurations();
+            System.out.println("Screens: " + gc.length);
             if (gc.length > 0) {
                 for (int i = 0; i < gc.length / 2; i++) {
+                    System.out.println("Init: i = " + i);
                     JFrame f = new JFrame(gc[i]); //test JFrame( gc )
                     GCCanvas c = new GCCanvas(gc[i]);//test canvas( gc )
                     Rectangle gcBounds = gc[i].getBounds(); //test getBounds()
@@ -124,6 +126,7 @@ public class MultiScreenTest {
                 }
             }
         }
+        System.out.println("Exiting init: " + list.size());
         return list;
     }
 }
