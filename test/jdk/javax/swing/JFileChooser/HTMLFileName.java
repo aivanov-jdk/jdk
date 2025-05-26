@@ -48,9 +48,26 @@ import javax.swing.filechooser.FileSystemView;
  * @run main/manual HTMLFileName system
  */
 
+/*
+ * @test id=nimbus
+ * @bug 8139228
+ * @summary JFileChooser should not render Directory names in HTML format
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual HTMLFileName nimbus
+ */
+
+/*
+ * @test id=motif
+ * @bug 8139228
+ * @summary JFileChooser should not render Directory names in HTML format
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual HTMLFileName motif
+ */
+
 public class HTMLFileName {
     private static final String INSTRUCTIONS = """
-            <html>
             <ol>
             <li><code>JFileChooser</code> shows a virtual directory.
                 The first file in the list has the following name:
@@ -84,21 +101,31 @@ public class HTMLFileName {
             </html>
             """;
 
+    private static volatile String lafName;
+
+    private static String getLafClassName(String[] args) {
+        final String lafClassName;
+        switch (args[0]) {
+            case "metal" -> lafClassName = UIManager.getCrossPlatformLookAndFeelClassName();
+            case "system" -> lafClassName = UIManager.getSystemLookAndFeelClassName();
+            case "nimbus" -> lafClassName = "javax.swing.plaf.nimbus.NimbusLookAndFeel";
+            case "motif" -> lafClassName = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
+            default -> throw new IllegalArgumentException("Unsupported Look-and-Feel keyword: " + args[0]);
+        }
+        return lafClassName;
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length < 1) {
             throw new IllegalArgumentException("Look-and-Feel keyword is required");
         }
 
-        final String lafClassName;
-        switch (args[0]) {
-            case "metal" -> lafClassName = UIManager.getCrossPlatformLookAndFeelClassName();
-            case "system" -> lafClassName = UIManager.getSystemLookAndFeelClassName();
-            default -> throw new IllegalArgumentException("Unsupported Look-and-Feel keyword: " + args[0]);
-        }
+        final String lafClassName = getLafClassName(args);
 
         SwingUtilities.invokeAndWait(() -> {
             try {
                 UIManager.setLookAndFeel(lafClassName);
+                lafName = UIManager.getLookAndFeel().getName();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -106,8 +133,11 @@ public class HTMLFileName {
 
         System.out.println("Test for LookAndFeel " + lafClassName);
         PassFailJFrame.builder()
-                .instructions(INSTRUCTIONS)
-                .columns(45)
+                .instructions("<html>" +
+                              "<p style=\"margin-top: 0pt\">Look and Feel: " +
+                              "<b>" + lafName + "</b>" +
+                              INSTRUCTIONS)
+                .columns(50)
                 .rows(20)
                 .testUI(HTMLFileName::initialize)
                 .positionTestUIBottomRowCentered()
