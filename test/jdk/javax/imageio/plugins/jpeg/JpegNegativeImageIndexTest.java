@@ -31,58 +31,62 @@
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 
 public class JpegNegativeImageIndexTest {
 
-    private static boolean failed;
-
-    private static void checkException(boolean exceptionReceived,
-                                       String testName) {
-        if (!exceptionReceived) {
-            System.out.println("Didn't receive IndexOutOfBoundsException for "
-                + testName);
-            failed = true;
-        }
+    private record TestMethod(String methodName,
+                              Callable<?> method) {
     }
 
-    private static void testMethod(String methodName,
-                                   RunnableWithException method) {
-        boolean exceptionReceived = false;
-        System.out.println("Testing " + methodName);
+    /**
+     * {@return {@code true} if the expected exception is caught,
+     * and {@code false} otherwise}
+     * @param test the test method to test
+     */
+    private static boolean testMethod(TestMethod test) {
+        System.out.println("Testing " + test.methodName);
         try {
-            method.run();
+            test.method
+                .call();
         } catch (Exception e) {
             if (e instanceof IndexOutOfBoundsException) {
-                exceptionReceived = true;
+                return true;
             }
         }
-        checkException(exceptionReceived, methodName);
-    }
-
-    private interface RunnableWithException {
-        void run() throws Exception;
+        System.out.println("Didn't receive IndexOutOfBoundsException for "
+                           + test.methodName);
+        return false;
     }
 
     public static void main(String[] args) throws IOException {
         Iterator<ImageReader> readers =
-            ImageIO.getImageReadersByFormatName("jpeg");
+                ImageIO.getImageReadersByFormatName("jpeg");
         if (!readers.hasNext()) {
             throw new RuntimeException("No jpeg image readers found");
         }
 
-        ImageReader ir = readers.next();
+        final ImageReader ir = readers.next();
 
-        testMethod("getImageTypes()", () -> ir.getImageTypes(-1));
-        testMethod("getWidth()", () -> ir.getWidth(-1));
-        testMethod("getHeight()", () -> ir.getHeight(-1));
-        testMethod("getRawImageType()", () -> ir.getRawImageType(-1));
+        if (!Stream.of(new TestMethod("getImageTypes()",
+                                      () -> ir.getImageTypes(-1)),
+                       new TestMethod("getWidth()",
+                                      () -> ir.getWidth(-1)),
+                       new TestMethod("getHeight()",
+                                      () -> ir.getHeight(-1)),
+                       new TestMethod("getRawImageType()",
+                                      () -> ir.getRawImageType(-1)))
+                   .map(JpegNegativeImageIndexTest::testMethod)
+                   .toList()
+                   .stream()
+                   .allMatch(Boolean::booleanValue)) {
+            throw new RuntimeException("JpegImageReader didn't throw required "
+                                       + "IndexOutOfBoundsException for -1 image index");
 
-        if (failed) {
-            throw new RuntimeException("JpegImageReader didn't throw required" +
-                " IndexOutOfBoundsException for -1 image index");
         }
     }
 }
