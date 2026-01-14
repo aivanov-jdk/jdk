@@ -172,22 +172,26 @@ public class PageRangesAuto implements Pageable, Printable {
     }
 
     @Override
-    public PageFormat getPageFormat(int pageIndex) throws IndexOutOfBoundsException {
+    public PageFormat getPageFormat(int pageIndex)
+            throws IndexOutOfBoundsException {
         checkPageIndex(pageIndex);
         return new PageFormat();
     }
 
     @Override
-    public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
+    public Printable getPrintable(int pageIndex)
+            throws IndexOutOfBoundsException {
         checkPageIndex(pageIndex);
         System.out.println("  test.getPrintable(" + (pageIndex + 1) + ")");
         return this;
     }
 
-    private static void checkPageIndex(int pageIndex) {
+    private static void checkPageIndex(int pageIndex)
+            throws IndexOutOfBoundsException {
         if (pageIndex < 0) {
             throw new IndexOutOfBoundsException("pageIndex < 0");
         }
+        
         if (pageIndex >= MAX_PAGE) {
             throw new IndexOutOfBoundsException("pageIndex >= " + MAX_PAGE);
         }
