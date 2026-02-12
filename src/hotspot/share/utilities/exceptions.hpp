@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,10 @@ class ThreadShadow: public CHeapObj<mtThread> {
   // use CLEAR_PENDING_NONASYNC_EXCEPTION to clear probable nonasync exception.
   void clear_pending_nonasync_exception();
 
+  void set_pending_preempted_exception();
+  void clear_pending_preempted_exception();
+  void check_preempted_exception() NOT_DEBUG_RETURN;
+
   ThreadShadow() : _pending_exception(nullptr),
                    _exception_file(nullptr), _exception_line(0) {}
 };
@@ -128,15 +132,15 @@ class Exceptions {
 
   static void _throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message);
   static void _throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message,
-                         Handle loader, Handle protection_domain);
+                         Handle loader);
 
   static void _throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause);
   static void _throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause,
-                               Handle h_loader, Handle h_protection_domain);
+                               Handle h_loader);
 
   static void _throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause);
   static void _throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause,
-                           Handle h_loader, Handle h_protection_domain);
+                           Handle h_loader);
 
   static void _throw_args(JavaThread* thread, const char* file, int line,
                           Symbol* name, Symbol* signature,
@@ -150,21 +154,21 @@ class Exceptions {
   // Create and initialize a new exception
   static Handle new_exception(JavaThread* thread, Symbol* name,
                               Symbol* signature, JavaCallArguments* args,
-                              Handle loader, Handle protection_domain);
+                              Handle loader);
 
   static Handle new_exception(JavaThread* thread, Symbol* name,
                               Symbol* signature, JavaCallArguments* args,
                               Handle cause,
-                              Handle loader, Handle protection_domain);
+                              Handle loader);
 
   static Handle new_exception(JavaThread* thread, Symbol* name,
                               Handle cause,
-                              Handle loader, Handle protection_domain,
+                              Handle loader,
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
   static Handle new_exception(JavaThread* thread, Symbol* name,
                               const char* message, Handle cause,
-                              Handle loader, Handle protection_domain,
+                              Handle loader,
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
   static Handle new_exception(JavaThread* thread, Symbol* name,
@@ -190,6 +194,8 @@ class Exceptions {
 
   // for logging exceptions
   static void log_exception(Handle exception, const char* message);
+  static void log_exception_stacktrace(Handle exception);
+  static void log_exception_stacktrace(Handle exception, methodHandle method, int bci);
 };
 
 
@@ -228,6 +234,8 @@ class Exceptions {
 #define CHECK_NULL                               CHECK_(nullptr)
 #define CHECK_false                              CHECK_(false)
 #define CHECK_JNI_ERR                            CHECK_(JNI_ERR)
+#define CHECK_PREEMPTABLE                        THREAD); if (HAS_PENDING_EXCEPTION) { THREAD->check_preempted_exception(); return;       } (void)(0
+#define CHECK_PREEMPTABLE_false                  THREAD); if (HAS_PENDING_EXCEPTION) { THREAD->check_preempted_exception(); return false; } (void)(0
 
 // CAUTION: These macros clears all exceptions including async exceptions, use it with caution.
 #define CHECK_AND_CLEAR                         THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; return;        } (void)(0
@@ -246,6 +254,10 @@ class Exceptions {
 #define CHECK_AND_CLEAR_NONASYNC_NH             CHECK_AND_CLEAR_NONASYNC_(Handle())
 #define CHECK_AND_CLEAR_NONASYNC_NULL           CHECK_AND_CLEAR_NONASYNC_(nullptr)
 #define CHECK_AND_CLEAR_NONASYNC_false          CHECK_AND_CLEAR_NONASYNC_(false)
+
+#define CLEAR_PENDING_PREEMPTED_EXCEPTION       (((ThreadShadow*)THREAD)->clear_pending_preempted_exception())
+#define CHECK_AND_CLEAR_PREEMPTED               THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_PREEMPTED_EXCEPTION; return; } (void)(0
+
 
 // The THROW... macros should be used to throw an exception. They require a THREAD variable to be
 // visible within the scope containing the THROW. Usually this is achieved by declaring the function
@@ -268,8 +280,8 @@ class Exceptions {
 #define THROW_CAUSE(name, cause)   \
   { Exceptions::_throw_cause(THREAD_AND_LOCATION, name, cause); return; }
 
-#define THROW_MSG_LOADER(name, message, loader, protection_domain) \
-  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message, loader, protection_domain); return;  }
+#define THROW_MSG_LOADER(name, message, loader) \
+  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message, loader); return;  }
 
 #define THROW_ARG(name, signature, args) \
   { Exceptions::_throw_args(THREAD_AND_LOCATION, name, signature, args);   return; }
@@ -286,8 +298,8 @@ class Exceptions {
 #define THROW_MSG_(name, message, result)           \
   { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message); return result; }
 
-#define THROW_MSG_LOADER_(name, message, loader, protection_domain, result) \
-  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message, loader, protection_domain); return result; }
+#define THROW_MSG_LOADER_(name, message, loader, result) \
+  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message, loader); return result; }
 
 #define THROW_ARG_(name, signature, args, result) \
   { Exceptions::_throw_args(THREAD_AND_LOCATION, name, signature, args); return result; }
@@ -310,6 +322,9 @@ class Exceptions {
 
 #define THROW_NULL(name)                    THROW_(name, nullptr)
 #define THROW_MSG_NULL(name, message)       THROW_MSG_(name, message, nullptr)
+
+#define THROW_HANDLE_NULL(e)                THROW_HANDLE_(e, nullptr)
+#define THROW_ARG_NULL(name, signature, arg) THROW_ARG_(name, signature, arg, nullptr)
 
 // The CATCH macro checks that no exception has been thrown by a function; it is used at
 // call sites about which is statically known that the callee cannot throw an exception

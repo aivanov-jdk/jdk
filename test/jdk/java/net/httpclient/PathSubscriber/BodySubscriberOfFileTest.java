@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8237470 8299015
  * @summary Confirm HttpResponse.BodySubscribers#ofFile(Path)
  *          works with default and non-default file systems
- *          when SecurityManager is enabled
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer
@@ -37,12 +36,8 @@
  *        jdk.httpclient.test.lib.http2.Queue jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
  * @run testng/othervm BodySubscriberOfFileTest
- * @run testng/othervm/java.security.policy=ofFile.policy BodySubscriberOfFileTest
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.AfterTest;
@@ -54,49 +49,43 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandler;
-import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2Handler;
-import jdk.httpclient.test.lib.http2.OutgoingPushPromise;
-import jdk.httpclient.test.lib.http2.Queue;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 
 public class BodySubscriberOfFileTest implements HttpServerAdapters {
     static final String MSG = "msg";
 
-    SSLContext sslContext;
-    HttpServerAdapters.HttpTestServer httpTestServer;    // HTTP/1.1      [ 4 servers ]
-    HttpServerAdapters.HttpTestServer httpsTestServer;   // HTTPS/1.1
-    HttpServerAdapters.HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpServerAdapters.HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    HttpTestServer httpTestServer;    // HTTP/1.1      [ 5 servers ]
+    HttpTestServer httpsTestServer;   // HTTPS/1.1
+    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
 
     FileSystem zipFs;
     Path defaultFsPath;
@@ -115,6 +104,9 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
     @DataProvider(name = "defaultFsData")
     public Object[][] defaultFsData() {
         return new Object[][]{
+                {  http3URI,   defaultFsPath,  MSG,  true   },
+                {  http3URI,   defaultFsPath,  MSG,  false  },
+
                 {  httpURI,    defaultFsPath,  MSG,  true   },
                 {  httpsURI,   defaultFsPath,  MSG,  true   },
                 {  http2URI,   defaultFsPath,  MSG,  true   },
@@ -154,6 +146,9 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
     @DataProvider(name = "zipFsData")
     public Object[][] zipFsData() {
         return new Object[][]{
+                {  http3URI,   zipFsPath,  MSG,  true   },
+                {  http3URI,   zipFsPath,  MSG,  false  },
+
                 {  httpURI,    zipFsPath,  MSG,  true   },
                 {  httpsURI,   zipFsPath,  MSG,  true   },
                 {  http2URI,   zipFsPath,  MSG,  true   },
@@ -177,6 +172,24 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
 
     private static final int ITERATION_COUNT = 3;
 
+    private HttpClient newHttpClient(String uri) {
+        var builder = uri.contains("/http3/")
+                ? newClientBuilderForH3()
+                : HttpClient.newBuilder();
+        return builder.proxy(NO_PROXY)
+                .sslContext(sslContext)
+                .build();
+    }
+
+    private HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
     private void receive(String uriString,
                       Path path,
                       String expectedMsg,
@@ -185,26 +198,25 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
 
         for (int i = 0; i < ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
-                client = HttpClient.newBuilder()
-                        .proxy(NO_PROXY)
-                        .sslContext(sslContext)
-                        .build();
+                client = newHttpClient(uriString);
             }
-            var req = HttpRequest.newBuilder(URI.create(uriString))
+            var req = newRequestBuilder(URI.create(uriString))
                 .POST(BodyPublishers.noBody())
                 .build();
 
-            // Retrieve handler with caller's privileges enabled
-            PrivilegedAction<BodySubscriber<Path>> action = () ->
-                    BodySubscribers.ofFile(path);
-            BodyHandler<Path> handler = respInfo ->
-                    AccessController.doPrivileged(action);
+            BodyHandler<Path> handler = respInfo -> BodySubscribers.ofFile(path);
             var resp = client.send(req, handler);
             String msg = Files.readString(path, StandardCharsets.UTF_8);
             out.printf("Resp code: %s\n", resp.statusCode());
             out.printf("Msg written to %s: %s\n", resp.body(), msg);
             assertEquals(resp.statusCode(), 200);
             assertEquals(msg, expectedMsg);
+            if (!sameClient) {
+                client.close();
+            }
+        }
+        if (sameClient && client != null) {
+            client.close();
         }
     }
 
@@ -234,10 +246,6 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         defaultFsPath = defaultFsFile();
         zipFs = newZipFs();
         zipFsPath = zipFsFile(zipFs);
@@ -258,10 +266,15 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
         https2TestServer.addHandler(new HttpEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new HttpEchoHandler(), "/http3/echo");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -275,6 +288,7 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
         zipFs.close();
     }
 

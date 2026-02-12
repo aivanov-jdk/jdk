@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,6 @@ import com.sun.tools.javac.tree.DCTree.DCParam;
 import com.sun.tools.javac.tree.DCTree.DCReference;
 import com.sun.tools.javac.tree.DocCommentTable;
 import com.sun.tools.javac.tree.DocTreeMaker;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCCatch;
@@ -240,8 +239,7 @@ public class JavacTrees extends DocTrees {
 
                 @Override @DefinedBy(Api.COMPILER_TREE)
                 public long getEndPosition(CompilationUnitTree file, Tree tree) {
-                    EndPosTable endPosTable = ((JCCompilationUnit) file).endPositions;
-                    return TreeInfo.getEndPos((JCTree) tree, endPosTable);
+                    return TreeInfo.getEndPos((JCTree) tree);
                 }
 
                 @Override @DefinedBy(Api.COMPILER_TREE)
@@ -357,13 +355,17 @@ public class JavacTrees extends DocTrees {
         if (tree instanceof DCReference dcReference) {
             JCTree qexpr = dcReference.qualifierExpression;
             if (qexpr != null) {
-                Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
-                        new Log.DeferredDiagnosticHandler(log);
+                Log.DeferredDiagnosticHandler deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 try {
                     Env<AttrContext> env = getAttrContext(path.getTreePath());
-                    Type t = attr.attribType(dcReference.qualifierExpression, env);
-                    if (t != null && !t.isErroneous()) {
-                        return t;
+                    JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
+                    try {
+                        Type t = attr.attribType(dcReference.qualifierExpression, env);
+                        if (t != null && !t.isErroneous()) {
+                            return t;
+                        }
+                    } finally {
+                        log.useSource(prevSource);
                     }
                 } catch (Abort e) { // may be thrown by Check.completionError in case of bad class file
                     return null;
@@ -388,8 +390,8 @@ public class JavacTrees extends DocTrees {
             // module name and member name without type
             return null;
         }
-        Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
-                new Log.DeferredDiagnosticHandler(log);
+        Log.DeferredDiagnosticHandler deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
+        JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
             final TypeSymbol tsym;
             final Name memberName;
@@ -409,7 +411,18 @@ public class JavacTrees extends DocTrees {
             }
 
             if (ref.qualifierExpression == null) {
-                tsym = env.enclClass.sym;
+                // Resolve target for unqualified reference based on declaring element
+                tsym = switch (path.getLeaf().getKind()) {
+                    case PACKAGE -> env.toplevel.packge;
+                    case MODULE -> env.toplevel.modle;
+                    case COMPILATION_UNIT ->
+                        // Treat unqualified reference in legacy package.html as package reference.
+                        // Unqualified references in doc-files only need to work locally, so null is fine.
+                        path.getCompilationUnit().getSourceFile().isNameCompatible("package", JavaFileObject.Kind.HTML)
+                                ? env.toplevel.packge
+                                : null;
+                    default -> env.enclClass.sym;  // Class or class member reference
+                };
                 memberName = (Name) ref.memberName;
             } else {
                 // Check if qualifierExpression is a type or package, using the methods javac provides.
@@ -466,8 +479,15 @@ public class JavacTrees extends DocTrees {
                 }
             }
 
-            if (memberName == null)
+            if (memberName == null) {
                 return tsym;
+            } else if (tsym == null || tsym.getKind() == ElementKind.PACKAGE || tsym.getKind() == ElementKind.MODULE) {
+                return null;  // Non-null member name in non-class context
+            }
+
+            if (tsym.type.isPrimitive()) {
+                return null;
+            }
 
             final List<Type> paramTypes;
             if (ref.paramTypes == null)
@@ -511,6 +531,7 @@ public class JavacTrees extends DocTrees {
         } catch (Abort e) { // may be thrown by Check.completionError in case of bad class file
             return null;
         } finally {
+            log.useSource(prevSource);
             log.popDiagnosticHandler(deferredDiagnosticHandler);
         }
     }
@@ -1071,6 +1092,11 @@ public class JavacTrees extends DocTrees {
             }
 
             @Override
+            public Comment stripIndent() {
+                return this;
+            }
+
+            @Override
             public JCDiagnostic.DiagnosticPosition getPos() {
                 return null;
             }
@@ -1321,7 +1347,7 @@ public class JavacTrees extends DocTrees {
             switch (kind) {
                 case ERROR ->             log.error(DiagnosticFlag.API, pos, Errors.ProcMessager(msg.toString()));
                 case WARNING ->           log.warning(pos, Warnings.ProcMessager(msg.toString()));
-                case MANDATORY_WARNING -> log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
+                case MANDATORY_WARNING -> log.warning(DiagnosticFlag.MANDATORY, pos, Warnings.ProcMessager(msg.toString()));
                 default ->                log.note(pos, Notes.ProcMessager(msg.toString()));
             }
         } finally {
@@ -1402,6 +1428,7 @@ public class JavacTrees extends DocTrees {
         jcCompilationUnit.namedImportScope = new NamedImportScope(psym);
         jcCompilationUnit.packge = psym;
         jcCompilationUnit.starImportScope = new StarImportScope(psym);
+        jcCompilationUnit.moduleImportScope = new StarImportScope(psym);
         jcCompilationUnit.toplevelScope = WriteableScope.create(psym);
         return new TreePath(jcCompilationUnit);
     }

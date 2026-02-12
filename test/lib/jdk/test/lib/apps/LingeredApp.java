@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,12 @@ public class LingeredApp {
 
     public void setForceCrash(boolean forceCrash) {
         this.forceCrash = forceCrash;
+    }
+
+    private static Runnable crasher;
+
+    public static void setCrasher(Runnable runnable) {
+        crasher = runnable;
     }
 
     native private static int crash();
@@ -429,7 +435,7 @@ public class LingeredApp {
         }
     }
 
-    /**
+    /*
      *  High level interface for test writers
      */
 
@@ -589,10 +595,17 @@ public class LingeredApp {
 
     static class SteadyStateLock {};
 
+    private static volatile boolean isReady = false;
+
+    protected static boolean isReady() {
+        return isReady;
+    }
+
     /**
      * This part is the application itself. First arg is optional "forceCrash".
      * Following arg is the lock file name.
      */
+    @SuppressWarnings("restricted")
     public static void main(String args[]) {
         boolean forceCrash = false;
 
@@ -621,12 +634,17 @@ public class LingeredApp {
             synchronized(steadyStateObj) {
                 startSteadyStateThread(steadyStateObj);
                 if (forceCrash) {
-                    System.loadLibrary("LingeredApp"); // location of native crash() method
-                    crash();
+                    if (crasher == null) {
+                        System.loadLibrary("LingeredApp"); // location of native crash() method
+                        crash();
+                    } else {
+                        crasher.run();
+                    }
                 }
                 while (Files.exists(path)) {
                     // Touch the lock to indicate our readiness
                     setLastModified(theLockFileName, epoch());
+                    isReady = true;
                     Thread.sleep(spinDelay);
                 }
             }

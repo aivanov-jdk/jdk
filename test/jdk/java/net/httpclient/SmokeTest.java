@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 8087112 8178699
- * @modules java.net.http
+ * @bug 8087112 8178699 8338569
+ * @modules java.net.http/jdk.internal.net.http.common
  *          java.logging
  *          jdk.httpserver
- * @library /test/lib /
+ * @library /test/lib /test/jdk/java/net/httpclient/lib /
  * @build jdk.test.lib.net.SimpleSSLContext ProxyServer
+ *        jdk.httpclient.test.lib.common.TestServerConfigurator
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @run main/othervm
@@ -54,6 +55,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
@@ -90,6 +93,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -116,7 +121,7 @@ import java.util.logging.Logger;
  * in docs directory.
  */
 public class SmokeTest {
-    static SSLContext ctx;
+    private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
     static SSLParameters sslparams;
     static HttpServer s1 ;
     static HttpsServer s2;
@@ -572,10 +577,12 @@ public class SmokeTest {
         System.out.print("test7: " + target);
         Path requestBody = getTempFile(128 * 1024);
         // First test
-        URI uri = new URI(target);
-        HttpRequest request = HttpRequest.newBuilder().uri(uri).GET().build();
+        AtomicInteger count = new AtomicInteger();
 
         for (int i=0; i<4; i++) {
+            URI uri = new URI(target+"?get-sync;count="+count.incrementAndGet());
+            System.out.println("Sending " + uri);
+            HttpRequest request = HttpRequest.newBuilder().uri(uri).GET().build();
             HttpResponse<String> r = client.send(request, BodyHandlers.ofString());
             String body = r.body();
             if (!body.equals("OK")) {
@@ -584,12 +591,15 @@ public class SmokeTest {
         }
 
         // Second test: 4 x parallel
-        request = HttpRequest.newBuilder()
-                .uri(uri)
-                .POST(BodyPublishers.ofFile(requestBody))
-                .build();
+
         List<CompletableFuture<String>> futures = new LinkedList<>();
         for (int i=0; i<4; i++) {
+            URI uri = new URI(target+"?post-async;count="+count.incrementAndGet());
+            System.out.println("Sending " + uri);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .POST(BodyPublishers.ofFile(requestBody))
+                    .build();
             futures.add(client.sendAsync(request, BodyHandlers.ofString())
                               .thenApply((response) -> {
                                   if (response.statusCode() == 200)
@@ -610,11 +620,17 @@ public class SmokeTest {
         }
 
         // Third test: Multiple of 4 parallel requests
-        request = HttpRequest.newBuilder(uri).GET().build();
         BlockingQueue<String> q = new LinkedBlockingQueue<>();
+        Set<String> inFlight = ConcurrentHashMap.newKeySet();
         for (int i=0; i<4; i++) {
+            URI uri = new URI(target+"?get-async;count="+count.incrementAndGet());
+            inFlight.add(uri.getQuery());
+            System.out.println("Sending " + uri);
+            HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
             client.sendAsync(request, BodyHandlers.ofString())
                   .thenApply((HttpResponse<String> resp) -> {
+                      inFlight.remove(uri.getQuery());
+                      System.out.println("Got response for: " + uri);
                       String body = resp.body();
                       putQ(q, body);
                       return body;
@@ -630,8 +646,15 @@ public class SmokeTest {
             if (!body.equals("OK")) {
                 throw new RuntimeException(body);
             }
+            URI uri = new URI(target+"?get-async-next;count="+count.incrementAndGet());
+            inFlight.add(uri.getQuery());
+            System.out.println("Sending " + uri);
+            HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
             client.sendAsync(request, BodyHandlers.ofString())
                   .thenApply((resp) -> {
+                      inFlight.remove(uri.getQuery());
+                      System.out.println("Got response for: " + uri);
+                      System.out.println("In flight: " + inFlight);
                       if (resp.statusCode() == 200)
                           putQ(q, resp.body());
                       else
@@ -639,9 +662,13 @@ public class SmokeTest {
                       return null;
                   });
         }
+        System.out.println("Waiting: In flight: " + inFlight);
+        System.out.println("Queue size: " + q.size());
         // should be four left
         for (int i=0; i<4; i++) {
             takeQ(q);
+            System.out.println("Waiting: In flight: " + inFlight);
+            System.out.println("Queue size: " + q.size());
         }
         System.out.println(" OK");
     }
@@ -781,10 +808,9 @@ public class SmokeTest {
         executor = Executors.newCachedThreadPool();
         s1.setExecutor(executor);
         s2.setExecutor(executor);
-        ctx = new SimpleSSLContext().get();
         sslparams = ctx.getDefaultSSLParameters();
         //sslparams.setProtocols(new String[]{"TLSv1.2"});
-        s2.setHttpsConfigurator(new Configurator(ctx));
+        s2.setHttpsConfigurator(new Configurator(addr.getAddress(), ctx));
         s1.start();
         s2.start();
 
@@ -911,14 +937,19 @@ public class SmokeTest {
     }
 
     static class Configurator extends HttpsConfigurator {
-        public Configurator(SSLContext ctx) {
+        private final InetAddress serverAddr;
+
+        public Configurator(InetAddress serverAddr, SSLContext ctx) {
             super(ctx);
+            this.serverAddr = serverAddr;
         }
 
-        public void configure (HttpsParameters params) {
-            SSLParameters p = getSSLContext().getDefaultSSLParameters();
+        @Override
+        public void configure(final HttpsParameters params) {
+            final SSLParameters p = getSSLContext().getDefaultSSLParameters();
+            TestServerConfigurator.addSNIMatcher(this.serverAddr, p);
             //p.setProtocols(new String[]{"TLSv1.2"});
-            params.setSSLParameters (p);
+            params.setSSLParameters(p);
         }
     }
 

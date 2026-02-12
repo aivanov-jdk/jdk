@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     @Stable
     final Class<? extends AbstractMask<E>> maskType;
     @Stable
+    final Class<? extends AbstractShuffle<E>> shuffleType;
+    @Stable
     final Function<Object, ? extends AbstractVector<E>> vectorFactory;
 
     @Stable
@@ -61,11 +63,13 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
                     LaneType laneType,
                     Class<? extends AbstractVector<E>> vectorType,
                     Class<? extends AbstractMask<E>> maskType,
+                    Class<? extends AbstractShuffle<E>> shuffleType,
                     Function<Object, ? extends AbstractVector<E>> vectorFactory) {
         this.vectorShape = vectorShape;
         this.laneType = laneType;
         this.vectorType = vectorType;
         this.maskType = maskType;
+        this.shuffleType = shuffleType;
         this.vectorFactory = vectorFactory;
 
         // derived values:
@@ -140,6 +144,12 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
         return (Class<E>) laneType.elementType;
     }
 
+    @ForceInline
+    @SuppressWarnings("unchecked")
+    //NOT FINAL: SPECIALIZED
+    int laneTypeOrdinal() {
+        return laneType.ordinal();
+    }
     // FIXME: appeal to general method (see https://bugs.openjdk.org/browse/JDK-6176992)
     // replace usages of this method and remove
     @ForceInline
@@ -160,6 +170,11 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     @ForceInline
     public final Class<? extends AbstractMask<E>> maskType() {
         return maskType;
+    }
+
+    @ForceInline
+    final Class<? extends AbstractShuffle<E>> shuffleType() {
+        return shuffleType;
     }
 
     @Override

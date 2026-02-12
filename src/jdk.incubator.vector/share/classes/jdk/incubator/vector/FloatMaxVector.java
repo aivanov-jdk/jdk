@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -117,6 +119,13 @@ final class FloatMaxVector extends FloatVector {
         return (float[])getPayload();
     }
 
+    /*package-private*/
+    @ForceInline
+    final @Override
+    int laneTypeOrdinal() {
+        return LANE_TYPE_ORDINAL;
+    }
+
     // Virtualized constructors
 
     @Override
@@ -141,24 +150,15 @@ final class FloatMaxVector extends FloatVector {
     @ForceInline
     FloatMaxShuffle iotaShuffle() { return FloatMaxShuffle.IOTA; }
 
+    @Override
     @ForceInline
     FloatMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (FloatMaxShuffle)VectorSupport.shuffleIota(ETYPE, FloatMaxShuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (FloatMaxShuffle)VectorSupport.shuffleIota(ETYPE, FloatMaxShuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+        return (FloatMaxShuffle) iotaShuffleTemplate(start, step, wrap);
     }
 
     @Override
     @ForceInline
-    FloatMaxShuffle shuffleFromBytes(byte[] reorder) { return new FloatMaxShuffle(reorder); }
-
-    @Override
-    @ForceInline
-    FloatMaxShuffle shuffleFromArray(int[] indexes, int i) { return new FloatMaxShuffle(indexes, i); }
+    FloatMaxShuffle shuffleFromArray(int[] indices, int i) { return new FloatMaxShuffle(indices, i); }
 
     @Override
     @ForceInline
@@ -344,9 +344,16 @@ final class FloatMaxVector extends FloatVector {
         return (long) super.reduceLanesTemplate(op, FloatMaxMask.class, (FloatMaxMask) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<Float> toShuffle() {
-        return super.toShuffleTemplate(FloatMaxShuffle.class); // specialize
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        throw new AssertionError();
+    }
+
+    @Override
+    @ForceInline
+    public final FloatMaxShuffle toShuffle() {
+        return (FloatMaxShuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -490,9 +497,16 @@ final class FloatMaxVector extends FloatVector {
                                    VectorMask<Float> m) {
         return (FloatMaxVector)
             super.selectFromTemplate((FloatMaxVector) v,
-                                     (FloatMaxMask) m);  // specialize
+                                     FloatMaxMask.class, (FloatMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public FloatMaxVector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (FloatMaxVector)
+            super.selectFromTemplate((FloatMaxVector) v1, (FloatMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -504,13 +518,14 @@ final class FloatMaxVector extends FloatVector {
         return Float.intBitsToFloat(bits);
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
-                     VCLASS, ETYPE, VLENGTH,
+                     VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
-                     return (long)Float.floatToIntBits(vecarr[ix]);
+                     return (long)Float.floatToRawIntBits(vecarr[ix]);
                      });
     }
 
@@ -523,10 +538,11 @@ final class FloatMaxVector extends FloatVector {
         return withLaneHelper(i, e);
     }
 
+    @ForceInline
     public FloatMaxVector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
-                                VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Float.floatToIntBits(e),
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
+                                this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
                                     res[ix] = Float.intBitsToFloat((int)bits);
@@ -629,8 +645,8 @@ final class FloatMaxVector extends FloatVector {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), ETYPE, VLENGTH,
-                species.maskType(), species.elementType(), VLENGTH,
+                this.getClass(), LANE_TYPE_ORDINAL, VLENGTH,
+                species.maskType(), species.laneTypeOrdinal(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -640,7 +656,7 @@ final class FloatMaxVector extends FloatVector {
         /*package-private*/
         FloatMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (FloatMaxMask) VectorSupport.indexPartiallyInUpperRange(
-                FloatMaxMask.class, float.class, VLENGTH, offset, limit,
+                FloatMaxMask.class, LANE_TYPE_ORDINAL, VLENGTH, offset, limit,
                 (o, l) -> (FloatMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -656,7 +672,7 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         public FloatMaxMask compress() {
             return (FloatMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                FloatMaxVector.class, FloatMaxMask.class, ETYPE, VLENGTH, null, this,
+                FloatMaxVector.class, FloatMaxMask.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
@@ -668,7 +684,7 @@ final class FloatMaxVector extends FloatVector {
         public FloatMaxMask and(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMaxMask m = (FloatMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, FloatMaxMask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, FloatMaxMask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -678,7 +694,7 @@ final class FloatMaxVector extends FloatVector {
         public FloatMaxMask or(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMaxMask m = (FloatMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, FloatMaxMask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, FloatMaxMask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -688,7 +704,7 @@ final class FloatMaxVector extends FloatVector {
         public FloatMaxMask xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMaxMask m = (FloatMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, FloatMaxMask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, FloatMaxMask.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -698,21 +714,21 @@ final class FloatMaxVector extends FloatVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, FloatMaxMask.class, int.class, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, FloatMaxMask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, FloatMaxMask.class, int.class, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, FloatMaxMask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, FloatMaxMask.class, int.class, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, FloatMaxMask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> lastTrueHelper(m.getBits()));
         }
 
@@ -722,7 +738,7 @@ final class FloatMaxVector extends FloatVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, FloatMaxMask.class, int.class, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, FloatMaxMask.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -732,7 +748,7 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(FloatMaxMask.class, float.class, VLENGTH,
+            return VectorSupport.extract(FloatMaxMask.class, LANE_TYPE_ORDINAL, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -741,7 +757,7 @@ final class FloatMaxVector extends FloatVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, FloatMaxMask.class, int.class, VLENGTH,
+            return VectorSupport.test(BT_ne, FloatMaxMask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> anyTrueHelper(((FloatMaxMask)m).getBits()));
         }
@@ -749,7 +765,7 @@ final class FloatMaxVector extends FloatVector {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, FloatMaxMask.class, int.class, VLENGTH,
+            return VectorSupport.test(BT_overflow, FloatMaxMask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> allTrueHelper(((FloatMaxMask)m).getBits()));
         }
@@ -757,7 +773,7 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         /*package-private*/
         static FloatMaxMask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(FloatMaxMask.class, int.class, VLENGTH,
+            return VectorSupport.fromBitsCoerced(FloatMaxMask.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
@@ -770,25 +786,28 @@ final class FloatMaxVector extends FloatVector {
 
     static final class FloatMaxShuffle extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Float> ETYPE = float.class; // used by the JVM
+        static final Class<Integer> ETYPE = int.class; // used by the JVM
 
-        FloatMaxShuffle(byte[] reorder) {
-            super(VLENGTH, reorder);
+        FloatMaxShuffle(int[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public FloatMaxShuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+        FloatMaxShuffle(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public FloatMaxShuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        FloatMaxShuffle(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public FloatMaxShuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        int[] indices() {
+            return (int[])getPayload();
         }
 
         @Override
+        @ForceInline
         public FloatSpecies vspecies() {
             return VSPECIES;
         }
@@ -796,40 +815,104 @@ final class FloatMaxVector extends FloatVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Integer.MAX_VALUE);
+            assert(Integer.MIN_VALUE <= -VLENGTH);
         }
         static final FloatMaxShuffle IOTA = new FloatMaxShuffle(IDENTITY);
 
         @Override
         @ForceInline
         public FloatMaxVector toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, FloatMaxShuffle.class, this, VLENGTH,
-                                                    (s) -> ((FloatMaxVector)(((AbstractShuffle<Float>)(s)).toVectorTemplate())));
+            return (FloatMaxVector) toBitsVector().castShape(vspecies(), 0);
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        IntMaxVector toBitsVector() {
+            return (IntMaxVector) super.toBitsVectorTemplate();
+        }
+
+        @Override
+        IntMaxVector toBitsVector0() {
+            return ((IntMaxVector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+        }
+
+        @Override
+        @ForceInline
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
+        }
+
+        @Override
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+            toBitsVector().intoArray(a, offset);
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            toBitsVector().intoMemorySegment(ms, offset, bo);
+         }
+
+        @Override
+        @ForceInline
+        public final FloatMaxMask laneIsValid() {
+            return (FloatMaxMask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
         }
 
         @ForceInline
         @Override
-        public FloatMaxShuffle rearrange(VectorShuffle<Float> shuffle) {
-            FloatMaxShuffle s = (FloatMaxShuffle) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+        public final FloatMaxShuffle rearrange(VectorShuffle<Float> shuffle) {
+            FloatMaxShuffle concreteShuffle = (FloatMaxShuffle) shuffle;
+            return (FloatMaxShuffle) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_MAX))
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final FloatMaxShuffle wrapIndexes() {
+            IntMaxVector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (IntMaxVector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (IntMaxVector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
             }
-            return new FloatMaxShuffle(r);
+            return (FloatMaxShuffle) v.toShuffle(vspecies(), false);
+        }
+
+        private static int[] prepare(int[] indices, int offset) {
+            int[] a = new int[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (int)si;
+            }
+            return a;
+        }
+
+        private static int[] prepare(IntUnaryOperator f) {
+            int[] a = new int[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (int)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange(int[] indices) {
+            int length = indices.length;
+            for (int si : indices) {
+                if (si >= (int)length || si < (int)(-length)) {
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                    throw new AssertionError(msg);
+                }
+            }
+            return true;
         }
     }
 

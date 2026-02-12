@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
-import sun.security.action.GetPropertyAction;
 import sun.security.provider.certpath.AlgorithmChecker;
+import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
 import sun.security.validator.Validator;
 
 /**
@@ -104,11 +104,11 @@ public abstract class SSLContextImpl extends SSLContextSpi {
          * first connection to time out and fail. Make sure it is
          * primed and ready by getting some initial output from it.
          */
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
             SSLLogger.finest("trigger seeding of SecureRandom");
         }
         secureRandom.nextInt();
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
             SSLLogger.finest("done seeding of SecureRandom");
         }
 
@@ -143,7 +143,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 return (X509ExtendedKeyManager)km;
             }
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
                 SSLLogger.warning(
                     "X509KeyManager passed to SSLContext.init():  need an " +
                     "X509ExtendedKeyManager for SSLEngine use");
@@ -246,7 +246,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             contextLock.lock();
             try {
                 if (statusResponseManager == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
                         SSLLogger.finest(
                                 "Initializing StatusResponseManager");
                     }
@@ -297,7 +298,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * Return whether a protocol list is the original default enabled
      * protocols.  See: SSLSocket/SSLEngine.setEnabledProtocols()
      */
-    boolean isDefaultProtocolVesions(List<ProtocolVersion> protocols) {
+    boolean isDefaultProtocolVersions(List<ProtocolVersion> protocols) {
         return (protocols == getServerDefaultProtocolVersions()) ||
                (protocols == getClientDefaultProtocolVersions());
     }
@@ -383,8 +384,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                             suite.name, null)) {
                         suites.add(suite);
                         isSupported = true;
-                    } else if (SSLLogger.isOn &&
-                            SSLLogger.isOn("ssl,sslctx,verbose")) {
+                    } else if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                                 "Ignore disabled cipher suite: " + suite.name);
                     }
@@ -392,8 +393,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     break;
                 }
 
-                if (!isSupported && SSLLogger.isOn &&
-                        SSLLogger.isOn("ssl,sslctx,verbose")) {
+                if (!isSupported && SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest(
                             "Ignore unsupported cipher suite: " + suite);
                 }
@@ -409,8 +410,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     private static Collection<CipherSuite> getCustomizedCipherSuites(
             String propertyName) {
 
-        String property = GetPropertyAction.privilegedGetProperty(propertyName);
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+        String property = System.getProperty(propertyName);
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +
                     property + "'");
@@ -437,7 +438,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 try {
                     suite = CipherSuite.nameOf(cipherSuiteNames[i]);
                 } catch (IllegalArgumentException iae) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
                         SSLLogger.fine(
                                 "Unknown or unsupported cipher suite name: " +
                                 cipherSuiteNames[i]);
@@ -449,7 +451,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 if (suite != null && suite.isAvailable()) {
                     cipherSuites.add(suite);
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
                         SSLLogger.fine(
                                 "The current installed providers do not " +
                                 "support cipher suite: " + cipherSuiteNames[i]);
@@ -479,6 +482,10 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         }
 
         return availableProtocols;
+    }
+
+    public boolean isUsableWithQuic() {
+        return trustManager instanceof X509TrustManagerImpl;
     }
 
     /*
@@ -742,7 +749,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
         private static void populate(String propname,
                 ArrayList<ProtocolVersion> arrayList) {
-            String property = GetPropertyAction.privilegedGetProperty(propname);
+            String property = System.getProperty(propname);
             if (property == null) {
                 return;
             }
@@ -903,7 +910,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 tmMediator = getTrustManagers();
             } catch (Exception e) {
                 reserved = e;
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.DEFAULTCTX)) {
                     SSLLogger.warning(
                             "Failed to load default trust managers", e);
                 }
@@ -915,7 +923,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     kmMediator = getKeyManagers();
                 } catch (Exception e) {
                     reserved = e;
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.DEFAULTCTX)) {
                         SSLLogger.warning(
                                 "Failed to load default key managers", e);
                     }
@@ -957,31 +966,23 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             return tmf.getTrustManagers();
         }
 
-        @SuppressWarnings("removal")
         private static KeyManager[] getKeyManagers() throws Exception {
 
-            final Map<String,String> props = new HashMap<>();
-            AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<Object>() {
-                @Override
-                public Object run() {
-                    props.put("keyStore",  System.getProperty(
-                                "javax.net.ssl.keyStore", ""));
-                    props.put("keyStoreType", System.getProperty(
-                                "javax.net.ssl.keyStoreType",
-                                KeyStore.getDefaultType()));
-                    props.put("keyStoreProvider", System.getProperty(
-                                "javax.net.ssl.keyStoreProvider", ""));
-                    props.put("keyStorePasswd", System.getProperty(
-                                "javax.net.ssl.keyStorePassword", ""));
-                    return null;
-                }
-            });
+            Map<String,String> props = new HashMap<>();
+            props.put("keyStore",  System.getProperty(
+                        "javax.net.ssl.keyStore", ""));
+            props.put("keyStoreType", System.getProperty(
+                        "javax.net.ssl.keyStoreType",
+                        KeyStore.getDefaultType()));
+            props.put("keyStoreProvider", System.getProperty(
+                        "javax.net.ssl.keyStoreProvider", ""));
+            props.put("keyStorePasswd", System.getProperty(
+                        "javax.net.ssl.keyStorePassword", ""));
 
-            final String defaultKeyStore = props.get("keyStore");
+            String defaultKeyStore = props.get("keyStore");
             String defaultKeyStoreType = props.get("keyStoreType");
             String defaultKeyStoreProvider = props.get("keyStoreProvider");
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.DEFAULTCTX)) {
                 SSLLogger.fine("keyStore is : " + defaultKeyStore);
                 SSLLogger.fine("keyStore type is : " +
                                         defaultKeyStoreType);
@@ -1001,13 +1002,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             try {
                 if (!defaultKeyStore.isEmpty() &&
                         !NONE.equals(defaultKeyStore)) {
-                    fs = AccessController.doPrivileged(
-                            new PrivilegedExceptionAction<FileInputStream>() {
-                        @Override
-                        public FileInputStream run() throws Exception {
-                            return new FileInputStream(defaultKeyStore);
-                        }
-                    });
+                    fs = new FileInputStream(defaultKeyStore);
                 }
 
                 String defaultKeyStorePassword = props.get("keyStorePasswd");
@@ -1017,7 +1012,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
                 // Try to initialize key store.
                 if ((defaultKeyStoreType.length()) != 0) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.DEFAULTCTX)) {
                         SSLLogger.finest("init keystore");
                     }
                     if (defaultKeyStoreProvider.isEmpty()) {
@@ -1040,7 +1036,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             /*
              * Try to initialize key manager.
              */
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.DEFAULTCTX)) {
                 SSLLogger.fine("init keymanager of type " +
                     KeyManagerFactory.getDefaultAlgorithm());
             }
@@ -1078,7 +1074,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     // exception object, which may be not garbage collection
                     // friendly as 'reservedException' is a static filed.
                     reserved = new KeyManagementException(e.getMessage());
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.DEFAULTCTX)) {
                         SSLLogger.warning(
                                 "Failed to load default SSLContext", e);
                     }
@@ -1107,7 +1104,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 super.engineInit(DefaultManagersHolder.keyManagers,
                         DefaultManagersHolder.trustManagers, null);
             } catch (Exception e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.DEFAULTCTX)) {
                     SSLLogger.fine("default context init failed: ", e);
                 }
                 throw e;
@@ -1464,22 +1462,8 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                                     identityAlg, checkClientTrusted);
             }
 
-            // try the best to check the algorithm constraints
-            AlgorithmConstraints constraints;
-            if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                if (session instanceof ExtendedSSLSession extSession) {
-                    String[] peerSupportedSignAlgs =
-                            extSession.getLocalSupportedSignatureAlgorithms();
-
-                    constraints = SSLAlgorithmConstraints.forSocket(
-                                    sslSocket, peerSupportedSignAlgs, true);
-                } else {
-                    constraints =
-                            SSLAlgorithmConstraints.forSocket(sslSocket, true);
-                }
-            } else {
-                constraints = SSLAlgorithmConstraints.forSocket(sslSocket, true);
-            }
+            AlgorithmConstraints constraints = SSLAlgorithmConstraints.forSocket(
+                    sslSocket, SIGNATURE_CONSTRAINTS_MODE.LOCAL, true);
 
             checkAlgorithmConstraints(chain, constraints, checkClientTrusted);
         }
@@ -1489,6 +1473,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             String authType, SSLEngine engine,
             boolean checkClientTrusted) throws CertificateException {
         if (engine != null) {
+
             SSLSession session = engine.getHandshakeSession();
             if (session == null) {
                 throw new CertificateException("No handshake session");
@@ -1502,22 +1487,8 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                                     identityAlg, checkClientTrusted);
             }
 
-            // try the best to check the algorithm constraints
-            AlgorithmConstraints constraints;
-            if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                if (session instanceof ExtendedSSLSession extSession) {
-                    String[] peerSupportedSignAlgs =
-                            extSession.getLocalSupportedSignatureAlgorithms();
-
-                    constraints = SSLAlgorithmConstraints.forEngine(
-                                    engine, peerSupportedSignAlgs, true);
-                } else {
-                    constraints =
-                            SSLAlgorithmConstraints.forEngine(engine, true);
-                }
-            } else {
-                constraints = SSLAlgorithmConstraints.forEngine(engine, true);
-            }
+            AlgorithmConstraints constraints = SSLAlgorithmConstraints.forEngine(
+                    engine, SIGNATURE_CONSTRAINTS_MODE.LOCAL, true);
 
             checkAlgorithmConstraints(chain, constraints, checkClientTrusted);
         }

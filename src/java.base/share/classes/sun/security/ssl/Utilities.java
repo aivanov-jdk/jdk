@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.*;
 import java.util.regex.Pattern;
 import javax.net.ssl.*;
 import sun.net.util.IPAddressUtil;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A utility class to share the static methods.
@@ -41,6 +40,7 @@ final class Utilities {
                 Pattern.compile("\\r\\n|\\n|\\r");
     private static final HexFormat HEX_FORMATTER =
             HexFormat.of().withUpperCase();
+    static final String LINE_SEP = System.lineSeparator();
 
     /**
      * Puts {@code hostname} into the {@code serverNames} list.
@@ -70,7 +70,7 @@ final class Utilities {
             SNIServerName serverName = sniList.get(i);
             if (serverName.getType() == StandardConstants.SNI_HOST_NAME) {
                 sniList.set(i, sniHostName);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                      SSLLogger.fine(
                         "the previous server name in SNI (" + serverName +
                         ") was replaced with (" + sniHostName + ")");
@@ -116,7 +116,7 @@ final class Utilities {
                 return new SNIHostName(hostname);
             } catch (IllegalArgumentException iae) {
                 // don't bother to handle illegal host_name
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                      SSLLogger.fine(hostname + "\" " +
                         "is not a legal HostName for  server name indication");
                 }
@@ -128,12 +128,10 @@ final class Utilities {
 
     /**
      * Return the value of the boolean System property propName.
-     *
-     * Note use of privileged action. Do NOT make accessible to applications.
      */
     static boolean getBooleanProperty(String propName, boolean defaultValue) {
         // if set, require value of either true or false
-        String b = GetPropertyAction.privilegedGetProperty(propName);
+        String b = System.getProperty(propName);
         if (b == null) {
             return defaultValue;
         } else if (b.equalsIgnoreCase("false")) {
@@ -153,7 +151,7 @@ final class Utilities {
     static String indent(String source, String prefix) {
         StringBuilder builder = new StringBuilder();
         if (source == null) {
-             builder.append("\n").append(prefix).append("<blank message>");
+             builder.append(LINE_SEP).append(prefix).append("<blank message>");
         } else {
             String[] lines = lineBreakPatern.split(source);
             boolean isFirst = true;
@@ -161,7 +159,7 @@ final class Utilities {
                 if (isFirst) {
                     isFirst = false;
                 } else {
-                    builder.append("\n");
+                    builder.append(LINE_SEP);
                 }
                 builder.append(prefix).append(line);
             }

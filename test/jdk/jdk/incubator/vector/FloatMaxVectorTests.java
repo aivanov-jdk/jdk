@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,10 +68,30 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
 
     private static final int Max = 256;  // juts so we can do N/Max
 
-    // for floating point reduction ops that may introduce rounding errors
-    private static final float RELATIVE_ROUNDING_ERROR = (float)0.000001;
+    // Identity values for reduction operations
+    private static final float ADD_IDENTITY = (float)0;
+    private static final float FIRST_NONZERO_IDENTITY = (float)0;
+    private static final float MAX_IDENTITY = Float.NEGATIVE_INFINITY;
+    private static final float MIN_IDENTITY = Float.POSITIVE_INFINITY;
+    private static final float MUL_IDENTITY = (float)1;
+
+    // for floating point addition reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (float)10.0;
+
+    // for floating point multiplication reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR_FACTOR_MUL = (float)50.0;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / Max);
+
+    static void assertArraysStrictlyEquals(float[] r, float[] a) {
+        for (int i = 0; i < a.length; i++) {
+            int ir = Float.floatToRawIntBits(r[i]);
+            int ia = Float.floatToRawIntBits(a[i]);
+            if (ir != ia) {
+                Assert.fail(String.format("at index #%d, expected = %08X, actual = %08X", i, ia, ir));
+            }
+        }
+    }
 
     interface FUnOp {
         float apply(float a);
@@ -134,16 +154,16 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
 
     static void assertReductionArraysEquals(float[] r, float rc, float[] a,
                                             FReductionOp f, FReductionAllOp fa,
-                                            float relativeError) {
+                                            float relativeErrorFactor) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError));
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor);
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError));
+                Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor, "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor, "at index #" + i);
         }
     }
 
@@ -250,25 +270,6 @@ relativeError));
         }
     }
 
-    static void assertInsertArraysEquals(float[] r, float[] a, float element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
-        }
-    }
-
     static void assertRearrangeArraysEquals(float[] r, float[] a, int[] order, int vector_len) {
         int i = 0, j = 0;
         try {
@@ -329,6 +330,25 @@ relativeError));
             } else {
                 Assert.assertEquals(r[idx], (float)0, "at index #" + idx);
             }
+        }
+    }
+
+    static void assertSelectFromTwoVectorEquals(float[] r, float[] order, float[] a, float[] b, int vector_len) {
+        int i = 0, j = 0;
+        boolean is_exceptional_idx = false;
+        int idx = 0, wrapped_index = 0, oidx = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                for (j = 0; j < vector_len; j++) {
+                    idx = i + j;
+                    wrapped_index = Math.floorMod((int)order[idx], 2 * vector_len);
+                    is_exceptional_idx = wrapped_index >= vector_len;
+                    oidx = is_exceptional_idx ? (wrapped_index - vector_len) : wrapped_index;
+                    Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
         }
     }
 
@@ -403,6 +423,36 @@ relativeError));
         }
     }
 
+    interface FBoolUnOp {
+        boolean apply(boolean a);
+    }
+
+    static void assertArraysEquals(boolean[] r, boolean[] a, FBoolUnOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i]), "(" + a[i] + ") at index #" + i);
+        }
+    }
+
+    interface FBoolBinOp {
+        boolean apply(boolean a, boolean b);
+    }
+
+    static void assertArraysEquals(boolean[] r, boolean[] a, boolean[] b, FBoolBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b[i]));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
+        }
+    }
+
     interface FBinOp {
         float apply(float a, float b);
     }
@@ -415,6 +465,52 @@ relativeError));
         }
     }
 
+    static void assertArraysEqualsAssociative(float[] rl, float[] rr, float[] a, float[] b, float[] c, FBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                //Left associative
+                Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i]), c[i]));
+
+                //Right associative
+                Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i])));
+
+                //Results equal sanity check
+                Assert.assertEquals(rl[i], rr[i]);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i]), c[i]), "left associative test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
+            Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i])), "right associative test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
+            Assert.assertEquals(rl[i], rr[i], "Result checks not equal at index #" + i + "leftRes = " + rl[i] + ", rightRes = " + rr[i]);
+        }
+    }
+
+   static void assertArraysEqualsAssociative(float[] rl, float[] rr, float[] a, float[] b, float[] c, boolean[] mask, FBinOp f) {
+       assertArraysEqualsAssociative(rl, rr, a, b, c, mask, FBinMaskOp.lift(f));
+   }
+
+    static void assertArraysEqualsAssociative(float[] rl, float[] rr, float[] a, float[] b, float[] c, boolean[] mask, FBinMaskOp f) {
+        int i = 0;
+        boolean mask_bit = false;
+        try {
+            for (; i < a.length; i++) {
+                mask_bit = mask[i % SPECIES.length()];
+                //Left associative
+                Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i], mask_bit), c[i], mask_bit));
+
+                //Right associative
+                Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i], mask_bit), mask_bit));
+
+                //Results equal sanity check
+                Assert.assertEquals(rl[i], rr[i]);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i], mask_bit), c[i], mask_bit), "left associative masked test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i] + ", mask = " + mask_bit);
+            Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i], mask_bit), mask_bit), "right associative masked test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i] + ", mask = " + mask_bit);
+            Assert.assertEquals(rl[i], rr[i], "Result checks not equal at index #" + i + "leftRes = " + rl[i] + ", rightRes = " + rr[i]);
+        }
+    }
+
     static void assertArraysEquals(float[] r, float[] a, float[] b, FBinOp f) {
         int i = 0;
         try {
@@ -423,6 +519,17 @@ relativeError));
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
+        }
+    }
+
+    static void assertArraysEquals(float[] r, float[] a, float b, FBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i], b), "(" + a[i] + ", " + b + ") at index #" + i);
         }
     }
 
@@ -462,6 +569,21 @@ relativeError));
             }
         } catch (AssertionError err) {
             Assert.assertEquals(r[i], f.apply(a[i], b[i], mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", mask = " + mask[i % SPECIES.length()]);
+        }
+    }
+
+    static void assertArraysEquals(float[] r, float[] a, float b, boolean[] mask, FBinOp f) {
+        assertArraysEquals(r, a, b, mask, FBinMaskOp.lift(f));
+    }
+
+    static void assertArraysEquals(float[] r, float[] a, float b, boolean[] mask, FBinMaskOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]));
+            }
+        } catch (AssertionError err) {
+            Assert.assertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b + ", mask = " + mask[i % SPECIES.length()]);
         }
     }
 
@@ -794,21 +916,6 @@ relativeError));
                              b[(i / SPECIES.length()) * SPECIES.length()] + ", actual = " + r[i] +
                              ", expected (within 1 ulp) = " + strictmathf.apply(a[i],
                              b[(i / SPECIES.length()) * SPECIES.length()]));
-        }
-    }
-
-    interface FBinArrayOp {
-        float apply(float[] a, int b);
-    }
-
-    static void assertArraysEquals(float[] r, float[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
         }
     }
 
@@ -1145,6 +1252,18 @@ relativeError));
                 flatMap(pair -> FLOAT_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                 collect(Collectors.toList());
 
+    static final List<IntFunction<float[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
+            withToString("float[0..VECLEN*2)", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (float)(RAND.nextInt()));
+            })
+    );
+
+    static final List<List<IntFunction<float[]>>> FLOAT_GENERATOR_SELECT_FROM_TRIPLES =
+        FLOAT_GENERATOR_PAIRS.stream().
+                flatMap(pair -> SELECT_FROM_INDEX_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                collect(Collectors.toList());
+
     @DataProvider
     public Object[][] floatBinaryOpProvider() {
         return FLOAT_GENERATOR_PAIRS.stream().map(List::toArray).
@@ -1169,6 +1288,12 @@ relativeError));
     @DataProvider
     public Object[][] floatTernaryOpProvider() {
         return FLOAT_GENERATOR_TRIPLES.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] floatSelectFromTwoVectorOpProvider() {
+        return FLOAT_GENERATOR_SELECT_FROM_TRIPLES.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
@@ -1219,8 +1344,23 @@ relativeError));
     }
 
     @DataProvider
-    public Object[][] maskCompareOpProvider() {
-        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().map(List::toArray).
+    public Object[][] longMaskProvider() {
+        return LONG_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] boolMaskBinaryOpProvider() {
+        return BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS.stream().
+                map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] boolMaskUnaryOpProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
 
@@ -1369,26 +1509,16 @@ relativeError));
     }
 
     static float cornerCaseValue(int i) {
-        switch(i % 7) {
-            case 0:
-                return Float.MAX_VALUE;
-            case 1:
-                return Float.MIN_VALUE;
-            case 2:
-                return Float.NEGATIVE_INFINITY;
-            case 3:
-                return Float.POSITIVE_INFINITY;
-            case 4:
-                return Float.NaN;
-            case 5:
-                return (float)0.0;
-            default:
-                return (float)-0.0;
-        }
-    }
-
-    static float get(float[] a, int i) {
-        return (float) a[i];
+        return switch(i % 8) {
+            case 0  -> Float.MAX_VALUE;
+            case 1  -> Float.MIN_VALUE;
+            case 2  -> Float.NEGATIVE_INFINITY;
+            case 3  -> Float.POSITIVE_INFINITY;
+            case 4  -> Float.NaN;
+            case 5  -> Float.intBitsToFloat(0x7F812345);
+            case 6  -> (float)0.0;
+            default -> (float)-0.0;
+        };
     }
 
     static final IntFunction<float[]> fr = (vl) -> {
@@ -2034,6 +2164,112 @@ relativeError));
         assertBroadcastLongArraysEquals(r, a, b, mask, FloatMaxVectorTests::ADD);
     }
 
+    static FloatVector bv_MIN = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void MINFloatMaxVectorTestsWithMemOp(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, FloatMaxVectorTests::MIN);
+    }
+
+    static FloatVector bv_min = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void minFloatMaxVectorTestsWithMemOp(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.min(bv_min).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, FloatMaxVectorTests::min);
+    }
+
+    static FloatVector bv_MIN_M = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpMaskProvider")
+    static void MINFloatMaxVectorTestsMaskedWithMemOp(IntFunction<float[]> fa, IntFunction<boolean[]> fm) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, mask, FloatMaxVectorTests::MIN);
+    }
+
+    static FloatVector bv_MAX = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void MAXFloatMaxVectorTestsWithMemOp(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, FloatMaxVectorTests::MAX);
+    }
+
+    static FloatVector bv_max = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void maxFloatMaxVectorTestsWithMemOp(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.max(bv_max).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, FloatMaxVectorTests::max);
+    }
+
+    static FloatVector bv_MAX_M = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpMaskProvider")
+    static void MAXFloatMaxVectorTestsMaskedWithMemOp(IntFunction<float[]> fa, IntFunction<boolean[]> fm) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, mask, FloatMaxVectorTests::MAX);
+    }
+
     static float MIN(float a, float b) {
         return (float)(Math.min(a, b));
     }
@@ -2171,7 +2407,7 @@ relativeError));
     }
 
     static float ADDReduce(float[] a, int idx) {
-        float res = 0;
+        float res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res += a[i];
         }
@@ -2180,7 +2416,7 @@ relativeError));
     }
 
     static float ADDReduceAll(float[] a) {
-        float res = 0;
+        float res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res += ADDReduce(a, i);
         }
@@ -2195,26 +2431,44 @@ relativeError));
         float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra += av.reduceLanes(VectorOperators.ADD);
+                float v = av.reduceLanes(VectorOperators.ADD);
+                r[i] = v;
+                ra += v;
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
-                FloatMaxVectorTests::ADDReduce, FloatMaxVectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR);
+                FloatMaxVectorTests::ADDReduce, FloatMaxVectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
+    }
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void ADDReduceIdentityValueTests(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float id = ADD_IDENTITY;
+
+        Assert.assertEquals((float) (id + id), id,
+                            "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
+
+        float x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((float) (id + x), x);
+                Assert.assertEquals((float) (x + id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((float) (id + x), x,
+                                "ADD(ADD_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((float) (x + id), x,
+                                "ADD(" + x + ", ADD_IDENTITY) != " + x);
+        }
     }
 
     static float ADDReduceMasked(float[] a, int idx, boolean[] mask) {
-        float res = 0;
+        float res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res += a[i];
@@ -2224,7 +2478,7 @@ relativeError));
     }
 
     static float ADDReduceAllMasked(float[] a, boolean[] mask) {
-        float res = 0;
+        float res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res += ADDReduceMasked(a, i, mask);
         }
@@ -2241,26 +2495,21 @@ relativeError));
         float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = ADD_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.ADD, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra += av.reduceLanes(VectorOperators.ADD, vmask);
+                float v = av.reduceLanes(VectorOperators.ADD, vmask);
+                r[i] = v;
+                ra += v;
             }
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                FloatMaxVectorTests::ADDReduceMasked, FloatMaxVectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                FloatMaxVectorTests::ADDReduceMasked, FloatMaxVectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static float MULReduce(float[] a, int idx) {
-        float res = 1;
+        float res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res *= a[i];
         }
@@ -2269,7 +2518,7 @@ relativeError));
     }
 
     static float MULReduceAll(float[] a) {
-        float res = 1;
+        float res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res *= MULReduce(a, i);
         }
@@ -2281,29 +2530,47 @@ relativeError));
     static void MULReduceFloatMaxVectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
-        float ra = 1;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra *= av.reduceLanes(VectorOperators.MUL);
+                float v = av.reduceLanes(VectorOperators.MUL);
+                r[i] = v;
+                ra *= v;
             }
         }
 
         assertReductionArraysEquals(r, ra, a,
-                FloatMaxVectorTests::MULReduce, FloatMaxVectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR);
+                FloatMaxVectorTests::MULReduce, FloatMaxVectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
+    }
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void MULReduceIdentityValueTests(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float id = MUL_IDENTITY;
+
+        Assert.assertEquals((float) (id * id), id,
+                            "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
+
+        float x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((float) (id * x), x);
+                Assert.assertEquals((float) (x * id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((float) (id * x), x,
+                                "MUL(MUL_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((float) (x * id), x,
+                                "MUL(" + x + ", MUL_IDENTITY) != " + x);
+        }
     }
 
     static float MULReduceMasked(float[] a, int idx, boolean[] mask) {
-        float res = 1;
+        float res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res *= a[i];
@@ -2313,7 +2580,7 @@ relativeError));
     }
 
     static float MULReduceAllMasked(float[] a, boolean[] mask) {
-        float res = 1;
+        float res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res *= MULReduceMasked(a, i, mask);
         }
@@ -2327,29 +2594,24 @@ relativeError));
         float[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        float ra = 1;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MUL_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MUL, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = 1;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra *= av.reduceLanes(VectorOperators.MUL, vmask);
+                float v = av.reduceLanes(VectorOperators.MUL, vmask);
+                r[i] = v;
+                ra *= v;
             }
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                FloatMaxVectorTests::MULReduceMasked, FloatMaxVectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                FloatMaxVectorTests::MULReduceMasked, FloatMaxVectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static float MINReduce(float[] a, int idx) {
-        float res = Float.POSITIVE_INFINITY;
+        float res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (float) Math.min(res, a[i]);
         }
@@ -2358,7 +2620,7 @@ relativeError));
     }
 
     static float MINReduceAll(float[] a) {
-        float res = Float.POSITIVE_INFINITY;
+        float res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (float) Math.min(res, MINReduce(a, i));
         }
@@ -2370,20 +2632,15 @@ relativeError));
     static void MINReduceFloatMaxVectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
-        float ra = Float.POSITIVE_INFINITY;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Float.POSITIVE_INFINITY;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float) Math.min(ra, av.reduceLanes(VectorOperators.MIN));
+                float v = av.reduceLanes(VectorOperators.MIN);
+                r[i] = v;
+                ra = (float) Math.min(ra, v);
             }
         }
 
@@ -2391,8 +2648,31 @@ relativeError));
                 FloatMaxVectorTests::MINReduce, FloatMaxVectorTests::MINReduceAll);
     }
 
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void MINReduceIdentityValueTests(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float id = MIN_IDENTITY;
+
+        Assert.assertEquals((float) Math.min(id, id), id,
+                            "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
+
+        float x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((float) Math.min(id, x), x);
+                Assert.assertEquals((float) Math.min(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((float) Math.min(id, x), x,
+                                "MIN(MIN_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((float) Math.min(x, id), x,
+                                "MIN(" + x + ", MIN_IDENTITY) != " + x);
+        }
+    }
+
     static float MINReduceMasked(float[] a, int idx, boolean[] mask) {
-        float res = Float.POSITIVE_INFINITY;
+        float res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (float) Math.min(res, a[i]);
@@ -2402,7 +2682,7 @@ relativeError));
     }
 
     static float MINReduceAllMasked(float[] a, boolean[] mask) {
-        float res = Float.POSITIVE_INFINITY;
+        float res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (float) Math.min(res, MINReduceMasked(a, i, mask));
         }
@@ -2416,20 +2696,15 @@ relativeError));
         float[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        float ra = Float.POSITIVE_INFINITY;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MIN_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MIN, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Float.POSITIVE_INFINITY;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float) Math.min(ra, av.reduceLanes(VectorOperators.MIN, vmask));
+                float v = av.reduceLanes(VectorOperators.MIN, vmask);
+                r[i] = v;
+                ra = (float) Math.min(ra, v);
             }
         }
 
@@ -2438,7 +2713,7 @@ relativeError));
     }
 
     static float MAXReduce(float[] a, int idx) {
-        float res = Float.NEGATIVE_INFINITY;
+        float res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = (float) Math.max(res, a[i]);
         }
@@ -2447,7 +2722,7 @@ relativeError));
     }
 
     static float MAXReduceAll(float[] a) {
-        float res = Float.NEGATIVE_INFINITY;
+        float res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (float) Math.max(res, MAXReduce(a, i));
         }
@@ -2459,20 +2734,15 @@ relativeError));
     static void MAXReduceFloatMaxVectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
-        float ra = Float.NEGATIVE_INFINITY;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Float.NEGATIVE_INFINITY;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float) Math.max(ra, av.reduceLanes(VectorOperators.MAX));
+                float v = av.reduceLanes(VectorOperators.MAX);
+                r[i] = v;
+                ra = (float) Math.max(ra, v);
             }
         }
 
@@ -2480,8 +2750,31 @@ relativeError));
                 FloatMaxVectorTests::MAXReduce, FloatMaxVectorTests::MAXReduceAll);
     }
 
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void MAXReduceIdentityValueTests(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float id = MAX_IDENTITY;
+
+        Assert.assertEquals((float) Math.max(id, id), id,
+                            "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
+
+        float x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals((float) Math.max(id, x), x);
+                Assert.assertEquals((float) Math.max(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals((float) Math.max(id, x), x,
+                                "MAX(MAX_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals((float) Math.max(x, id), x,
+                                "MAX(" + x + ", MAX_IDENTITY) != " + x);
+        }
+    }
+
     static float MAXReduceMasked(float[] a, int idx, boolean[] mask) {
-        float res = Float.NEGATIVE_INFINITY;
+        float res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = (float) Math.max(res, a[i]);
@@ -2491,7 +2784,7 @@ relativeError));
     }
 
     static float MAXReduceAllMasked(float[] a, boolean[] mask) {
-        float res = Float.NEGATIVE_INFINITY;
+        float res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = (float) Math.max(res, MAXReduceMasked(a, i, mask));
         }
@@ -2505,20 +2798,15 @@ relativeError));
         float[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        float ra = Float.NEGATIVE_INFINITY;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = MAX_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.MAX, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = Float.NEGATIVE_INFINITY;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float) Math.max(ra, av.reduceLanes(VectorOperators.MAX, vmask));
+                float v = av.reduceLanes(VectorOperators.MAX, vmask);
+                r[i] = v;
+                ra = (float) Math.max(ra, v);
             }
         }
 
@@ -2527,7 +2815,7 @@ relativeError));
     }
 
     static float FIRST_NONZEROReduce(float[] a, int idx) {
-        float res = (float) 0;
+        float res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             res = firstNonZero(res, a[i]);
         }
@@ -2536,7 +2824,7 @@ relativeError));
     }
 
     static float FIRST_NONZEROReduceAll(float[] a) {
-        float res = (float) 0;
+        float res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduce(a, i));
         }
@@ -2548,20 +2836,15 @@ relativeError));
     static void FIRST_NONZEROReduceFloatMaxVectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
-        float ra = (float) 0;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (float) 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO));
+                float v = av.reduceLanes(VectorOperators.FIRST_NONZERO);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
@@ -2569,8 +2852,31 @@ relativeError));
                 FloatMaxVectorTests::FIRST_NONZEROReduce, FloatMaxVectorTests::FIRST_NONZEROReduceAll);
     }
 
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void FIRST_NONZEROReduceIdentityValueTests(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float id = FIRST_NONZERO_IDENTITY;
+
+        Assert.assertEquals(firstNonZero(id, id), id,
+                            "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, FIRST_NONZERO_IDENTITY) != FIRST_NONZERO_IDENTITY");
+
+        float x = 0;
+        try {
+            for (int i = 0; i < a.length; i++) {
+                x = a[i];
+                Assert.assertEquals(firstNonZero(id, x), x);
+                Assert.assertEquals(firstNonZero(x, id), x);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(firstNonZero(id, x), x,
+                                "FIRST_NONZERO(FIRST_NONZERO_IDENTITY, " + x + ") != " + x);
+            Assert.assertEquals(firstNonZero(x, id), x,
+                                "FIRST_NONZERO(" + x + ", FIRST_NONZERO_IDENTITY) != " + x);
+        }
+    }
+
     static float FIRST_NONZEROReduceMasked(float[] a, int idx, boolean[] mask) {
-        float res = (float) 0;
+        float res = FIRST_NONZERO_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
                 res = firstNonZero(res, a[i]);
@@ -2580,7 +2886,7 @@ relativeError));
     }
 
     static float FIRST_NONZEROReduceAllMasked(float[] a, boolean[] mask) {
-        float res = (float) 0;
+        float res = FIRST_NONZERO_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             res = firstNonZero(res, FIRST_NONZEROReduceMasked(a, i, mask));
         }
@@ -2594,20 +2900,15 @@ relativeError));
         float[] r = fr.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
-        float ra = (float) 0;
+        float ra = 0;
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = FIRST_NONZERO_IDENTITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
-            }
-        }
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ra = (float) 0;
-            for (int i = 0; i < a.length; i += SPECIES.length()) {
-                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask));
+                float v = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
+                r[i] = v;
+                ra = firstNonZero(ra, v);
             }
         }
 
@@ -2615,22 +2916,23 @@ relativeError));
                 FloatMaxVectorTests::FIRST_NONZEROReduceMasked, FloatMaxVectorTests::FIRST_NONZEROReduceAllMasked);
     }
 
-    @Test(dataProvider = "floatUnaryOpProvider")
-    static void withFloatMaxVectorTests(IntFunction<float []> fa) {
+    @Test(dataProvider = "floatBinaryOpProvider")
+    static void withFloatMaxVectorTests(IntFunction<float []> fa, IntFunction<float []> fb) {
         float[] a = fa.apply(SPECIES.length());
+        float[] b = fb.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.withLane((j++ & (SPECIES.length()-1)), (float)(65535+i)).intoArray(r, i);
+                av.withLane(j, b[i + j]).intoArray(r, i);
+                a[i + j] = b[i + j];
+                j = (j + 1) & (SPECIES.length() - 1);
             }
         }
 
 
-        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
-            assertInsertArraysEquals(r, a, (float)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
-        }
+        assertArraysStrictlyEquals(r, a);
     }
 
     static boolean testIS_DEFAULT(float a) {
@@ -3520,7 +3822,7 @@ relativeError));
             }
         }
 
-        assertArraysEquals(r, a, FloatMaxVectorTests::get);
+        assertArraysStrictlyEquals(r, a);
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4595,6 +4897,157 @@ relativeError));
         assertArraysEquals(r, a, mask, FloatMaxVectorTests::SQRT);
     }
 
+    static boolean band(boolean a, boolean b) {
+        return a & b;
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskandFloatMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.and(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, FloatMaxVectorTests::band);
+    }
+
+    static boolean bor(boolean a, boolean b) {
+        return a | b;
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskorFloatMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.or(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, FloatMaxVectorTests::bor);
+    }
+
+    static boolean bxor(boolean a, boolean b) {
+        return a != b;
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskxorFloatMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.xor(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, FloatMaxVectorTests::bxor);
+    }
+
+    static boolean bandNot(boolean a, boolean b) {
+        return a & !b;
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskandNotFloatMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.andNot(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, FloatMaxVectorTests::bandNot);
+    }
+
+    static boolean beq(boolean a, boolean b) {
+        return a == b;
+    }
+
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskeqFloatMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                VectorMask bv = SPECIES.loadMask(b, i);
+                av.eq(bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, FloatMaxVectorTests::beq);
+    }
+
+    static boolean unot(boolean a) {
+        return !a;
+    }
+
+    @Test(dataProvider = "boolMaskUnaryOpProvider")
+    static void masknotFloatMaxVectorTests(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask av = SPECIES.loadMask(a, i);
+                av.not().intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, FloatMaxVectorTests::unot);
+    }
+
+    private static final long LONG_MASK_BITS = 0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length());
+
+    static void assertArraysEquals(long[] r, long[] a, long bits) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], a[i] & bits);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], a[i] & bits, "(" + a[i] + ") at index #" + i);
+        }
+    }
+
+    @Test(dataProvider = "longMaskProvider")
+    static void maskFromToLongFloatMaxVectorTests(IntFunction<long[]> fa) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = new long[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i++) {
+                VectorMask vmask = VectorMask.fromLong(SPECIES, a[i]);
+                r[i] = vmask.toLong();
+            }
+        }
+        assertArraysEquals(r, a, LONG_MASK_BITS);
+    }
+
     @Test(dataProvider = "floatCompareOpProvider")
     static void ltFloatMaxVectorTestsBroadcastSmokeTest(IntFunction<float[]> fa, IntFunction<float[]> fb) {
         float[] a = fa.apply(SPECIES.length());
@@ -4813,6 +5266,24 @@ relativeError));
         assertSelectFromArraysEquals(r, a, order, SPECIES.length());
     }
 
+    @Test(dataProvider = "floatSelectFromTwoVectorOpProvider")
+    static void SelectFromTwoVectorFloatMaxVectorTests(IntFunction<float[]> fa, IntFunction<float[]> fb, IntFunction<float[]> fc) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] b = fb.apply(SPECIES.length());
+        float[] idx = fc.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < idx.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                FloatVector bv = FloatVector.fromArray(SPECIES, b, i);
+                FloatVector idxv = FloatVector.fromArray(SPECIES, idx, i);
+                idxv.selectFrom(av, bv).intoArray(r, i);
+            }
+        }
+        assertSelectFromTwoVectorEquals(r, idx, a, b, SPECIES.length());
+    }
+
     @Test(dataProvider = "floatUnaryOpSelectFromMaskProvider")
     static void SelectFromFloatMaxVectorTestsMaskedSmokeTest(IntFunction<float[]> fa,
                                                            BiFunction<Integer,Integer,float[]> fs,
@@ -4876,113 +5347,20 @@ relativeError));
         }
     }
 
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskEqualsFloatMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+    @Test(dataProvider = "boolMaskBinaryOpProvider")
+    static void maskEqualsFloatMaxVectorTests(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
 
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            boolean equals = av.equals(bv);
-            int to = i + SPECIES.length();
-            Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var av = SPECIES.loadMask(a, i);
+                var bv = SPECIES.loadMask(b, i);
+                boolean equals = av.equals(bv);
+                int to = i + SPECIES.length();
+                Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
+            }
         }
-    }
-
-    static boolean band(boolean a, boolean b) {
-        return a & b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskAndFloatMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.and(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, FloatMaxVectorTests::band);
-    }
-
-    static boolean bor(boolean a, boolean b) {
-        return a | b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskOrFloatMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.or(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, FloatMaxVectorTests::bor);
-    }
-
-    static boolean bxor(boolean a, boolean b) {
-        return a != b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskXorFloatMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.xor(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, FloatMaxVectorTests::bxor);
-    }
-
-    static boolean bandNot(boolean a, boolean b) {
-        return a & !b;
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskAndNotFloatMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.andNot(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, FloatMaxVectorTests::bandNot);
-    }
-
-    static boolean beq(boolean a, boolean b) {
-        return (a == b);
-    }
-
-    @Test(dataProvider = "maskCompareOpProvider")
-    static void maskEqFloatMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
-        boolean[] a = fa.apply(SPECIES.length());
-        boolean[] b = fb.apply(SPECIES.length());
-        boolean[] r = new boolean[a.length];
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var av = SPECIES.loadMask(a, i);
-            var bv = SPECIES.loadMask(b, i);
-            var cv = av.eq(bv);
-            cv.intoArray(r, i);
-        }
-        assertArraysEquals(r, a, b, FloatMaxVectorTests::beq);
     }
 
     @Test(dataProvider = "maskProvider")
@@ -5088,7 +5466,6 @@ relativeError));
             }
         }
     }
-
 
     @DataProvider
     public static Object[][] offsetProvider() {

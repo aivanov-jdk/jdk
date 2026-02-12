@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -628,7 +628,7 @@ public class FieldGen {
         result.appendLine("private static final long CARRY_ADD = 1 << "
                 + (params.getBitsPerLimb() - 1) + ";");
         if (params.getBitsPerLimb() * params.getNumLimbs() != params.getPower()) {
-            result.appendLine("private static final int LIMB_MASK = -1 "
+            result.appendLine("private static final long LIMB_MASK = -1L "
                     + ">>> (64 - BITS_PER_LIMB);");
         }
 
@@ -778,7 +778,7 @@ public class FieldGen {
         result.appendLine("}");
 
         result.appendLine("@Override");
-        result.appendLine("protected int mult(long[] a, long[] b, long[] r) {");
+        result.appendLine("protected void mult(long[] a, long[] b, long[] r) {");
         result.incrIndent();
         for (int i = 0; i < 2 * params.getNumLimbs() - 1; i++) {
             result.appendIndent();
@@ -804,9 +804,6 @@ public class FieldGen {
             }
         }
         result.append(");\n");
-        result.appendIndent();
-        result.append("return 0;");
-        result.appendLine();
         result.decrIndent();
         result.appendLine("}");
 
@@ -836,7 +833,7 @@ public class FieldGen {
         //      }
         //  }
         result.appendLine("@Override");
-        result.appendLine("protected int square(long[] a, long[] r) {");
+        result.appendLine("protected void square(long[] a, long[] r) {");
         result.incrIndent();
         for (int i = 0; i < 2 * params.getNumLimbs() - 1; i++) {
             result.appendIndent();
@@ -877,9 +874,6 @@ public class FieldGen {
             }
         }
         result.append(");\n");
-        result.appendIndent();
-        result.append("return 0;");
-        result.appendLine();
         result.decrIndent();
         result.appendLine("}");
 

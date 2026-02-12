@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, NTT DATA.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "dwarf.hpp"
 #include "libproc.h"
 
-#define CHECK_EXCEPTION if (env->ExceptionOccurred()) { return; }
+#define CHECK_EXCEPTION if (env->ExceptionCheck()) { return; }
 
 static jfieldID p_dwarf_context_ID = 0;
 static jint sa_RAX = -1;
@@ -102,7 +102,7 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_linux_amd64_DwarfParser_cr
   DwarfParser *parser = new DwarfParser(reinterpret_cast<lib_info *>(lib));
   if (!parser->is_parseable()) {
     jclass ex_cls = env->FindClass("sun/jvm/hotspot/debugger/DebuggerException");
-    if (!env->ExceptionOccurred()) {
+    if (!env->ExceptionCheck()) {
         env->ThrowNew(ex_cls, "DWARF not found");
     }
     delete parser;
@@ -147,7 +147,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_amd64_DwarfParser_pro
   DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
   if (!parser->process_dwarf(pc)) {
     jclass ex_cls = env->FindClass("sun/jvm/hotspot/debugger/DebuggerException");
-    if (!env->ExceptionOccurred()) {
+    if (!env->ExceptionCheck()) {
         env->ThrowNew(ex_cls, "Could not find PC in DWARF");
     }
     return;
@@ -219,16 +219,3 @@ JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_linux_amd64_DwarfParser_get
   DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
   return parser->get_bp_cfa_offset();
 }
-
-/*
- * Class:     sun_jvm_hotspot_debugger_linux_amd64_DwarfParser
- * Method:    isBPOffsetAvailable
- * Signature: ()Z
- */
-extern "C"
-JNIEXPORT jboolean JNICALL Java_sun_jvm_hotspot_debugger_linux_amd64_DwarfParser_isBPOffsetAvailable
-  (JNIEnv *env, jobject this_obj) {
-  DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
-  return parser->is_bp_offset_available();
-}
-

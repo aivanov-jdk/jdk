@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -195,7 +196,8 @@ public class PushPromiseContinuation {
                 client.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8), pph);
 
         CompletionException t = expectThrows(CompletionException.class, () -> cf.join());
-        assertEquals(t.getCause().getClass(), IOException.class, "Expected an IOException but got " + t.getCause());
+        assertEquals(t.getCause().getClass(), ProtocolException.class,
+                "Expected a ProtocolException but got " + t.getCause());
         System.err.println("Client received the following expected exception: " + t.getCause());
         faultyServer.stop();
     }
@@ -222,24 +224,27 @@ public class PushPromiseContinuation {
 
     static class Http2PushPromiseHeadersExchangeImpl extends Http2TestExchangeImpl {
 
-        Http2PushPromiseHeadersExchangeImpl(int streamid, String method, HttpHeaders reqheaders, HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is, SSLSession sslSession, BodyOutputStream os, Http2TestServerConnection conn, boolean pushAllowed) {
+        Http2PushPromiseHeadersExchangeImpl(int streamid, String method, HttpHeaders reqheaders,
+                                            HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is,
+                                            SSLSession sslSession, BodyOutputStream os,
+                                            Http2TestServerConnection conn, boolean pushAllowed) {
             super(streamid, method, reqheaders, rspheadersBuilder, uri, is, sslSession, os, conn, pushAllowed);
         }
 
 
         @Override
-        public void serverPush(URI uri, HttpHeaders headers, InputStream content) {
+        public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream content) {
             HttpHeadersBuilder headersBuilder = new HttpHeadersBuilder();
             headersBuilder.setHeader(":method", "GET");
             headersBuilder.setHeader(":scheme", uri.getScheme());
             headersBuilder.setHeader(":authority", uri.getAuthority());
             headersBuilder.setHeader(":path", uri.getPath());
-            for (Map.Entry<String,List<String>> entry : headers.map().entrySet()) {
+            for (Map.Entry<String,List<String>> entry : reqHeaders.map().entrySet()) {
                 for (String value : entry.getValue())
                     headersBuilder.addHeader(entry.getKey(), value);
             }
             HttpHeaders combinedHeaders = headersBuilder.build();
-            OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, content);
+            OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, rspHeaders, content);
             // Indicates to the client that a continuation should be expected
             pp.setFlag(0x0);
             try {
@@ -287,7 +292,7 @@ public class PushPromiseContinuation {
         }
 
         @Override
-        public void serverPush(URI uri, HttpHeaders headers, InputStream content) {
+        public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream content) {
             pushPromiseHeadersBuilder = new HttpHeadersBuilder();
             testHeadersBuilder = new HttpHeadersBuilder();
             cfs = new ArrayList<>();
@@ -296,7 +301,7 @@ public class PushPromiseContinuation {
             setPushHeaders(":scheme", uri.getScheme());
             setPushHeaders(":authority", uri.getAuthority());
             setPushHeaders(":path", uri.getPath());
-            for (Map.Entry<String,List<String>> entry : headers.map().entrySet()) {
+            for (Map.Entry<String,List<String>> entry : reqHeaders.map().entrySet()) {
                 for (String value : entry.getValue()) {
                     setPushHeaders(entry.getKey(), value);
                 }
@@ -313,7 +318,7 @@ public class PushPromiseContinuation {
             HttpHeaders pushPromiseHeaders = pushPromiseHeadersBuilder.build();
             testHeaders = testHeadersBuilder.build();
             // Create the Push Promise Frame
-            OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, pushPromiseHeaders, content, cfs);
+            OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, pushPromiseHeaders, rspHeaders, content, cfs);
 
             // Indicates to the client that a continuation should be expected
             pp.setFlag(0x0);
