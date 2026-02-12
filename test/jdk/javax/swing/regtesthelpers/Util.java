@@ -58,7 +58,7 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * </pre>
  */
 
-public class Util {
+public final class Util {
 
     /**
      * Convert a rectangle from coordinate system of Component c to
@@ -186,8 +186,7 @@ public class Util {
      * Hits mnemonics by robot.
      */
     public static void hitMnemonics(Robot robot, int... keys) {
-
-        ArrayList<Integer> mnemonicKeyCodes = getSystemMnemonicKeyCodes();
+        List<Integer> mnemonicKeyCodes = getSystemMnemonicKeyCodes();
         for (Integer mnemonic : mnemonicKeyCodes) {
             robot.keyPress(mnemonic);
         }
@@ -274,20 +273,31 @@ public class Util {
      * @param modifiers an integer combination of the modifier constants
      * @return key codes list
      */
-    public static ArrayList<Integer> getKeyCodesFromKeyMask(int modifiers) {
-        ArrayList<Integer> result = new ArrayList<>();
-        if ((modifiers & InputEvent.CTRL_MASK) != 0) {
-            result.add(KeyEvent.VK_CONTROL);
+    public static List<Integer> getKeyCodesFromKeyMask(int modifiers) {
+        final int[][] maskToKey = {
+                {InputEvent.CTRL_DOWN_MASK,     KeyEvent.VK_CONTROL},
+                {InputEvent.ALT_DOWN_MASK,      KeyEvent.VK_ALT},
+                {InputEvent.SHIFT_DOWN_MASK,    KeyEvent.VK_SHIFT},
+                {InputEvent.META_DOWN_MASK,     KeyEvent.VK_META},
+        };
+        ArrayList<Integer> result = new ArrayList<>(maskToKey.length);
+        for (int[] pair : maskToKey) {
+            if ((modifiers & pair[0]) != 0) {
+                result.add(pair[1]);
+            }
         }
-        if ((modifiers & InputEvent.ALT_MASK) != 0) {
-            result.add(KeyEvent.VK_ALT);
-        }
-        if ((modifiers & InputEvent.SHIFT_MASK) != 0) {
-            result.add(KeyEvent.VK_SHIFT);
-        }
-        if ((modifiers & InputEvent.META_MASK) != 0) {
-            result.add(KeyEvent.VK_META);
-        }
+//        if ((modifiers & InputEvent.CTRL_DOWN_MASK) != 0) {
+//            result.add(KeyEvent.VK_CONTROL);
+//        }
+//        if ((modifiers & InputEvent.ALT_DOWN_MASK) != 0) {
+//            result.add(KeyEvent.VK_ALT);
+//        }
+//        if ((modifiers & InputEvent.SHIFT_DOWN_MASK) != 0) {
+//            result.add(KeyEvent.VK_SHIFT);
+//        }
+//        if ((modifiers & InputEvent.META_DOWN_MASK) != 0) {
+//            result.add(KeyEvent.VK_META);
+//        }
         return result;
     }
 
@@ -295,14 +305,11 @@ public class Util {
      * Gets key codes from system mnemonic key mask
      * @return key codes list
      */
-    public static ArrayList<Integer> getSystemMnemonicKeyCodes() {
+    public static List<Integer> getSystemMnemonicKeyCodes() {
         String osName = System.getProperty("os.name");
-        ArrayList<Integer> result = new ArrayList<>();
-        if (osName.contains("OS X")) {
-            result.add(KeyEvent.VK_CONTROL);
-        }
-        result.add(KeyEvent.VK_ALT);
-        return result;
+        return osName.contains("OS X")
+               ? List.of(KeyEvent.VK_CONTROL, KeyEvent.VK_ALT)
+               : List.of(KeyEvent.VK_ALT);
     }
 
    /**
@@ -341,5 +348,8 @@ public class Util {
         retDialog.getContentPane().add(buttonBox, BorderLayout.SOUTH);
         retDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         return retDialog;
+    }
+
+    private Util() {
     }
 }
