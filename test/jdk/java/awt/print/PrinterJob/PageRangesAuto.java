@@ -191,7 +191,7 @@ public class PageRangesAuto implements Pageable, Printable {
         if (pageIndex < 0) {
             throw new IndexOutOfBoundsException("pageIndex < 0");
         }
-        
+
         if (pageIndex >= MAX_PAGE) {
             throw new IndexOutOfBoundsException("pageIndex >= " + MAX_PAGE);
         }
