@@ -1,0 +1,4 @@
+#define test_width 16
+#define test_width 3
+static unsigned char test_bits[] = {
+0x13, 0x11, 0x15, 0x00, 0xAB, 0xcd };
