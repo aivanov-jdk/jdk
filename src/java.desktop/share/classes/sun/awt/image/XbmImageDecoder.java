@@ -99,56 +99,57 @@ public class XbmImageDecoder extends ImageDecoder {
         int lineNum = 0;
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(input))) {
-            // loop to process XBM header - width, height and create raster
-            while (!aborted && (line = br.readLine()) != null
-                    && lineNum <= HEADER_SCAN_LIMIT) {
+            // loop to process XBM header - width, height
+            while (!aborted
+                   && state < 2
+                   && lineNum <= HEADER_SCAN_LIMIT
+                   && (line = br.readLine()) != null) {
                 lineNum++;
-                // process #define stmts
-                if (line.trim().startsWith("#define")) {
+/* !!! */       System.out.println(lineNum + ": " + line);
+                // process #define statements
+                line = line.trim();
+                if (line.startsWith("#define")) {
                     String[] token = line.split("\\s+");
                     if (token.length != 3) {
                         error("Error while parsing define statement");
                     }
+
                     try {
-                        if (state < 2) {
-                            if (token[1].endsWith("h")) {
-                                W = Integer.parseInt(token[2]);
-                            } else if (token[1].endsWith("ht")) {
-                                H = Integer.parseInt(token[2]);
-                            }
-                            // After the 1st dimension is set, state becomes 1;
-                            // after the 2nd dimension is set, state becomes 2
-                            ++state;
+                        if (token[1].endsWith("h")) {
+                            W = Integer.parseInt(token[2]);
+                        } else if (token[1].endsWith("ht")) {
+                            H = Integer.parseInt(token[2]);
                         }
+                        // After the 1st dimension is set, state becomes 1;
+                        // after the 2nd dimension is set, state becomes 2
+                        ++state;
                     } catch (NumberFormatException nfe) {
                         // parseInt() can throw NFE
                         error("Error while parsing width or height.");
                     }
                 }
-
-                if (state == 2) {
-                    if (W <= 0 || H <= 0) {
-                        error("Invalid values for width or height.");
-                    }
-                    if (multiplyExact(W, H) > MAX_XBM_SIZE) {
-                        error("Large XBM file size."
-                                + " Maximum allowed size: " + MAX_XBM_SIZE);
-                    }
-                    model = new IndexColorModel(8, 2, XbmColormap,
-                            0, false, 0);
-                    setDimensions(W, H);
-                    setColorModel(model);
-                    setHints(XbmHints);
-                    headerComplete();
-                    raster = new byte[W];
-                    state = 3;
-                    break;
-                }
             }
 
-            if (state != 3) {
+            if (state != 2) {
                 error("Width or Height of XBM file not defined");
             }
+
+            if (W <= 0 || H <= 0) {
+                error("Invalid values for width or height.");
+            }
+            if (multiplyExact(W, H) > MAX_XBM_SIZE) {
+                error("Large XBM file size."
+                      + " Maximum allowed size: " + MAX_XBM_SIZE);
+            }
+
+            // Create raster
+            model = new IndexColorModel(8, 2, XbmColormap,
+                                        0, false, 0);
+            setDimensions(W, H);
+            setColorModel(model);
+            setHints(XbmHints);
+            headerComplete();
+            raster = new byte[W];
 
             boolean contFlag = false;
             StringBuilder sb = new StringBuilder();
@@ -156,6 +157,7 @@ public class XbmImageDecoder extends ImageDecoder {
             // loop to process image data
             while (!aborted && (line = br.readLine()) != null) {
                 lineNum++;
+/* !!! */       System.out.println(lineNum + ": " + line);
 
                 if (!contFlag) {
                     if (line.contains("[]")) {
