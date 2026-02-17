@@ -62,21 +62,23 @@ public class XBMDecoderTest {
                 ImageIcon icon = new ImageIcon(fis.readAllBytes());
                 boolean isErrEmpty = errContent.toString().isEmpty();
 
-                if (!isErrEmpty) {
-                    if (!validCase) {
-                        System.out.println("Expected ImageFormatException occurred.");
+                if (!validCase) {
+                    if (isErrEmpty) {
+                        throw new RuntimeException("Test failed: ImageFormatException"
+                                                   + " expected but not thrown");
                     }
+                    System.out.println("Expected ImageFormatException occurred:");
                     System.out.print(errContent);
-                }
-                if (validCase && !isErrEmpty) {
-                    throw new RuntimeException("Test failed: Error stream not empty");
-                } else if (!validCase && isErrEmpty && hasPixelData(icon.getImage())) {
-                    throw new RuntimeException("Test failed: ImageFormatException"
-                            + " expected but not thrown");
-                }
-                if (validCase && !hasPixelData(icon.getImage())) {
-                    throw new RuntimeException("Test failed: the parsed image " +
-                            "does not contain any pixel data");
+                } else {
+                    if (!isErrEmpty) {
+                        System.out.print(errContent);
+                        throw new RuntimeException("Test failed: Error stream not empty");
+                    }
+
+                    if (!hasPixelData(icon.getImage())) {
+                        throw new RuntimeException("Test failed: the parsed image " +
+                                                   "does not contain any pixel data");
+                    }
                 }
                 System.out.println("PASSED\n");
             } finally {
