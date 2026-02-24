@@ -49,7 +49,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *
  * Tracking an animated image
  * might not always be useful
- * due to the multi-part nature of animated image
+ * due to the multipart nature of animated image
  * loading and painting,
  * but it is supported.
  * {@code MediaTracker} treats an animated image
@@ -80,7 +80,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  * public class MediaTrackerExample extends Panel implements Runnable {
  *      MediaTracker tracker;
  *      Image bg;
- *      Image anim[] = new Image[5];
+ *      Image[] anim = new Image[5];
  *      int index;
  *      Thread animator;
  *
@@ -117,7 +117,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *
  *      // Run the animation thread.
  *      // First wait for the background image to fully load
- *      // and paint.  Then wait for all of the animation
+ *      // and paint.  Then wait for all the animation
  *      // frames to finish loading. Finally, loop and
  *      // increment the animation frame index.
  *      public void run() {
@@ -152,10 +152,10 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *      }
  *
  *      // Paint a large red rectangle if there are any errors
- *      // loading the images.  Otherwise always paint the
+ *      // loading the images.  Otherwise, always paint the
  *      // background so that it appears incrementally as it
  *      // is loading.  Finally, only paint the current animation
- *      // frame if all of the frames (id == 1) are done loading,
+ *      // frame if all the frames (id == 1) are done loading,
  *      // so that we don't get partial animations.
  *      public void paint(Graphics g) {
  *          if ((tracker.statusAll(false) & MediaTracker.ERRORED) != 0) {
@@ -340,7 +340,7 @@ public class MediaTracker implements java.io.Serializable {
     }
 
     /**
-     * Checks the error status of all of the images.
+     * Checks the error status of all the images.
      * @return   {@code true} if any of the images tracked
      *                  by this media tracker had an error during
      *                  loading; {@code false} otherwise
@@ -471,7 +471,7 @@ public class MediaTracker implements java.io.Serializable {
      * @param        load   if {@code true}, start loading
      *                            any images that are not yet being loaded
      * @return       the bitwise inclusive <b>OR</b> of the status of
-     *                            all of the media being tracked
+     *                            all the media being tracked
      * @see          java.awt.MediaTracker#statusID(int, boolean)
      * @see          java.awt.MediaTracker#LOADING
      * @see          java.awt.MediaTracker#ABORTED
@@ -559,7 +559,7 @@ public class MediaTracker implements java.io.Serializable {
     }
 
     /**
-     * Checks the error status of all of the images tracked by this
+     * Checks the error status of all the images tracked by this
      * media tracker with the specified identifier.
      * @param        id   the identifier of the images to check
      * @return       {@code true} if any of the images with the
@@ -706,7 +706,7 @@ public class MediaTracker implements java.io.Serializable {
      * @param        load   if {@code true}, start loading
      *                            any images that are not yet being loaded
      * @return       the bitwise inclusive <b>OR</b> of the status of
-     *                            all of the media with the specified
+     *                            all the media with the specified
      *                            identifier that are being tracked
      * @see          java.awt.MediaTracker#statusAll(boolean)
      * @see          java.awt.MediaTracker#LOADING
