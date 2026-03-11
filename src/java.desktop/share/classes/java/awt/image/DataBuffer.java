@@ -548,8 +548,12 @@ public abstract class DataBuffer {
     }
 
     final void checkIndex(int i) {
-        if ((i < 0) || ((offset + i) < i)) {
+        if (i < 0) {
             throw new ArrayIndexOutOfBoundsException("Index cannot be negative : " + i);
+        }
+        if ((offset + i) < i) {
+            throw new ArrayIndexOutOfBoundsException("(offset+i) cannot be negative : " +
+                "(" + offset + " + " + i + ") = " + (offset + i));
         }
         if (i >= size) {
             throw new ArrayIndexOutOfBoundsException("Invalid index (offset+i) is " +
