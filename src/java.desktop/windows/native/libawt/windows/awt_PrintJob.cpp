@@ -690,6 +690,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
             if (devmode->dmFields & DM_PAPERSIZE) {
                 jboolean err = setPrintPaperSize(env, self, devmode->dmPaperSize);
                 if (err) {
+                    ::GlobalUnlock(setup.hDevMode);
                     CLEANUP_SHOW;
                     return JNI_FALSE;
                 }
