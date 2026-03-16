@@ -26,7 +26,9 @@
 package java.awt.image;
 
 import java.util.Objects;
-import static sun.java2d.StateTrackable.State.*;
+
+import static sun.java2d.StateTrackable.State.STABLE;
+import static sun.java2d.StateTrackable.State.UNTRACKABLE;
 
 /**
  * This class extends {@code DataBuffer} and stores data internally

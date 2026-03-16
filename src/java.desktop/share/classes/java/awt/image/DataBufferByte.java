@@ -222,7 +222,7 @@ public final class DataBufferByte extends DataBuffer
         super(UNTRACKABLE, TYPE_BYTE, size, dataArray.length, offsets);
         checkSize(size);
         checkNumBanks(dataArray.length);
-        Objects.requireNonNull(offsets, "offsets");
+        Objects.requireNonNull(offsets, "offsets must not be null");
         if (dataArray.length != offsets.length) {
             throw new ArrayIndexOutOfBoundsException("Must be an offsets entry for every bank");
         }
