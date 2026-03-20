@@ -599,6 +599,7 @@ public abstract class DataBuffer {
     private static boolean checkSizeAndOffset(int size, int offset, int arrayLen) {
         return
             (size <= 0) ||
+            (offset < 0) ||
             ((offset + size) <= 0) ||
             ((offset + size) > arrayLen) ||
             ((offset > 0) && ((offset + size ) < size));

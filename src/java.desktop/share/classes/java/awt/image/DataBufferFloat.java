@@ -145,8 +145,9 @@ public final class DataBufferFloat extends DataBuffer {
      * @param offset The offset of the first element of the array
      *               that will be used.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} is less than or equal to zero,
-     *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException if {@code size} or {@code offset}
+     *         is less than or equal to zero, or {@code (offset + size)}
+     *         is greater than the length of {@code dataArray}.
      */
     public DataBufferFloat(float[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_FLOAT, size, 1, offset);
@@ -210,10 +211,11 @@ public final class DataBufferFloat extends DataBuffer {
      * @param offsets An array of integer offsets, one for each bank.
      * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
      * @throws IllegalArgumentException if {@code dataArray} does not have at least one bank.
      * @throws NullPointerException if {@code offsets} is {@code null}.
+     * @throws IllegalArgumentException if any element of {@code offsets} is less than zero.
      * @throws ArrayIndexOutOfBoundsException if the lengths of {@code dataArray} and {@code offsets} differ.
-     * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
      * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
      *         is less than {@code (size + offsets[bankIndex])}.
      */

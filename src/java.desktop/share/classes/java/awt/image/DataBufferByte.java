@@ -146,11 +146,11 @@ public final class DataBufferByte extends DataBuffer
      * @param offset The offset into the {@code dataArray}. {@code dataArray}
      * must have at least {@code offset} + {@code size} elements.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} is less than or equal
-     *         to zero, or {@code (offset + size)} is greater than the
-     *         length of {@code dataArray}.
+     * @throws IllegalArgumentException if {@code size} or {@code offset}
+     *         is less than or equal to zero, or {@code (offset + size)}
+     *         is greater than the length of {@code dataArray}.
      */
-    public DataBufferByte(byte[] dataArray, int size, int offset){
+    public DataBufferByte(byte[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_BYTE, size, 1, offset);
         Objects.requireNonNull(dataArray, "dataArray must not be null");
         checkArraySize(size, offset, dataArray.length);
@@ -211,10 +211,12 @@ public final class DataBufferByte extends DataBuffer
      * @param offsets The offsets into each array.
      * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
      * @throws IllegalArgumentException if {@code dataArray} does not have at least one bank.
      * @throws NullPointerException if {@code offsets} is {@code null}.
-     * @throws ArrayIndexOutOfBoundsException if the lengths of {@code dataArray} and {@code offsets} differ.
-     * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if any element of {@code offsets} is less than zero.
+     * @throws ArrayIndexOutOfBoundsException if the lengths of {@code dataArray}
+     *          and {@code offsets} differ.
      * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
      *         is less than {@code (size + offsets[bankIndex])}.
      */
