@@ -36,6 +36,7 @@
 package java.awt.image;
 
 import java.util.Objects;
+
 import static sun.java2d.StateTrackable.State.STABLE;
 import static sun.java2d.StateTrackable.State.UNTRACKABLE;
 
@@ -224,10 +225,6 @@ public final class DataBufferByte extends DataBuffer
         super(UNTRACKABLE, TYPE_BYTE, size, dataArray.length, offsets);
         checkSize(size);
         checkNumBanks(dataArray.length);
-        Objects.requireNonNull(offsets, "offsets must not be null");
-        if (dataArray.length != offsets.length) {
-            throw new ArrayIndexOutOfBoundsException("Must be an offsets entry for every bank");
-        }
         for (int b = 0; b < dataArray.length; b++) {
             Objects.requireNonNull(dataArray[b], "bank must not be null");
             checkBankSize(b, size, offsets[b], dataArray[b].length);

@@ -223,10 +223,6 @@ public final class DataBufferFloat extends DataBuffer {
         super(UNTRACKABLE, TYPE_FLOAT, size, dataArray.length, offsets);
         checkSize(size);
         checkNumBanks(dataArray.length);
-        Objects.requireNonNull(offsets, "offsets must not be null");
-        if (dataArray.length != offsets.length) {
-            throw new ArrayIndexOutOfBoundsException("Must be an offsets entry for every bank");
-        }
         for (int b = 0; b < dataArray.length; b++) {
             Objects.requireNonNull(dataArray[b], "bank must not be null");
             checkBankSize(b, size, offsets[b], dataArray[b].length);

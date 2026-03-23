@@ -572,12 +572,13 @@ public abstract class DataBuffer {
         // Don't need to include bank offset here since all constructors validated
         // the offset for each bank against the size.
         if (i >= size) {
-            throw new ArrayIndexOutOfBoundsException("Invalid index (offsets[" + bank + "] +i) is " +
+            throw new ArrayIndexOutOfBoundsException("Invalid index (offsets[" + bank + "]+i) is " +
                 "(" + offsets[bank] + " + " + i + ") which is too large for size : " + size);
         }
     }
 
     // Checks used by subclass constructors.
+
     static void checkSize(int size) {
         if (size <= 0) {
             throw new IllegalArgumentException("Size must be > 0");
