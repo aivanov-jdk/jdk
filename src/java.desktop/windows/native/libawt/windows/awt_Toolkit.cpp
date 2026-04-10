@@ -1471,6 +1471,7 @@ AwtToolkit::MessageLoop(IDLEPROC lpIdleFunc,
                         PEEKMESSAGEPROC lpPeekMessageFunc)
 {
     DTRACE_PRINTLN("AWT event loop started");
+    printf("AWT event loop started\n"); fflush(stdout);
 
     DASSERT(lpIdleFunc != NULL);
     DASSERT(lpPeekMessageFunc != NULL);
@@ -1489,11 +1490,15 @@ AwtToolkit::MessageLoop(IDLEPROC lpIdleFunc,
         // if held.
         VerifyWindowMoveLockReleased();
     }
-    if (m_messageLoopResult == EXIT_ALL_ENCLOSING_LOOPS)
+    if (m_messageLoopResult == EXIT_ALL_ENCLOSING_LOOPS) {
+        printf("MessageLoop -> PostQuitMessage(EXIT_ALL_ENCLOSING_LOOPS)\n"); fflush(stdout);
         ::PostQuitMessage(EXIT_ALL_ENCLOSING_LOOPS);
+    }
     m_breakMessageLoop = FALSE;
 
     DTRACE_PRINTLN("AWT event loop ended");
+    printf("AWT event loop ended: result = %d, break = %d\n",
+           m_messageLoopResult, m_breakMessageLoop); fflush(stdout);
 
     return m_messageLoopResult;
 }
@@ -1540,10 +1545,19 @@ void AwtToolkit::QuitMessageLoop(int status) {
      * This call is unnecessary during dnd, since we postpone processing of all
      * messages that can enter internal message loop until dnd is over.
      */
-      if (status == EXIT_ALL_ENCLOSING_LOOPS) {
-          ::EnumThreadWindows(MainThread(), (WNDENUMPROC)CancelAllThreadWindows,
-                              0);
-      }
+    printf("> Toolkit::QuitMessageLoop(%d)\n",
+           status); fflush(stdout);
+
+    if (status == EXIT_ALL_ENCLOSING_LOOPS) {
+        printf("  > CancelAllThreadWindows\n"); fflush(stdout);
+        printf("    break = %d, result = %d\n",
+               m_breakMessageLoop, m_messageLoopResult); fflush(stdout);
+        ::EnumThreadWindows(MainThread(), (WNDENUMPROC)CancelAllThreadWindows,
+                            0);
+        printf("  < CancelAllThreadWindows\n"); fflush(stdout);
+        printf("    break = %d, result = %d\n",
+               m_breakMessageLoop, m_messageLoopResult); fflush(stdout);
+    }
 
     /*
      * Fix for 4623377.
@@ -1557,12 +1571,16 @@ void AwtToolkit::QuitMessageLoop(int status) {
      */
     m_breakMessageLoop = TRUE;
     m_messageLoopResult = status;
+    printf("  Toolkit::QuitMessageLoop: break = %d, result = %d\n",
+           m_breakMessageLoop, m_messageLoopResult); fflush(stdout);
 
     /*
      * Fix for 4683602.
      * Post an empty message, to wake up the toolkit thread
      * if it is currently in WaitMessage(),
      */
+    printf("< Toolkit::QuitMessageLoop(%d) - WM_NULL\n",
+           status); fflush(stdout);
     PostMessage(WM_NULL);
 }
 
@@ -1604,10 +1622,16 @@ void AwtToolkit::PumpToDestroy(class AwtComponent* p)
 void AwtToolkit::ProcessMsg(MSG& msg)
 {
     if (msg.message == WM_QUIT) {
+        printf("< AwtToolkit::ProcessMsg(WM_QUIT / %d)\n",
+               (int) msg.wParam); fflush(stdout);
         m_breakMessageLoop = TRUE;
         m_messageLoopResult = static_cast<UINT>(msg.wParam);
-        if (m_messageLoopResult == EXIT_ALL_ENCLOSING_LOOPS)
+        if (m_messageLoopResult == EXIT_ALL_ENCLOSING_LOOPS) {
+            printf("  AwtToolkit::ProcessMsg -> PostQuitMessage(EXIT_ALL_ENCLOSING_LOOPS)\n"); fflush(stdout);
             ::PostQuitMessage(static_cast<int>(msg.wParam));  // make sure all loops exit
+        }
+        printf("< AwtToolkit::ProcessMsg(WM_QUIT / %d)\n",
+               (int) msg.wParam); fflush(stdout);
     }
     else if (msg.message != WM_NULL) {
         /*
@@ -2433,11 +2457,15 @@ Java_sun_awt_windows_WToolkit_shutdown(JNIEnv *env, jobject self)
 
     AwtToolkit& tk = AwtToolkit::GetInstance();
 
+    printf("> WToolkit_shutdown\n"); fflush(stdout);
+    printf("  > QuitMessageLoop(EXIT_ALL_ENCLOSING_LOOPS)\n"); fflush(stdout);
     tk.QuitMessageLoop(AwtToolkit::EXIT_ALL_ENCLOSING_LOOPS);
+    printf("  < QuitMessageLoop(EXIT_ALL_ENCLOSING_LOOPS)\n"); fflush(stdout);
 
     while (!tk.IsDisposed()) {
         Sleep(100);
     }
+    printf("< WToolkit_shutdown\n"); fflush(stdout);
 
     CATCH_BAD_ALLOC;
 }
@@ -2474,7 +2502,11 @@ Java_sun_awt_windows_WToolkit_quitSecondaryEventLoop(
 {
     TRY;
 
+    printf("> WToolkit_quitSecondaryEventLoop\n"); fflush(stdout);
+    printf("  > QuitMessageLoop(EXIT_ENCLOSING_LOOP)\n"); fflush(stdout);
     AwtToolkit::GetInstance().QuitMessageLoop(AwtToolkit::EXIT_ENCLOSING_LOOP);
+    printf("  < QuitMessageLoop(EXIT_ENCLOSING_LOOP)\n"); fflush(stdout);
+    printf("< WToolkit_quitSecondaryEventLoop\n"); fflush(stdout);
 
     CATCH_BAD_ALLOC;
 }

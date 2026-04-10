@@ -422,8 +422,15 @@ void AwtDropTarget::_DropDone(void* param) {
 void AwtDropTarget::DropDone(jboolean success, jint action) {
     m_dropSuccess = success;
     m_dropActions = action;
+
+    printf("> AwtDropTarget::DropDone\n"); fflush(stdout);
+    printf("  > QuitMessageLoop(EXIT_ENCLOSING_LOOP)\n"); fflush(stdout);
+
     AwtToolkit::GetInstance().QuitMessageLoop(AwtToolkit::EXIT_ENCLOSING_LOOP);
     AwtToolkit::GetInstance().isDnDTargetActive = FALSE;
+
+    printf("  < QuitMessageLoop(EXIT_ENCLOSING_LOOP)\n"); fflush(stdout);
+    printf("< AwtDropTarget::DropDone\n"); fflush(stdout);
 }
 
 /**
