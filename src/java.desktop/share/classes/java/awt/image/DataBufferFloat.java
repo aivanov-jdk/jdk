@@ -114,8 +114,8 @@ public final class DataBufferFloat extends DataBuffer {
      *                  first and only bank of this {@code DataBuffer}.
      * @param size The number of elements of the array to be used.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} is less than or equal to zero,
-     *         or greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal
+     *         to zero or is greater than the length of {@code dataArray}.
      */
     public DataBufferFloat(float[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_FLOAT, size);
@@ -145,9 +145,10 @@ public final class DataBufferFloat extends DataBuffer {
      * @param offset The offset of the first element of the array
      *               that will be used.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} or {@code offset}
-     *         is less than or equal to zero, or {@code (offset + size)}
-     *         is greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException 
+     *         if {@code size} is less than or equal to zero, 
+     *         or {@code offset} is less than zero, 
+     *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
     public DataBufferFloat(float[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_FLOAT, size, 1, offset);
@@ -309,7 +310,7 @@ public final class DataBufferFloat extends DataBuffer {
      * @see #setElem(int, int, int)
      */
     public int getElem(int bank, int i) {
-        checkIndex(i);
+        checkIndex(bank, i);
         return (int)(bankdata[bank][i+offsets[bank]]);
     }
 
@@ -372,7 +373,7 @@ public final class DataBufferFloat extends DataBuffer {
      *
      * @return The data entry as a {@code float}.
      * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
-     *         or {@code (i + getOffsets(bank)}} is not a valid index into the bank.
+     *         or {@code (i + getOffsets(bank))} is not a valid index into the bank.
      * @see #setElemFloat(int, float)
      * @see #setElemFloat(int, int, float)
      */

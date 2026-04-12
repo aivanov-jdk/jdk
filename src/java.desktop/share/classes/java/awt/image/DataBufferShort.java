@@ -117,7 +117,7 @@ public final class DataBufferShort extends DataBuffer
      * @param size The size of the {@code DataBuffer} bank.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
      * @throws IllegalArgumentException if {@code size} is less than or equal
-     *         to zero, or greater than the length of {@code dataArray}
+     *         to zero, or is greater than the length of {@code dataArray}
      */
     public DataBufferShort(short[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_SHORT, size);
@@ -144,9 +144,10 @@ public final class DataBufferShort extends DataBuffer
      * @param size The size of the {@code DataBuffer} bank.
      * @param offset The offset into the {@code dataArray}.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} or {@code offset}
-     *         is less than or equal to zero, or {@code (offset + size)}
-     *         is greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException 
+     *         if {@code size} is less than or equal to zero, 
+     *         or {@code offset} is less than zero, 
+     *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
     public DataBufferShort(short[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_SHORT, size, 1, offset);
@@ -213,7 +214,7 @@ public final class DataBufferShort extends DataBuffer
      * @throws IllegalArgumentException if {@code dataArray} does not have at least one bank.
      * @throws NullPointerException if {@code offsets} is {@code null}.
      * @throws IllegalArgumentException if any element of {@code offsets} is less than zero.
-     * @throws IllegalArgumentException if the lengths of {@code dataArray} and {@code offsets} differ.
+     * @throws ArrayIndexOutOfBoundsException if the lengths of {@code dataArray} and {@code offsets} differ.
      * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
      *         is less than {@code (size + offsets[bankIndex])}.
      */
