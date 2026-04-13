@@ -144,9 +144,9 @@ public final class DataBufferShort extends DataBuffer
      * @param size The size of the {@code DataBuffer} bank.
      * @param offset The offset into the {@code dataArray}.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException 
-     *         if {@code size} is less than or equal to zero, 
-     *         or {@code offset} is less than zero, 
+     * @throws IllegalArgumentException
+     *         if {@code size} is less than or equal to zero,
+     *         or {@code offset} is less than zero,
      *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
     public DataBufferShort(short[] dataArray, int size, int offset) {

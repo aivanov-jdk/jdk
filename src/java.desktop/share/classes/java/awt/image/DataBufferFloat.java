@@ -145,9 +145,9 @@ public final class DataBufferFloat extends DataBuffer {
      * @param offset The offset of the first element of the array
      *               that will be used.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException 
-     *         if {@code size} is less than or equal to zero, 
-     *         or {@code offset} is less than zero, 
+     * @throws IllegalArgumentException
+     *         if {@code size} is less than or equal to zero,
+     *         or {@code offset} is less than zero,
      *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
     public DataBufferFloat(float[] dataArray, int size, int offset) {
