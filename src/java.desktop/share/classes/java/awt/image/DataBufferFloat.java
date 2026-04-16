@@ -115,7 +115,7 @@ public final class DataBufferFloat extends DataBuffer {
      * @param size The number of elements of the array to be used.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
      * @throws IllegalArgumentException if {@code size} is less than or equal
-     *         to zero or is greater than the length of {@code dataArray}.
+     *         to zero, or is greater than the length of {@code dataArray}.
      */
     public DataBufferFloat(float[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_FLOAT, size);
