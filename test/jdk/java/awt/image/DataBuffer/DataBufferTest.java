@@ -1,4 +1,5 @@
 import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
 
 import org.junit.jupiter.api.Test;
 
@@ -8,36 +9,181 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public abstract class DataBufferTest {
     protected static final int DATA_ARRAY_SIZE = 10;
 
-    protected abstract DataBuffer createDataBufferInt(int size);
+    /**
+     * Creates a {@code DataBuffer} object passing only the size.
+     * <p>
+     * This method corresponds to {@code DataBufferByte(int size)}.
+     *
+     * @param size the size of the {@code DataBuffer}
+     * @return an instance of {@code DataBuffer}
+     *
+     * @see DataBufferByte#DataBufferByte(int)
+     */
+    protected abstract DataBuffer createDataBufferSize(int size);
+
+    /**
+     * Creates a {@code DataBuffer} object passing the size and an offset.
+     * <p>
+     * This method corresponds to {@code DataBufferByte(int size, int numBanks)}.
+     *
+     * @param size the size of the data buffer
+     * @param numBanks the number of banks in the data buffer
+     * @return an instance of {@code DataBuffer}
+     *
+     * @see DataBufferByte#DataBufferByte(int, int)
+     */
+    protected abstract DataBuffer createDataBufferSizeBanks(int size, int numBanks);
+
+    /**
+     * Creates a {@code DataBuffer} a data array of size of
+     * {@value DATA_ARRAY_SIZE} as well as specifying the size of the buffer.
+     * <p>
+     * This method corresponds to {@code DataBufferByte(byte[] dataArray, int size)}.
+     *
+     * @param size the size of the data buffer
+     * @return an instance of {@code DataBuffer}
+     *
+     * @see DataBufferByte#DataBufferByte(byte[], int)
+     */
+    protected abstract DataBuffer createDataBufferArraySize(int size);
+
+    /**
+     * Creates a {@code DataBuffer} passing {@code null} as the data array.
+     * <p>
+     * This method corresponds to {@code DataBufferByte(byte[] dataArray, int size)}.
+     *
+     * @see DataBufferByte#DataBufferByte(byte[], int)
+     */
+    protected abstract void createDataBufferArrayNullSize();
+
+    /**
+     * Creates a {@code DataBuffer} object passing a data array of size of
+     * {@value DATA_ARRAY_SIZE} as well as specifying the size of the buffer
+     * and the offset into the data array.
+     * <p>
+     * This method corresponds to
+     * {@code DataBufferByte(byte[] dataArray, int size, int offset)}.
+     *
+     * @param size the size of the data buffer
+     * @param offset the offset into the data array
+     * @return an instance of {@code DataBuffer}
+     * @see DataBufferByte#DataBufferByte(byte[], int, int)
+     */
     protected abstract DataBuffer createDataBufferArraySizeOffset(int size, int offset);
 
 
+    /* Tests for DataBuffer*(int size) */
+
     @Test
-    public void dataBufferSizeNegative() {
+    public final void dataBuffer_Size_SizeNegative() {
         var iae = assertThrows(IllegalArgumentException.class,
-                                () -> createDataBufferInt(-1));
+                               () -> createDataBufferSize(-1));
         assertEquals("Size must be > 0", iae.getMessage());
     }
 
     @Test
-    public void dataBufferSizeZero() {
+    public final void dataBuffer_Size_SizeZero() {
         var iae = assertThrows(IllegalArgumentException.class,
-                               () -> createDataBufferInt(0));
+                               () -> createDataBufferSize(0));
         assertEquals("Size must be > 0", iae.getMessage());
     }
 
     @Test
-    public void dataBufferSizeOne() {
-        DataBuffer db = createDataBufferInt(1);
+    public final void dataBuffer_Size_SizeOne() {
+        DataBuffer db = createDataBufferSize(1);
         assertEquals(1, db.getSize());
     }
 
+
+    /* Tests for DataBuffer*(int size, int numBanks) */
+
+    @Test
+    public final void dataBuffer_SizeBanks_SizeNegative() {
+        var iae = assertThrows(IllegalArgumentException.class,
+                               () -> createDataBufferSizeBanks(-1, 0));
+        assertEquals("Size must be > 0", iae.getMessage());
+    }
+
+    @Test
+    public final void dataBuffer_SizeBanks_SizeZero() {
+        var iae = assertThrows(IllegalArgumentException.class,
+                               () -> createDataBufferSizeBanks(0, 0));
+        assertEquals("Size must be > 0", iae.getMessage());
+    }
+
+    @Test
+    public final void dataBuffer_SizeBanks_SizeOne_BanksNegative() {
+        var iae = assertThrows(IllegalArgumentException.class,
+                               () -> createDataBufferSizeBanks(1, -1));
+        assertEquals("Must have at least one bank", iae.getMessage());
+    }
+
+    @Test
+    public final void dataBuffer_SizeBanks_SizeOne_BanksZero() {
+        var iae = assertThrows(IllegalArgumentException.class,
+                               () -> createDataBufferSizeBanks(1, 0));
+        assertEquals("Must have at least one bank", iae.getMessage());
+    }
+
+    @Test
+    public final void dataBuffer_SizeBanks_SizeOne_BanksOne() {
+        DataBuffer db = createDataBufferSizeBanks(1, 1);
+        assertEquals(1, db.getSize());
+        assertEquals(1, db.getNumBanks());
+    }
+
+
+    /* Tests for DataBuffer*(*[] dataArray, int size) */
+
+    @Test
+    public final void dataBuffer_ArraySize_ArrayNull() {
+        var iae = assertThrows(IllegalArgumentException.class,
+                               this::createDataBufferArrayNullSize);
+        assertEquals("dataArray must not be null", iae.getMessage());
+    }
+
+    @Test
+    public final void dataBuffer_ArraySize_SizeNegative() {
+        var iae = assertThrows(IllegalArgumentException.class,
+                               () -> createDataBufferArraySize(-1));
+        assertEquals("Size must be > 0", iae.getMessage());
+    }
+
+    @Test
+    public final void dataBuffer_ArraySize_SizeZero() {
+        var iae = assertThrows(IllegalArgumentException.class,
+                               () -> createDataBufferArraySize(0));
+        assertEquals("Size must be > 0", iae.getMessage());
+    }
+
+    @Test
+    public final void dataBuffer_ArraySize_SizeOne() {
+        DataBuffer db = createDataBufferArraySize(1);
+        assertEquals(1, db.getSize());
+    }
+
+    @Test
+    public final void dataBuffer_ArraySize_SizeLarge() {
+        DataBuffer db = createDataBufferArraySize(DATA_ARRAY_SIZE);
+        assertEquals(DATA_ARRAY_SIZE, db.getSize());
+    }
+
+    @Test
+    public final void dataBuffer_ArraySize_SizeLarger() {
+        var iae = assertThrows(IllegalArgumentException.class,
+                               () -> createDataBufferArraySize(DATA_ARRAY_SIZE + 1));
+        assertEquals("Bad size : " + (DATA_ARRAY_SIZE + 1),
+                     iae.getMessage());
+    }
+
+
+    /* Tests for DataBuffer*(byte[] dataArray, int size, int offset) */
 
     protected static final String BAD_SIZE_OFFSET =
             "Bad size/offset. Size = %d, offset = %d, array length = %d";
 
     @Test
-    public void dataBufferArraySizeOffset_NegativeSize() {
+    public final void dataBufferArraySizeOffset_NegativeSize() {
         var iae = assertThrows(IllegalArgumentException.class,
                                () -> createDataBufferArraySizeOffset(-1, 0));
         assertEquals(BAD_SIZE_OFFSET.formatted(-1, 0, DATA_ARRAY_SIZE),
@@ -45,7 +191,7 @@ public abstract class DataBufferTest {
     }
 
     @Test
-    public void dataBufferArraySizeOffset_ZeroSize() {
+    public final void dataBufferArraySizeOffset_ZeroSize() {
         var iae = assertThrows(IllegalArgumentException.class,
                                () -> createDataBufferArraySizeOffset(0, 0));
         assertEquals(BAD_SIZE_OFFSET.formatted(0, 0, DATA_ARRAY_SIZE),
@@ -53,7 +199,7 @@ public abstract class DataBufferTest {
     }
 
     @Test
-    public void dataBufferArraySizeOffset_NegativeOffset() {
+    public final void dataBufferArraySizeOffset_NegativeOffset() {
         var iae = assertThrows(IllegalArgumentException.class,
                                () -> createDataBufferArraySizeOffset(0, 1));
         assertEquals(BAD_SIZE_OFFSET.formatted(0, 1, DATA_ARRAY_SIZE),
@@ -61,7 +207,7 @@ public abstract class DataBufferTest {
     }
 
     @Test
-    public void dataBufferArraySizeOffset_SizeOffsetOverflow() {
+    public final void dataBufferArraySizeOffset_SizeOffsetOverflow() {
         var iae = assertThrows(IllegalArgumentException.class,
                                () -> createDataBufferArraySizeOffset(Integer.MAX_VALUE, 1));
         assertEquals(BAD_SIZE_OFFSET.formatted(Integer.MAX_VALUE, 1, DATA_ARRAY_SIZE),
@@ -69,7 +215,7 @@ public abstract class DataBufferTest {
     }
 
     @Test
-    public void dataBufferArraySizeOffset_SizeOffsetOverflowArrayLength() {
+    public final void dataBufferArraySizeOffset_SizeOffsetOverflowArrayLength() {
         var iae = assertThrows(IllegalArgumentException.class,
                                () -> createDataBufferArraySizeOffset(DATA_ARRAY_SIZE, 1));
         assertEquals(BAD_SIZE_OFFSET.formatted(DATA_ARRAY_SIZE, 1, DATA_ARRAY_SIZE),
@@ -77,7 +223,7 @@ public abstract class DataBufferTest {
     }
 
     @Test
-    public void dataBufferArraySizeOffset_SizeOffsetNoOverflowArrayLength() {
+    public final void dataBufferArraySizeOffset_SizeOffsetNoOverflowArrayLength() {
         DataBuffer db = createDataBufferArraySizeOffset(DATA_ARRAY_SIZE, 0);
         assertEquals(DATA_ARRAY_SIZE, db.getSize());
         assertEquals(0, db.getOffset());
@@ -91,7 +237,7 @@ public abstract class DataBufferTest {
     }
 
     @Test
-    public void dataBufferArraySizeOffset_SizeOffsetValid() {
+    public final void dataBufferArraySizeOffset_SizeOffsetValid() {
         DataBuffer db = createDataBufferArraySizeOffset(1, 1);
         assertEquals(1, db.getSize());
         assertEquals(1, db.getOffset());

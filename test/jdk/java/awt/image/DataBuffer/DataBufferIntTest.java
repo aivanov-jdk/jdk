@@ -8,10 +8,25 @@ import java.awt.image.DataBufferInt;
  * @run junit DataBufferByteTest
  */
 
-public class DataBufferIntTest extends DataBufferTest {
+public final class DataBufferIntTest extends DataBufferTest {
     @Override
-    protected DataBuffer createDataBufferInt(int size) {
+    protected DataBuffer createDataBufferSize(int size) {
         return new DataBufferInt(size);
+    }
+
+    @Override
+    protected DataBuffer createDataBufferSizeBanks(int size, int numBanks) {
+        return new DataBufferInt(size, numBanks);
+    }
+
+    @Override
+    protected DataBuffer createDataBufferArraySize(int size) {
+        return new DataBufferInt(new int[DATA_ARRAY_SIZE], size);
+    }
+
+    @Override
+    protected void createDataBufferArrayNullSize() {
+        new DataBufferInt((int[]) null, -1);
     }
 
     @Override
