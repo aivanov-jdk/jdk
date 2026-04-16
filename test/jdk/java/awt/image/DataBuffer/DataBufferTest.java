@@ -201,8 +201,8 @@ public abstract class DataBufferTest {
     @Test
     public final void arraySizeOffset_NegativeOffset() {
         var iae = assertThrows(IllegalArgumentException.class,
-                               () -> createDataBufferArraySizeOffset(0, 1));
-        assertEquals(BAD_SIZE_OFFSET.formatted(0, 1, DATA_ARRAY_SIZE),
+                               () -> createDataBufferArraySizeOffset(1, -1));
+        assertEquals(BAD_SIZE_OFFSET.formatted(1, -1, DATA_ARRAY_SIZE),
                      iae.getMessage());
     }
 
