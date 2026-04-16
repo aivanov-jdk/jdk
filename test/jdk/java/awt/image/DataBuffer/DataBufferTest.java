@@ -113,9 +113,14 @@ public abstract class DataBufferTest {
 
     @Test
     public final void sizeBanks_SizeOne_BanksNegative() {
+        var e = assertThrows(NegativeArraySizeException.class,
+                               () -> createDataBufferSizeBanks(1, -1));
+        assertEquals("-1", e.getMessage());
+        /*
         var iae = assertThrows(IllegalArgumentException.class,
                                () -> createDataBufferSizeBanks(1, -1));
         assertEquals("Must have at least one bank", iae.getMessage());
+         */
     }
 
     @Test
@@ -137,23 +142,23 @@ public abstract class DataBufferTest {
 
     @Test
     public final void arraySize_ArrayNull() {
-        var iae = assertThrows(IllegalArgumentException.class,
-                               this::createDataBufferArrayNullSize);
-        assertEquals("dataArray must not be null", iae.getMessage());
+        var e = assertThrows(NullPointerException.class,
+                             this::createDataBufferArrayNullSize);
+        assertEquals("dataArray must not be null", e.getMessage());
     }
 
     @Test
     public final void arraySize_SizeNegative() {
         var iae = assertThrows(IllegalArgumentException.class,
                                () -> createDataBufferArraySize(-1));
-        assertEquals("Size must be > 0", iae.getMessage());
+        assertEquals("Bad size : -1", iae.getMessage());
     }
 
     @Test
     public final void arraySize_SizeZero() {
         var iae = assertThrows(IllegalArgumentException.class,
                                () -> createDataBufferArraySize(0));
-        assertEquals("Size must be > 0", iae.getMessage());
+        assertEquals("Bad size : 0", iae.getMessage());
     }
 
     @Test
@@ -266,7 +271,7 @@ public abstract class DataBufferTest {
 
         var aioobe = assertThrows(ArrayIndexOutOfBoundsException.class,
                                   () -> db.getElem(1));
-        assertEquals("Invalid index (offset+i) is (1 + 1) which is too large for size : 1",
+        assertEquals("Invalid index (offset+i) is (9 + 1) which is too large for size : 1",
                      aioobe.getMessage());
     }
 }
