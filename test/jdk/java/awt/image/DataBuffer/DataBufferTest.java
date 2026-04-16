@@ -207,7 +207,7 @@ public abstract class DataBufferTest {
     }
 
     @Test
-    public final void arraySizeOffset_SizeOffsetOverflow() {
+    public final void arraySizeOffset_Overflow() {
         var iae = assertThrows(IllegalArgumentException.class,
                                () -> createDataBufferArraySizeOffset(Integer.MAX_VALUE, 1));
         assertEquals(BAD_SIZE_OFFSET.formatted(Integer.MAX_VALUE, 1, DATA_ARRAY_SIZE),
@@ -215,7 +215,7 @@ public abstract class DataBufferTest {
     }
 
     @Test
-    public final void arraySizeOffset_SizeOffsetOverflowArrayLength() {
+    public final void arraySizeOffset_ArrayOverflow1() {
         var iae = assertThrows(IllegalArgumentException.class,
                                () -> createDataBufferArraySizeOffset(DATA_ARRAY_SIZE, 1));
         assertEquals(BAD_SIZE_OFFSET.formatted(DATA_ARRAY_SIZE, 1, DATA_ARRAY_SIZE),
@@ -223,7 +223,15 @@ public abstract class DataBufferTest {
     }
 
     @Test
-    public final void arraySizeOffset_SizeOffsetNoOverflowArrayLength() {
+    public final void arraySizeOffset_ArrayOverflow2() {
+        var iae = assertThrows(IllegalArgumentException.class,
+                               () -> createDataBufferArraySizeOffset(1, DATA_ARRAY_SIZE));
+        assertEquals(BAD_SIZE_OFFSET.formatted(1, DATA_ARRAY_SIZE, DATA_ARRAY_SIZE),
+                     iae.getMessage());
+    }
+
+    @Test
+    public final void arraySizeOffset_Offset0() {
         DataBuffer db = createDataBufferArraySizeOffset(DATA_ARRAY_SIZE, 0);
         assertEquals(DATA_ARRAY_SIZE, db.getSize());
         assertEquals(0, db.getOffset());
@@ -237,11 +245,23 @@ public abstract class DataBufferTest {
     }
 
     @Test
-    public final void arraySizeOffset_SizeOffsetValid() {
+    public final void arraySizeOffset_Offset1() {
         DataBuffer db = createDataBufferArraySizeOffset(1, 1);
         assertEquals(1, db.getSize());
         assertEquals(1, db.getOffset());
-        // TODO Should it throw?
+        assertEquals(0, db.getElem(0));
+
+        var aioobe = assertThrows(ArrayIndexOutOfBoundsException.class,
+                                  () -> db.getElem(1));
+        assertEquals("Invalid index (offset+i) is (1 + 1) which is too large for size : 1",
+                     aioobe.getMessage());
+    }
+
+    @Test
+    public final void arraySizeOffset_Offset9() {
+        DataBuffer db = createDataBufferArraySizeOffset(1, DATA_ARRAY_SIZE - 1);
+        assertEquals(1, db.getSize());
+        assertEquals(DATA_ARRAY_SIZE - 1, db.getOffset());
         assertEquals(0, db.getElem(0));
 
         var aioobe = assertThrows(ArrayIndexOutOfBoundsException.class,
