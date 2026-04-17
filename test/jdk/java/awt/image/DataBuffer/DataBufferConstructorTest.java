@@ -215,7 +215,11 @@ public class DataBufferConstructorTest {
     static void testShortConstructor(short[][] dataArray, int size,
                                     boolean signed, Class expectedExceptionType) {
         try {
-             new DataBufferShort(dataArray, size);
+             if (signed) {
+                 new DataBufferShort(dataArray, size);
+             } else {
+                 new DataBufferUShort(dataArray, size);
+             }
              failed = true;
              System.err.println("No expected exception");
              Thread.dumpStack();
@@ -230,7 +234,11 @@ public class DataBufferConstructorTest {
     static void testShortConstructor(short[][] dataArray, int size, int[] offsets,
                                     boolean signed, Class expectedExceptionType) {
         try {
-             new DataBufferShort(dataArray, size, offsets);
+             if (signed) {
+                 new DataBufferShort(dataArray, size, offsets);
+             } else {
+                 new DataBufferUShort(dataArray, size, offsets);
+             }
              failed = true;
              System.err.println("No expected exception");
              Thread.dumpStack();

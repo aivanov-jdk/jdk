@@ -117,8 +117,8 @@ public final class DataBufferInt extends DataBuffer
      * @param dataArray The integer array for the {@code DataBuffer}.
      * @param size The size of the {@code DataBuffer} bank.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} is less than or equal to zero,
-     *         or greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal
+     *         to zero, or is greater than the length of {@code dataArray}.
      */
     public DataBufferInt(int[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_INT, size);
@@ -145,9 +145,10 @@ public final class DataBufferInt extends DataBuffer
      * @param size The size of the {@code DataBuffer} bank.
      * @param offset The offset into the {@code dataArray}.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} or {@code offset}
-     *         is less than or equal to zero, or {@code (offset + size)}
-     *         is greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException
+     *         if {@code size} is less than or equal to zero,
+     *         or {@code offset} is less than zero,
+     *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
     public DataBufferInt(int[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_INT, size, 1, offset);

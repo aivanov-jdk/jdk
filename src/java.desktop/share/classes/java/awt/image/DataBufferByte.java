@@ -147,9 +147,10 @@ public final class DataBufferByte extends DataBuffer
      * @param offset The offset into the {@code dataArray}. {@code dataArray}
      * must have at least {@code offset} + {@code size} elements.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} or {@code offset}
-     *         is less than or equal to zero, or {@code (offset + size)}
-     *         is greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException
+     *         if {@code size} is less than or equal to zero,
+     *         or {@code offset} is less than zero,
+     *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
     public DataBufferByte(byte[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_BYTE, size, 1, offset);

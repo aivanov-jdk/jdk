@@ -543,7 +543,7 @@ public abstract class DataBuffer {
 
     final void checkBank(int bank) {
         if (bank < 0 || bank >= banks) {
-            throw new ArrayIndexOutOfBoundsException("Bank index out of range " + bank);
+            throw new ArrayIndexOutOfBoundsException("Bank index out of range : " + bank);
         }
     }
 
@@ -602,8 +602,7 @@ public abstract class DataBuffer {
             (size <= 0) ||
             (offset < 0) ||
             ((offset + size) <= 0) ||
-            ((offset + size) > arrayLen) ||
-            ((offset > 0) && ((offset + size ) < size));
+            ((offset + size) > arrayLen);
     }
 
     static void checkArraySize(int size, int offset, int arrayLen) {

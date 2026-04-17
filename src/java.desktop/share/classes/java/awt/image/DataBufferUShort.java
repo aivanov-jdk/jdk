@@ -78,9 +78,6 @@ public final class DataBufferUShort extends DataBuffer
     public DataBufferUShort(int size) {
         super(STABLE, TYPE_USHORT, size);
         checkSize(size);
-        if (size <= 0) {
-            throw new IllegalArgumentException("Size must be > 0");
-        }
         data = new short[size];
         bankdata = new short[1][];
         bankdata[0] = data;
@@ -121,8 +118,8 @@ public final class DataBufferUShort extends DataBuffer
      * @param dataArray The unsigned-short array for the {@code DataBuffer}.
      * @param size The size of the {@code DataBuffer} bank.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} is less than or equal to zero,
-     *         or greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal
+     *         to zero, or is greater than the length of {@code dataArray}.
      */
     public DataBufferUShort(short[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_USHORT, size);
@@ -149,9 +146,10 @@ public final class DataBufferUShort extends DataBuffer
      * @param size The size of the {@code DataBuffer} bank.
      * @param offset The offset into the {@code dataArray}.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} or {@code offset}
-     *         is less than or equal to zero, or {@code (offset + size)}
-     *         is greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException
+     *         if {@code size} is less than or equal to zero,
+     *         or {@code offset} is less than zero,
+     *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
     public DataBufferUShort(short[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_USHORT, size, 1, offset);

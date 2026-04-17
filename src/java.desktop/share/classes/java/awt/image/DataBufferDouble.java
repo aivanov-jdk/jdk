@@ -113,8 +113,8 @@ public final class DataBufferDouble extends DataBuffer {
      *                  first and only bank of this {@code DataBuffer}.
      * @param size The number of elements of the array to be used.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} is less than or equal to zero,
-     *         or greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal
+     *         to zero, or is greater than the length of {@code dataArray}.
      */
     public DataBufferDouble(double[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_DOUBLE, size);
@@ -143,9 +143,10 @@ public final class DataBufferDouble extends DataBuffer {
      * @param offset The offset of the first element of the array
      *               that will be used.
      * @throws NullPointerException if {@code dataArray} is {@code null}.
-     * @throws IllegalArgumentException if {@code size} or {@code offset}
-     *         is less than or equal to zero, or {@code (offset + size)}
-     *         is greater than the length of {@code dataArray}.
+     * @throws IllegalArgumentException
+     *         if {@code size} is less than or equal to zero,
+     *         or {@code offset} is less than zero,
+     *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
     public DataBufferDouble(double[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, 1, offset);
