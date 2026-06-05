@@ -202,21 +202,21 @@ class UnixSecureDirectoryStream
     {
         UnixPath from = getName(fromObj);
         UnixPath to = getName(toObj);
-        if (dir == null)
-            throw new NullPointerException();
-        if (!(dir instanceof UnixSecureDirectoryStream))
+        if (dir != null && !(dir instanceof UnixSecureDirectoryStream))
             throw new ProviderMismatchException();
         UnixSecureDirectoryStream that = (UnixSecureDirectoryStream)dir;
+        int todfd = that != null ? that.dfd : AT_FDCWD;
 
         // lock ordering doesn't matter
         this.ds.readLock().lock();
         try {
-            that.ds.readLock().lock();
+            if (that != null)
+                that.ds.readLock().lock();
             try {
-                if (!this.ds.isOpen() || !that.ds.isOpen())
+                if (!this.ds.isOpen() || (that != null && !that.ds.isOpen()))
                     throw new ClosedDirectoryStreamException();
                 try {
-                    renameat(this.dfd, from.asByteArray(), that.dfd, to.asByteArray());
+                    renameat(this.dfd, from.asByteArray(), todfd, to.asByteArray());
                 } catch (UnixException x) {
                     if (x.errno() == EXDEV) {
                         throw new AtomicMoveNotSupportedException(
@@ -225,7 +225,8 @@ class UnixSecureDirectoryStream
                     x.rethrowAsIOException(from, to);
                 }
             } finally {
-                that.ds.readLock().unlock();
+                if (that != null)
+                    that.ds.readLock().unlock();
             }
         } finally {
             this.ds.readLock().unlock();
@@ -414,15 +415,24 @@ class UnixSecureDirectoryStream
                 if (!ds.isOpen())
                     throw new ClosedDirectoryStreamException();
 
-                int fd = (file == null) ? dfd : open();
-                try {
-                    fchmod(fd, UnixFileModeAttribute.toUnixMode(perms));
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(file);
-                } finally {
-                    if (file != null && fd >= 0)
-                        UnixNativeDispatcher.close(fd, e-> null);
+                int mode = UnixFileModeAttribute.toUnixMode(perms);
+                if (file == null)
+                    fchmod(dfd, mode);
+                else if (followLinks)
+                    fchmodat(dfd, file, mode, 0);
+                else if (fchmodatNoFollowSupported())
+                    fchmodat(dfd, file, mode, AT_SYMLINK_NOFOLLOW);
+                else {
+                    int fd = open();
+                    try {
+                        fchmod(fd, mode);
+                    } finally {
+                        if (fd >= 0)
+                            UnixNativeDispatcher.close(fd, e-> null);
+                    }
                 }
+            } catch (UnixException x) {
+                x.rethrowAsIOException(file);
             } finally {
                 ds.readLock().unlock();
             }

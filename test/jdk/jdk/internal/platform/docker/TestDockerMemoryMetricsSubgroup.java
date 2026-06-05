@@ -22,6 +22,7 @@
  */
 
 import jdk.internal.platform.Metrics;
+import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerfileConfig;
@@ -39,10 +40,12 @@ import jtreg.SkippedException;
  * @key cgroups
  * @summary Cgroup v1 subsystem fails to set subsystem path
  * @requires container.support
+ * @requires !vm.asan
+ * @requires !vm.ubsan
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build MetricsMemoryTester
- * @run main TestDockerMemoryMetricsSubgroup
+ * @run main/timeout=480 TestDockerMemoryMetricsSubgroup
  */
 
 public class TestDockerMemoryMetricsSubgroup {
@@ -56,12 +59,13 @@ public class TestDockerMemoryMetricsSubgroup {
             System.out.println("Cgroup not configured.");
             return;
         }
-        if (!DockerTestUtils.canTestDocker()) {
-            System.out.println("Unable to run docker tests.");
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
 
         ContainerRuntimeVersionTestUtils.checkContainerVersionSupported();
+
+        if (DockerTestUtils.isRootless()) {
+            throw new SkippedException("Test skipped in rootless mode");
+        }
 
         if ("cgroupv1".equals(metrics.getProvider())) {
             testMemoryLimitSubgroupV1("200m", "400m", false);
@@ -88,7 +92,8 @@ public class TestDockerMemoryMetricsSubgroup {
             .addDockerOpts("--volume", Utils.TEST_JDK + ":/jdk")
             .addDockerOpts("--privileged")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
-            .addDockerOpts("--memory", outerGroupMemorySize);
+            .addDockerOpts("--memory", outerGroupMemorySize)
+            .addDockerOpts("-e", "LANG=C.UTF-8");
         opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
             "echo " + innerSize + " > /sys/fs/cgroup/memory/test/memory.limit_in_bytes ; " +
             "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +
@@ -109,6 +114,7 @@ public class TestDockerMemoryMetricsSubgroup {
             .addDockerOpts("--volume", Utils.TEST_JDK + ":/jdk")
             .addDockerOpts("--privileged")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
+            .addDockerOpts("-e", "LANG=C.UTF-8")
             .addDockerOpts("--memory", outerGroupMemorySize);
         opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
             "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +

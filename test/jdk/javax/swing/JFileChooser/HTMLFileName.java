@@ -41,7 +41,7 @@ import javax.swing.filechooser.FileSystemView;
 
 /*
  * @test id=system
- * @bug 8139228
+ * @bug 8139228 8358532
  * @summary JFileChooser should not render Directory names in HTML format
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -72,7 +72,7 @@ public class HTMLFileName {
             <li><code>JFileChooser</code> shows a virtual directory.
                 The first file in the list has the following name:
                 <code>&lt;html&gt;&lt;h1 color=#ff00ff&gt;&lt;font
-                face="Comic Sans MS"&gt;Swing Rocks!</code>
+                face="Serif"&gt;Swing Rocks!</code>
                 <br>
                 <br>
             <li>In <b>HTML disabled</b> frame:
@@ -89,9 +89,11 @@ public class HTMLFileName {
             <li>In <b>HTML enabled</b> frame:
                 <ol>
                   <li>Verify that the first file name displays as <em>HTML</em>,
-                      that is <code><font face="Comic Sans MS"
+                      that is <code><font face="Serif"
                       color=#ff00ff>Swing Rocks!</code> in large font
-                      and magenta color.
+                      and magenta color.<br>
+                      <b>Note:</b> On macOS in Aqua L&amp;F, the file name with
+                      HTML displays as an empty file name. It is not an error.
                   <li>If the file name in the file pane and
                       in the navigation combo box above is displayed
                       as HTML, then press <b>Pass</b>.<br>
@@ -150,12 +152,12 @@ public class HTMLFileName {
         return List.of(createFileChooser(true), createFileChooser(false));
     }
 
-    private static JFrame createFileChooser(boolean htmlEnabled) {
+    private static JFrame createFileChooser(boolean htmlDisabled) {
         JFileChooser jfc = new JFileChooser(new VirtualFileSystemView());
-        jfc.putClientProperty("html.disable", htmlEnabled);
+        jfc.putClientProperty("html.disable", htmlDisabled);
         jfc.setControlButtonsAreShown(false);
 
-        JFrame frame = new JFrame((!htmlEnabled) ? "HTML enabled" : "HTML disabled");
+        JFrame frame = new JFrame(htmlDisabled ? "HTML disabled" : "HTML enabled");
         frame.add(jfc);
         frame.pack();
         return frame;
@@ -164,7 +166,7 @@ public class HTMLFileName {
     private static class VirtualFileSystemView extends FileSystemView {
         private final File[] files = {
                 new File("/", "<html><h1 color=#ff00ff><font " +
-                         "face=\"Comic Sans MS\">Swing Rocks!"),
+                         "face=\"Serif\">Swing Rocks!"),
                 new File("/", "virtualFile1.txt"),
                 new File("/", "virtualFile2.log")
         };
