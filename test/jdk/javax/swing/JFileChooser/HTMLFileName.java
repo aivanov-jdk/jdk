@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.swing.filechooser.FileSystemView;
 /*
  * @test id=metal
  * @bug 8139228
- * @summary JFileChooser should not render Directory names in HTML format
+ * @summary JFileChooser should not render directory names in HTML format
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual HTMLFileName metal
@@ -42,7 +42,7 @@ import javax.swing.filechooser.FileSystemView;
 /*
  * @test id=system
  * @bug 8139228 8358532
- * @summary JFileChooser should not render Directory names in HTML format
+ * @summary JFileChooser should not render directory names in HTML format
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual HTMLFileName system
@@ -51,7 +51,7 @@ import javax.swing.filechooser.FileSystemView;
 /*
  * @test id=nimbus
  * @bug 8139228
- * @summary JFileChooser should not render Directory names in HTML format
+ * @summary JFileChooser should not render directory names in HTML format
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual HTMLFileName nimbus
@@ -60,7 +60,7 @@ import javax.swing.filechooser.FileSystemView;
 /*
  * @test id=motif
  * @bug 8139228
- * @summary JFileChooser should not render Directory names in HTML format
+ * @summary JFileChooser should not render directory names in HTML format
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual HTMLFileName motif
@@ -103,16 +103,21 @@ public class HTMLFileName {
             </html>
             """;
 
+    private static final String MOTIF_INSTRUCTIONS =
+            "<p><b>Note:</b> there's no navigation combo box in Motif. "
+            + "Ignore it in the instructions.</p>\n";
+
+
     private static volatile String lafName;
 
-    private static String getLafClassName(String[] args) {
+    private static String getLafClassName(String lafKey) {
         final String lafClassName;
-        switch (args[0]) {
+        switch (lafKey) {
             case "metal" -> lafClassName = UIManager.getCrossPlatformLookAndFeelClassName();
             case "system" -> lafClassName = UIManager.getSystemLookAndFeelClassName();
             case "nimbus" -> lafClassName = "javax.swing.plaf.nimbus.NimbusLookAndFeel";
             case "motif" -> lafClassName = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
-            default -> throw new IllegalArgumentException("Unsupported Look-and-Feel keyword: " + args[0]);
+            default -> throw new IllegalArgumentException("Unsupported Look-and-Feel keyword: " + lafKey);
         }
         return lafClassName;
     }
@@ -122,7 +127,7 @@ public class HTMLFileName {
             throw new IllegalArgumentException("Look-and-Feel keyword is required");
         }
 
-        final String lafClassName = getLafClassName(args);
+        final String lafClassName = getLafClassName(args[0]);
 
         SwingUtilities.invokeAndWait(() -> {
             try {
@@ -133,14 +138,17 @@ public class HTMLFileName {
             }
         });
 
+        final boolean motif = "CDE/Motif".equals(lafName);
+
         System.out.println("Test for LookAndFeel " + lafClassName);
         PassFailJFrame.builder()
-                .instructions("<html>" +
-                              "<p style=\"margin-top: 0pt\">Look and Feel: " +
-                              "<b>" + lafName + "</b>" +
+                .instructions("<html>\n" +
+                              "<p><b>Look and Feel:</b> " +
+                              lafName + "</p>\n" +
+                              (motif ? MOTIF_INSTRUCTIONS : "") +
                               INSTRUCTIONS)
-                .columns(50)
-                .rows(20)
+                .columns(motif ? 70 : 45)
+                .rows(25)
                 .testUI(HTMLFileName::initialize)
                 .positionTestUIBottomRowCentered()
                 .build()
@@ -157,7 +165,8 @@ public class HTMLFileName {
         jfc.putClientProperty("html.disable", htmlDisabled);
         jfc.setControlButtonsAreShown(false);
 
-        JFrame frame = new JFrame(htmlDisabled ? "HTML disabled" : "HTML enabled");
+        JFrame frame = new JFrame((htmlDisabled ? "HTML disabled" : "HTML enabled")
+                                  + " - " + lafName);
         frame.add(jfc);
         frame.pack();
         return frame;
