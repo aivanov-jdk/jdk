@@ -210,6 +210,7 @@ class ImageFetcher extends Thread {
             }
             stoppingAnimation(me);
         }
+        System.out.println("Fetcher.fetchloop exit");
     }
 
 
@@ -236,6 +237,12 @@ class ImageFetcher extends Thread {
         }
         me.setPriority(ANIM_PRIORITY);
         me.setName("Image Animator");
+    }
+
+    static void stoppingAnimation() {
+        System.out.println("    > stopping animation");
+        stoppingAnimation(Thread.currentThread());
+        System.out.println("    < stopped animation");
     }
 
     /**

@@ -44,7 +44,7 @@ import java.awt.image.*;
  * @author Jim Graham
  */
 public class GifImageDecoder extends ImageDecoder {
-    private static final boolean verbose = false;
+    private static final boolean verbose = true;
 
     private static final int IMAGESEP           = 0x2c;
     private static final int EXBLOCK            = 0x21;
@@ -180,6 +180,7 @@ public class GifImageDecoder extends ImageDecoder {
                                         }
                                         else {
                                             nloops = ExtractWord(buf, 1);
+                                            System.out.println("nloops = " + nloops);
                                             loopsRead = true;
                                         }
                                     } else {
@@ -209,6 +210,15 @@ public class GifImageDecoder extends ImageDecoder {
                     if (!isAnimation) {
                         input.mark(0); // we don't need the mark buffer
                     }
+                    System.out.println("> IMAGESEP: " + isAnimation + ", " + frameno + ", " + totalframes);
+/*
+                    if (isAnimation && frameno == 0 && totalframes == 1) {
+                        System.out.println(" stopping animation");
+                        isAnimation = false;
+                        ImageFetcher.stoppingAnimation();
+                        break;
+                    }
+*/
                     try {
                         if (!readImage(totalframes == 0,
                                        disposal_method,
@@ -223,6 +233,7 @@ public class GifImageDecoder extends ImageDecoder {
                     }
                     frameno++;
                     totalframes++;
+                    System.out.println("< IMAGESEP: " + isAnimation + ", " + frameno + ", " + totalframes);
                     break;
 
                   default:
@@ -242,7 +253,15 @@ public class GifImageDecoder extends ImageDecoder {
                     // Fall through
 
                   case TERMINATOR:
-                    if (nloops == 0 || nloops-- >= 0) {
+                    System.out.println("> TERMINATOR: " + isAnimation + ", " + frameno + ", " + totalframes);
+                    System.out.println("              nloops = " + nloops);
+                    if (isAnimation && totalframes == 1) {
+                        System.out.println(" stopping animation");
+                        isAnimation = false;
+                        ImageFetcher.stoppingAnimation();
+                    }
+                    if (isAnimation && (nloops == 0 || nloops-- >= 0)) {
+                        System.out.println("isAnimation && (nloops == 0 || nloops-- >= 0)");
                         try {
                             if (curframe != null) {
                                 curframe.dispose();
@@ -257,11 +276,12 @@ public class GifImageDecoder extends ImageDecoder {
                             return; // Unable to reset input buffer
                         }
                     }
-                    if (verbose && frameno != 1) {
+                    if (verbose) {
                         System.out.println("processing GIF terminator,"
                                            + " frames: " + frameno
                                            + " total: " + totalframes);
                     }
+                    System.out.println("imageComplete(ImageConsumer.STATICIMAGEDONE, true)");
                     imageComplete(ImageConsumer.STATICIMAGEDONE, true);
                     return;
                 }
@@ -626,7 +646,7 @@ public class GifImageDecoder extends ImageDecoder {
 }
 
 class GifFrame {
-    private static final boolean verbose = false;
+    private static final boolean verbose = true;
 
     static final int DISPOSAL_NONE      = 0x00;
     static final int DISPOSAL_SAVE      = 0x01;
