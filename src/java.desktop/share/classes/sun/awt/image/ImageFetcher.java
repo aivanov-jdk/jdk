@@ -210,7 +210,6 @@ class ImageFetcher extends Thread {
             }
             stoppingAnimation(me);
         }
-        System.out.println("Fetcher.fetchloop exit");
     }
 
 
@@ -239,10 +238,13 @@ class ImageFetcher extends Thread {
         me.setName("Image Animator");
     }
 
+    /**
+     * Stops the animator thread and returns back to service as
+     * an {@code ImageFetcher} if possible.
+     * @see #stoppingAnimation(Thread)
+     */
     static void stoppingAnimation() {
-        System.out.println("    > stopping animation");
         stoppingAnimation(Thread.currentThread());
-        System.out.println("    < stopped animation");
     }
 
     /**
