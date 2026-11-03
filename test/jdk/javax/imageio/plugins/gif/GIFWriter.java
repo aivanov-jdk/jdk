@@ -40,6 +40,11 @@ import javax.imageio.stream.ImageOutputStream;
 
 import org.w3c.dom.NodeList;
 
+/**
+ * Utility class to create animated GIF images with the specified number
+ * of frames and loop count. The frames are generated as the image is
+ * written into the file.
+ */
 public final class GIFWriter implements AutoCloseable {
     private static final int WIDTH = 100;
     private static final int HEIGHT = 100;
@@ -53,7 +58,9 @@ public final class GIFWriter implements AutoCloseable {
     private final ImageWriter writer;
     private final ImageOutputStream outputStream;
 
+    /** Number of frames. */
     private final int frameCount;
+    /** Number of animation loops. */
     private final int loopCount;
 
     private int x;
@@ -90,6 +97,10 @@ public final class GIFWriter implements AutoCloseable {
         writer.setOutput(outputStream);
     }
 
+    /**
+     * Write the frames into the image stream.
+     * @throws IOException if an error occurs during writing.
+     */
     public void writeFrames() throws IOException {
         final ImageWriteParam writeParam = writer.getDefaultWriteParam();
         final ImageTypeSpecifier type =
